@@ -166,11 +166,13 @@ async function submitMoto(e) {
     status:        document.getElementById('moto-status').value,
     obs:           document.getElementById('moto-obs').value.trim()
   };
+  var result;
   if (id) {
-    await db.from('veiculos').update(veiculo).eq('id', id);
+    result = await db.from('veiculos').update(veiculo).eq('id', id);
   } else {
-    await db.from('veiculos').insert(veiculo);
+    result = await db.from('veiculos').insert(veiculo);
   }
+  if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-moto');
   renderVeiculos();
   populateVeiculoSelects();
@@ -293,11 +295,13 @@ async function submitAluguel(e) {
     caucao:     document.getElementById('aluguel-caucao').value || null,
     status:     document.getElementById('aluguel-status').value
   };
+  var result;
   if (id) {
-    await db.from('alugueis').update(aluguel).eq('id', id);
+    result = await db.from('alugueis').update(aluguel).eq('id', id);
   } else {
-    await db.from('alugueis').insert(aluguel);
+    result = await db.from('alugueis').insert(aluguel);
   }
+  if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-aluguel');
   renderAlugueis();
 }
@@ -364,11 +368,13 @@ async function submitManutencao(e) {
     prox_km:    document.getElementById('manut-prox-km').value || null,
     descricao:  document.getElementById('manut-desc').value.trim()
   };
+  var result;
   if (id) {
-    await db.from('manutencoes').update(m).eq('id', id);
+    result = await db.from('manutencoes').update(m).eq('id', id);
   } else {
-    await db.from('manutencoes').insert(m);
+    result = await db.from('manutencoes').insert(m);
   }
+  if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-manutencao');
   renderManutencoes();
 }
@@ -433,11 +439,13 @@ async function submitDespesa(e) {
     vencimento:  document.getElementById('despesa-vencimento').value || null,
     obs:         document.getElementById('despesa-obs').value.trim()
   };
+  var result;
   if (id) {
-    await db.from('despesas').update(d).eq('id', id);
+    result = await db.from('despesas').update(d).eq('id', id);
   } else {
-    await db.from('despesas').insert(d);
+    result = await db.from('despesas').insert(d);
   }
+  if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-despesa');
   renderDespesas();
 }
