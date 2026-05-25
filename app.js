@@ -609,8 +609,9 @@ function buildChecklist() {
       return '<div class="checklist-item" id="chk-row-' + item.id + '">' +
         '<span class="checklist-text">' + item.text + '</span>' +
         '<div class="checklist-btns">' +
-          '<button class="chk-btn chk-ok" onclick="setCheck(\'' + item.id + '\',\'ok\')" title="OK">✓</button>' +
-          '<button class="chk-btn chk-bad" onclick="setCheck(\'' + item.id + '\',\'bad\')" title="Problema">✗</button>' +
+          '<button class="chk-btn chk-ok"  onclick="setCheck(\'' + item.id + '\',\'ok\')"  title="Aprovado">✓</button>' +
+          '<button class="chk-btn chk-na"  onclick="setCheck(\'' + item.id + '\',\'na\')"  title="Não aplicável">X</button>' +
+          '<button class="chk-btn chk-bad" onclick="setCheck(\'' + item.id + '\',\'bad\')" title="Reprovado">R</button>' +
         '</div>' +
       '</div>';
     }).join('');
@@ -629,39 +630,44 @@ function setCheck(id, val) {
 }
 
 function updateChecklistUI() {
-  var ok = 0, bad = 0, total = 0;
+  var ok = 0, na = 0, bad = 0, total = 0;
   CHECKLIST.forEach(function(group) {
     group.items.forEach(function(item) {
       total++;
       var row = document.getElementById('chk-row-' + item.id);
       if (!row) return;
       var state = checklistState[item.id];
-      row.className = 'checklist-item' + (state === 'ok' ? ' item-ok' : state === 'bad' ? ' item-bad' : '');
+      row.className = 'checklist-item' +
+        (state === 'ok' ? ' item-ok' : state === 'na' ? ' item-na' : state === 'bad' ? ' item-bad' : '');
       row.querySelector('.chk-ok').className  = 'chk-btn chk-ok'  + (state === 'ok'  ? ' active' : '');
+      row.querySelector('.chk-na').className  = 'chk-btn chk-na'  + (state === 'na'  ? ' active' : '');
       row.querySelector('.chk-bad').className = 'chk-btn chk-bad' + (state === 'bad' ? ' active' : '');
       if (state === 'ok')  ok++;
+      if (state === 'na')  na++;
       if (state === 'bad') bad++;
     });
   });
-  var avaliados = ok + bad;
+  var pendentes = total - ok - na - bad;
   var verdict = '', vclass = 'verdict-none';
-  if (avaliados === 0) {
+  if (ok + bad === 0) {
     verdict = 'Nenhum item avaliado';
-  } else if (bad === 0 && ok === total) {
+  } else if (bad === 0) {
     verdict = '✓ Excelente — pode comprar!'; vclass = 'verdict-great';
   } else if (bad <= 2) {
     verdict = '⚠ Atenção — negocie o preço'; vclass = 'verdict-ok';
   } else if (bad <= 5) {
     verdict = '⚠ Muito cuidado — avalie bem'; vclass = 'verdict-ok';
   } else {
-    verdict = '✗ Não compre — muitos problemas'; vclass = 'verdict-bad';
+    verdict = 'R Não compre — muitos problemas'; vclass = 'verdict-bad';
   }
   document.getElementById('checklist-score').innerHTML =
-    '<div class="score-stat"><span class="score-num" style="color:#4ade80">' + ok + '</span><span class="score-lbl">OK</span></div>' +
+    '<div class="score-stat"><span class="score-num" style="color:#4ade80">' + ok  + '</span><span class="score-lbl">Aprovado</span></div>' +
     '<div class="score-divider"></div>' +
-    '<div class="score-stat"><span class="score-num" style="color:#f87171">' + bad + '</span><span class="score-lbl">Problemas</span></div>' +
+    '<div class="score-stat"><span class="score-num" style="color:#fbbf24">' + na  + '</span><span class="score-lbl">N/A</span></div>' +
     '<div class="score-divider"></div>' +
-    '<div class="score-stat"><span class="score-num" style="color:var(--text2)">' + (total - avaliados) + '</span><span class="score-lbl">Pendentes</span></div>' +
+    '<div class="score-stat"><span class="score-num" style="color:#f87171">' + bad + '</span><span class="score-lbl">Reprovado</span></div>' +
+    '<div class="score-divider"></div>' +
+    '<div class="score-stat"><span class="score-num" style="color:var(--text2)">' + pendentes + '</span><span class="score-lbl">Pendentes</span></div>' +
     '<span class="score-verdict ' + vclass + '">' + verdict + '</span>';
 }
 
