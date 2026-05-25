@@ -107,7 +107,7 @@ function renderDashboard() {
         var moto = motos.find(function(x){ return x.id === m.motoId; });
         return '<tr><td>' + (moto ? motoLabel(moto) : '-') + '</td><td>' + m.tipo + '</td><td>' + fmtBRL(m.custo) + '</td><td>' + fmtDate(m.data) + '</td></tr>';
       }).join('')
-    : '<tr class="empty-row"><td colspan="4">Nenhuma manutenção registrada</td></tr>';
+    : '<tr class="empty-row"><td colspan="4">Nenhum custo registrado</td></tr>';
 }
 
 // --- MOTOS ---
@@ -134,7 +134,7 @@ function renderMotos() {
 function openNewMoto() {
   document.getElementById('form-moto').reset();
   document.getElementById('moto-id').value = '';
-  document.getElementById('modal-moto-title').textContent = 'Nova Moto';
+  document.getElementById('modal-moto-title').textContent = 'Novo Veículo';
   openModal('modal-moto');
 }
 
@@ -149,7 +149,7 @@ function editMoto(id) {
   document.getElementById('moto-valor-compra').value = m.valorCompra || '';
   document.getElementById('moto-status').value = m.status || 'disponivel';
   document.getElementById('moto-obs').value = m.obs || '';
-  document.getElementById('modal-moto-title').textContent = 'Editar Moto';
+  document.getElementById('modal-moto-title').textContent = 'Editar Veículo';
   openModal('modal-moto');
 }
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GereMoto — Gestão de Aluguel de Motos</title>
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -12,7 +12,7 @@
   <div class="nav-brand">&#127949; GereMoto</div>
   <ul class="nav-links" id="navLinks">
     <li><a href="#" class="nav-item active" data-section="dashboard">Dashboard</a></li>
-    <li><a href="#" class="nav-item" data-section="motos">Motos</a></li>
+    <li><a href="#" class="nav-item" data-section="motos">Veículos</a></li>
     <li><a href="#" class="nav-item" data-section="alugueis">Aluguéis</a></li>
     <li><a href="#" class="nav-item" data-section="custos">Custos</a></li>
     <li><a href="#" class="nav-item" data-section="relatorios">Relatórios</a></li>
@@ -29,7 +29,7 @@
       <div class="card card-blue">
         <div class="card-icon">&#127949;</div>
         <div class="card-info">
-          <span class="card-label">Total de Motos</span>
+          <span class="card-label">Total de Veículos</span>
           <span class="card-value" id="dash-total-motos">0</span>
         </div>
       </div>
@@ -77,11 +77,11 @@
     </div>
   </section>
 
-  <!-- MOTOS -->
+  <!-- VEÍCULOS -->
   <section id="motos" class="section">
     <div class="section-header">
-      <h2 class="section-title">Motos</h2>
-      <button class="btn btn-primary" onclick="openNewMoto()">+ Nova Moto</button>
+      <h2 class="section-title">Veículos</h2>
+      <button class="btn btn-primary" onclick="openNewMoto()">+ Novo Veículo</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -125,8 +125,9 @@
     <h2 class="section-title">Custos</h2>
 
     <!-- Sub-seção: Manutenções -->
-    <div class="section-header" style="margin-top:0.5rem">
-      <h3 style="margin:0">Manutenções</h3>
+    <div class="costs-divider"><h3>Manutenções</h3></div>
+    <div class="section-header" style="margin-top:0;margin-bottom:1rem">
+      <span></span>
       <button class="btn btn-primary" onclick="openNewManutencao()">+ Nova Manutenção</button>
     </div>
     <div class="filter-bar">
@@ -142,8 +143,9 @@
     </div>
 
     <!-- Sub-seção: Despesas Fixas -->
-    <div class="section-header" style="margin-top:2rem">
-      <h3 style="margin:0">Despesas Fixas</h3>
+    <div class="costs-divider"><h3>Despesas Fixas</h3></div>
+    <div class="section-header" style="margin-top:0;margin-bottom:1rem">
+      <span></span>
       <button class="btn btn-primary" onclick="openNewDespesa()">+ Nova Despesa</button>
     </div>
     <div class="filter-bar">
@@ -180,7 +182,7 @@
 
 </main>
 
-<!-- MODAL MOTO -->
+<!-- MODAL VEÍCULO -->
 <div class="modal-overlay" id="modal-moto">
   <div class="modal">
     <div class="modal-header">
@@ -457,6 +459,6 @@
   </div>
 </div>
 
-<script src="app.js?v=4"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>
