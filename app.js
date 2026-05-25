@@ -220,19 +220,21 @@ function renderAlugueis() {
         return '<tr>' +
           '<td>' + (moto ? motoLabel(moto) : '-') + '</td>' +
           '<td>' + a.cliente + '</td>' +
-          '<td>' + (a.contato || '-') + '</td>' +
+          '<td>' + (a.cpf || '-') + '</td>' +
+          '<td>' + (a.telefone || '-') + '</td>' +
           '<td>' + fmtDate(a.inicio) + '</td>' +
           '<td>' + fmtDate(a.fim) + '</td>' +
           '<td>' + (periodoLabel[a.periodo] || '-') + '</td>' +
           '<td>' + fmtBRL(a.valor) + '</td>' +
           '<td><strong>' + fmtBRL(a.total) + '</strong></td>' +
+          '<td>' + (a.caucao ? fmtBRL(a.caucao) : '-') + '</td>' +
           '<td>' + statusBadge(a.status,'aluguel') + '</td>' +
           '<td>' +
             '<button class="btn btn-sm btn-secondary" onclick="editAluguel(\'' + a.id + '\')">Editar</button> ' +
             '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'aluguel\',\'' + a.id + '\')">Excluir</button>' +
           '</td></tr>';
       }).join('')
-    : '<tr class="empty-row"><td colspan="10">Nenhum aluguel encontrado</td></tr>';
+    : '<tr class="empty-row"><td colspan="12">Nenhum aluguel encontrado</td></tr>';
 }
 
 function openNewAluguel() {
@@ -250,14 +252,17 @@ function editAluguel(id) {
   document.getElementById('aluguel-id').value = a.id;
   document.getElementById('aluguel-moto').value = a.motoId || '';
   document.getElementById('aluguel-cliente').value = a.cliente || '';
-  document.getElementById('aluguel-contato').value = a.contato || '';
+  document.getElementById('aluguel-cpf').value = a.cpf || '';
+  document.getElementById('aluguel-telefone').value = a.telefone || '';
+  document.getElementById('aluguel-cnh').value = a.cnh || '';
+  document.getElementById('aluguel-endereco').value = a.endereco || '';
   document.getElementById('aluguel-inicio').value = a.inicio || '';
   document.getElementById('aluguel-fim').value = a.fim || '';
   document.getElementById('aluguel-periodo').value = a.periodo || 'semana';
   document.getElementById('aluguel-valor').value = a.valor || '';
   document.getElementById('aluguel-total').value = a.total || '';
+  document.getElementById('aluguel-caucao').value = a.caucao || '';
   document.getElementById('aluguel-status').value = a.status || 'ativo';
-  document.getElementById('aluguel-obs').value = a.obs || '';
   document.getElementById('modal-aluguel-title').textContent = 'Editar Aluguel';
   openModal('modal-aluguel');
 }
@@ -270,14 +275,17 @@ function submitAluguel(e) {
     id: id,
     motoId:   document.getElementById('aluguel-moto').value,
     cliente:  document.getElementById('aluguel-cliente').value.trim(),
-    contato:  document.getElementById('aluguel-contato').value.trim(),
+    cpf:      document.getElementById('aluguel-cpf').value.trim(),
+    telefone: document.getElementById('aluguel-telefone').value.trim(),
+    cnh:      document.getElementById('aluguel-cnh').value.trim(),
+    endereco: document.getElementById('aluguel-endereco').value.trim(),
     inicio:   document.getElementById('aluguel-inicio').value,
     fim:      document.getElementById('aluguel-fim').value,
-    periodo: document.getElementById('aluguel-periodo').value,
-    valor:   document.getElementById('aluguel-valor').value,
+    periodo:  document.getElementById('aluguel-periodo').value,
+    valor:    document.getElementById('aluguel-valor').value,
     total:    document.getElementById('aluguel-total').value,
-    status:   document.getElementById('aluguel-status').value,
-    obs:      document.getElementById('aluguel-obs').value.trim()
+    caucao:   document.getElementById('aluguel-caucao').value,
+    status:   document.getElementById('aluguel-status').value
   };
   var idx = alugueis.findIndex(function(a){ return a.id === id; });
   if (idx >= 0) alugueis[idx] = aluguel; else alugueis.push(aluguel);

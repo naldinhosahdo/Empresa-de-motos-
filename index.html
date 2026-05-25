@@ -113,7 +113,7 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Moto</th><th>Cliente</th><th>CPF/Tel</th><th>Início</th><th>Fim</th><th>Período</th><th>Valor</th><th>Total</th><th>Status</th><th>Ações</th></tr>
+          <tr><th>Moto</th><th>Cliente</th><th>CPF</th><th>Telefone</th><th>Início</th><th>Fim</th><th>Período</th><th>Valor</th><th>Total</th><th>Caução</th><th>Status</th><th>Ações</th></tr>
         </thead>
         <tbody id="alugueis-tbody"></tbody>
       </table>
@@ -244,9 +244,23 @@
           <input type="text" id="aluguel-cliente" required placeholder="Nome completo">
         </div>
         <div class="form-group">
-          <label>CPF / Telefone</label>
-          <input type="text" id="aluguel-contato" placeholder="000.000.000-00">
+          <label>CPF</label>
+          <input type="text" id="aluguel-cpf" placeholder="000.000.000-00">
         </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="text" id="aluguel-telefone" placeholder="(00) 00000-0000">
+        </div>
+        <div class="form-group">
+          <label>CNH</label>
+          <input type="text" id="aluguel-cnh" placeholder="Número da CNH">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Endereço</label>
+        <input type="text" id="aluguel-endereco" placeholder="Rua, número, bairro, cidade">
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -278,9 +292,11 @@
           <input type="number" id="aluguel-total" step="0.01" min="0" placeholder="Calculado automaticamente">
         </div>
       </div>
-      <div class="form-group">
-        <label>Observações</label>
-        <textarea id="aluguel-obs" rows="2" placeholder="CNH, cauções..."></textarea>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Caução (R$)</label>
+          <input type="number" id="aluguel-caucao" step="0.01" min="0" placeholder="250.00">
+        </div>
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-aluguel')">Cancelar</button>
