@@ -169,18 +169,6 @@
       <button class="btn btn-secondary" onclick="resetChecklist()">↺ Resetar</button>
     </div>
     <p class="checklist-intro">Avalie a moto antes de comprar. Marque <strong style="color:#4ade80">✓ Aprovado</strong>, <strong style="color:#fbbf24">X Não aplicável</strong> ou <strong style="color:#f87171">R Reprovado</strong> em cada item.</p>
-    <div class="checklist-placa-box">
-      <label class="checklist-placa-label">Placa do veículo</label>
-      <div class="checklist-placa-row">
-        <input type="text" id="chk-placa" placeholder="ABC-1D23" maxlength="8" oninput="onPlacaInput(this)" style="text-transform:uppercase">
-        <button class="btn btn-primary" id="chk-consultar-btn" onclick="consultarPlaca()" style="display:none">🔍 Consultar no DETRAN</button>
-      </div>
-      <div id="chk-consulta-links" style="display:none" class="consulta-links">
-        <span class="consulta-hint">Escolha onde consultar:</span>
-        <a id="link-sinesp" href="#" target="_blank" class="consulta-link consulta-link-blue">🚨 Roubo/Furto (SINESP)</a>
-        <a id="link-detran" href="#" target="_blank" class="consulta-link consulta-link-green">📋 Multas e Débitos (DETRAN-CE)</a>
-      </div>
-    </div>
     <div id="checklist-score" class="checklist-score"></div>
     <div id="checklist-body"></div>
   </section>
