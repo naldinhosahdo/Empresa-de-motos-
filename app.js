@@ -1,17 +1,9 @@
-// GereMoto - Gestao de Aluguel de Motos
+// GereMoto — Gestão de Aluguel de Veículos
+// Backend: Supabase
 
-// --- DATA ---
-function getMotos()      { return JSON.parse(localStorage.getItem('gm_motos')      || '[]'); }
-function getAlugueis()   { return JSON.parse(localStorage.getItem('gm_alugueis')   || '[]'); }
-function getManutencoes(){ return JSON.parse(localStorage.getItem('gm_manutencoes')|| '[]'); }
-function getDespesas()   { return JSON.parse(localStorage.getItem('gm_despesas')   || '[]'); }
-
-function saveMotos(d)      { localStorage.setItem('gm_motos',      JSON.stringify(d)); }
-function saveAlugueis(d)   { localStorage.setItem('gm_alugueis',   JSON.stringify(d)); }
-function saveManutencoes(d){ localStorage.setItem('gm_manutencoes',JSON.stringify(d)); }
-function saveDespesas(d)   { localStorage.setItem('gm_despesas',   JSON.stringify(d)); }
-
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+const SUPABASE_URL = 'https://ohukqqyktkrvqedhozgk.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9odWtxcXlrdGtydnFlZGhvemdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2ODkzMTQsImV4cCI6MjA5NTI2NTMxNH0.yKCkjINcQNcxiIqkfRUA507KlFymzTsInHTa6ObZzTM';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- FORMATTERS ---
 function fmtBRL(v) {
@@ -22,30 +14,35 @@ function fmtDate(d) {
   const [y, m, day] = d.split('-');
   return day + '/' + m + '/' + y;
 }
-function motoLabel(m) { return m.modelo + (m.placa ? ' · ' + m.placa : ''); }
+function veiculoLabel(v) { return v.modelo + (v.placa ? ' · ' + v.placa : ''); }
 
 function statusBadge(status, type) {
   const maps = {
-    moto:    { disponivel: ['green','Disponível'], alugada: ['blue','Alugada'], manutencao: ['yellow','Manutenção'] },
+    veiculo: { disponivel: ['green','Disponível'], alugada: ['blue','Alugado'], manutencao: ['yellow','Manutenção'] },
     aluguel: { ativo: ['blue','Ativo'], finalizado: ['green','Finalizado'], cancelado: ['red','Cancelado'] }
   };
   const [color, label] = (maps[type] && maps[type][status]) ? maps[type][status] : ['gray', status];
   return '<span class="badge badge-' + color + '">' + label + '</span>';
 }
 
+function showLoading(tbodyId, cols) {
+  const el = document.getElementById(tbodyId);
+  if (el) el.innerHTML = '<tr class="empty-row"><td colspan="' + cols + '">Carregando...</td></tr>';
+}
+
 // --- NAVIGATION ---
 function showSection(name) {
-  document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
-  document.querySelectorAll('.nav-item').forEach(function(a){ a.classList.remove('active'); });
+  document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(a) { a.classList.remove('active'); });
   document.getElementById(name).classList.add('active');
   var link = document.querySelector('[data-section="' + name + '"]');
   if (link) link.classList.add('active');
   document.getElementById('navLinks').classList.remove('open');
 
   if (name === 'dashboard')  renderDashboard();
-  if (name === 'motos')      renderMotos();
-  if (name === 'alugueis')   { populateMotoSelects(); renderAlugueis(); }
-  if (name === 'custos')     { populateMotoSelects(); renderManutencoes(); renderDespesas(); }
+  if (name === 'motos')      renderVeiculos();
+  if (name === 'alugueis')   { populateVeiculoSelects(); renderAlugueis(); }
+  if (name === 'custos')     { populateVeiculoSelects(); renderManutencoes(); renderDespesas(); }
   if (name === 'relatorios') renderRelatorios();
 }
 
@@ -71,64 +68,68 @@ document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
 });
 
 // --- DASHBOARD ---
-function renderDashboard() {
-  var motos = getMotos();
-  var alugueis = getAlugueis();
-  var manutencoes = getManutencoes();
+async function renderDashboard() {
+  const [{ data: veiculos }, { data: alugueis }, { data: manutencoes }, { data: despesas }] = await Promise.all([
+    db.from('veiculos').select('*'),
+    db.from('alugueis').select('*'),
+    db.from('manutencoes').select('*'),
+    db.from('despesas').select('*')
+  ]);
 
-  var receita = alugueis
-    .filter(function(a){ return a.status !== 'cancelado'; })
-    .reduce(function(s, a){ return s + Number(a.total || 0); }, 0);
-  var despesas = getDespesas();
-  var custos = manutencoes.reduce(function(s, m){ return s + Number(m.custo || 0); }, 0)
-             + despesas.reduce(function(s, d){ return s + Number(d.valor || 0); }, 0);
-  var lucro = receita - custos;
+  const v = veiculos || [], a = alugueis || [], m = manutencoes || [], d = despesas || [];
 
-  document.getElementById('dash-total-motos').textContent = motos.length;
+  const receita = a.filter(function(x) { return x.status !== 'cancelado'; })
+                   .reduce(function(s, x) { return s + Number(x.total || 0); }, 0);
+  const custos  = m.reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
+                + d.reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+  const lucro   = receita - custos;
+
+  document.getElementById('dash-total-motos').textContent = v.length;
   document.getElementById('dash-receita').textContent = fmtBRL(receita);
-  document.getElementById('dash-custos').textContent = fmtBRL(custos);
+  document.getElementById('dash-custos').textContent  = fmtBRL(custos);
   var lucroEl = document.getElementById('dash-lucro');
-  lucroEl.textContent = fmtBRL(lucro);
-  lucroEl.style.color = lucro >= 0 ? 'var(--green)' : 'var(--red)';
+  lucroEl.textContent  = fmtBRL(lucro);
+  lucroEl.style.color  = lucro >= 0 ? 'var(--green)' : 'var(--red)';
 
   var tbody1 = document.getElementById('dash-alugueis-tbody');
-  var lastAlugueis = alugueis.slice().reverse().slice(0, 5);
-  tbody1.innerHTML = lastAlugueis.length
-    ? lastAlugueis.map(function(a) {
-        var moto = motos.find(function(m){ return m.id === a.motoId; });
-        return '<tr><td>' + (moto ? motoLabel(moto) : '-') + '</td><td>' + a.cliente + '</td><td>' + fmtBRL(a.total) + '</td><td>' + statusBadge(a.status,'aluguel') + '</td></tr>';
+  var lastA   = a.slice().reverse().slice(0, 5);
+  tbody1.innerHTML = lastA.length
+    ? lastA.map(function(x) {
+        var vei = v.find(function(vv) { return vv.id === x.veiculo_id; });
+        return '<tr><td>' + (vei ? veiculoLabel(vei) : '-') + '</td><td>' + x.cliente + '</td><td>' + fmtBRL(x.total) + '</td><td>' + statusBadge(x.status, 'aluguel') + '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="4">Nenhum aluguel registrado</td></tr>';
 
   var tbody2 = document.getElementById('dash-manut-tbody');
-  var lastManut = manutencoes.slice().reverse().slice(0, 5);
-  tbody2.innerHTML = lastManut.length
-    ? lastManut.map(function(m) {
-        var moto = motos.find(function(x){ return x.id === m.motoId; });
-        return '<tr><td>' + (moto ? motoLabel(moto) : '-') + '</td><td>' + m.tipo + '</td><td>' + fmtBRL(m.custo) + '</td><td>' + fmtDate(m.data) + '</td></tr>';
+  var lastM   = m.slice().reverse().slice(0, 5);
+  tbody2.innerHTML = lastM.length
+    ? lastM.map(function(x) {
+        var vei = v.find(function(vv) { return vv.id === x.veiculo_id; });
+        return '<tr><td>' + (vei ? veiculoLabel(vei) : '-') + '</td><td>' + x.tipo + '</td><td>' + fmtBRL(x.custo) + '</td><td>' + fmtDate(x.data) + '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="4">Nenhum custo registrado</td></tr>';
 }
 
-// --- MOTOS ---
-function renderMotos() {
-  var motos = getMotos();
-  var tbody = document.getElementById('motos-tbody');
-  tbody.innerHTML = motos.length
-    ? motos.map(function(m) {
+// --- VEÍCULOS ---
+async function renderVeiculos() {
+  showLoading('motos-tbody', 7);
+  const { data } = await db.from('veiculos').select('*').order('created_at', { ascending: false });
+  const v = data || [];
+  document.getElementById('motos-tbody').innerHTML = v.length
+    ? v.map(function(vei) {
         return '<tr>' +
-          '<td><strong>' + m.modelo + '</strong></td>' +
-          '<td>' + (m.placa || '-') + '</td>' +
-          '<td>' + (m.ano || '-') + '</td>' +
-          '<td>' + (m.cor || '-') + '</td>' +
-          '<td>' + (m.valorCompra ? fmtBRL(m.valorCompra) : '-') + '</td>' +
-          '<td>' + statusBadge(m.status, 'moto') + '</td>' +
+          '<td>' + vei.modelo + '</td>' +
+          '<td>' + (vei.placa || '-') + '</td>' +
+          '<td>' + (vei.ano || '-') + '</td>' +
+          '<td>' + (vei.cor || '-') + '</td>' +
+          '<td>' + fmtBRL(vei.valor_compra) + '</td>' +
+          '<td>' + statusBadge(vei.status, 'veiculo') + '</td>' +
           '<td>' +
-            '<button class="btn btn-sm btn-secondary" onclick="editMoto(\'' + m.id + '\')">Editar</button> ' +
-            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'moto\',\'' + m.id + '\')" style="margin-top:2px">Excluir</button>' +
+            '<button class="btn btn-sm btn-secondary" onclick="editVeiculo(\'' + vei.id + '\')">Editar</button> ' +
+            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'veiculo\',\'' + vei.id + '\')">Excluir</button>' +
           '</td></tr>';
       }).join('')
-    : '<tr class="empty-row"><td colspan="7">Nenhuma moto cadastrada</td></tr>';
+    : '<tr class="empty-row"><td colspan="7">Nenhum veículo cadastrado</td></tr>';
 }
 
 function openNewMoto() {
@@ -138,54 +139,55 @@ function openNewMoto() {
   openModal('modal-moto');
 }
 
-function editMoto(id) {
-  var m = getMotos().find(function(x){ return x.id === id; });
-  if (!m) return;
-  document.getElementById('moto-id').value = m.id;
-  document.getElementById('moto-modelo').value = m.modelo || '';
-  document.getElementById('moto-placa').value = m.placa || '';
-  document.getElementById('moto-ano').value = m.ano || '';
-  document.getElementById('moto-cor').value = m.cor || '';
-  document.getElementById('moto-valor-compra').value = m.valorCompra || '';
-  document.getElementById('moto-status').value = m.status || 'disponivel';
-  document.getElementById('moto-obs').value = m.obs || '';
+async function editVeiculo(id) {
+  const { data: v } = await db.from('veiculos').select('*').eq('id', id).single();
+  if (!v) return;
+  document.getElementById('moto-id').value         = v.id;
+  document.getElementById('moto-modelo').value     = v.modelo || '';
+  document.getElementById('moto-placa').value      = v.placa || '';
+  document.getElementById('moto-ano').value        = v.ano || '';
+  document.getElementById('moto-cor').value        = v.cor || '';
+  document.getElementById('moto-valor-compra').value = v.valor_compra || '';
+  document.getElementById('moto-status').value     = v.status || 'disponivel';
+  document.getElementById('moto-obs').value        = v.obs || '';
   document.getElementById('modal-moto-title').textContent = 'Editar Veículo';
   openModal('modal-moto');
 }
 
-function submitMoto(e) {
+async function submitMoto(e) {
   e.preventDefault();
-  var id = document.getElementById('moto-id').value || uid();
-  var motos = getMotos();
-  var moto = {
-    id: id,
-    modelo: document.getElementById('moto-modelo').value.trim(),
-    placa: document.getElementById('moto-placa').value.trim().toUpperCase(),
-    ano: document.getElementById('moto-ano').value,
-    cor: document.getElementById('moto-cor').value.trim(),
-    valorCompra: document.getElementById('moto-valor-compra').value,
-    status: document.getElementById('moto-status').value,
-    obs: document.getElementById('moto-obs').value.trim()
+  const id = document.getElementById('moto-id').value;
+  const veiculo = {
+    modelo:        document.getElementById('moto-modelo').value.trim(),
+    placa:         document.getElementById('moto-placa').value.trim(),
+    ano:           document.getElementById('moto-ano').value || null,
+    cor:           document.getElementById('moto-cor').value.trim(),
+    valor_compra:  document.getElementById('moto-valor-compra').value || null,
+    status:        document.getElementById('moto-status').value,
+    obs:           document.getElementById('moto-obs').value.trim()
   };
-  var idx = motos.findIndex(function(m){ return m.id === id; });
-  if (idx >= 0) motos[idx] = moto; else motos.push(moto);
-  saveMotos(motos);
+  if (id) {
+    await db.from('veiculos').update(veiculo).eq('id', id);
+  } else {
+    await db.from('veiculos').insert(veiculo);
+  }
   closeModal('modal-moto');
-  renderMotos();
-  populateMotoSelects();
+  renderVeiculos();
+  populateVeiculoSelects();
 }
 
 // --- SELECTS ---
-function populateMotoSelects() {
-  var motos = getMotos();
-  var opts = motos.map(function(m){ return '<option value="' + m.id + '">' + motoLabel(m) + '</option>'; }).join('');
-  var noOpt = '<option value="">Nenhuma moto cadastrada</option>';
-  ['aluguel-moto','manut-moto','despesa-moto'].forEach(function(id) {
+async function populateVeiculoSelects() {
+  const { data } = await db.from('veiculos').select('*').order('modelo');
+  const v = data || [];
+  const opts  = v.map(function(vei) { return '<option value="' + vei.id + '">' + veiculoLabel(vei) + '</option>'; }).join('');
+  const noOpt = '<option value="">Nenhum veículo cadastrado</option>';
+  ['aluguel-moto', 'manut-moto', 'despesa-moto'].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) el.innerHTML = motos.length ? opts : noOpt;
+    if (el) el.innerHTML = v.length ? opts : noOpt;
   });
-  var filterOpts = '<option value="">Todas</option>' + opts;
-  ['filtro-moto-aluguel','filtro-moto-manut','filtro-moto-despesa'].forEach(function(id) {
+  var filterOpts = '<option value="">Todos</option>' + opts;
+  ['filtro-moto-aluguel', 'filtro-moto-manut', 'filtro-moto-despesa'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.innerHTML = filterOpts;
   });
@@ -193,7 +195,7 @@ function populateMotoSelects() {
 
 var periodoLabel = { dia: 'Dia', semana: 'Semana', mes: 'Mês' };
 
-// --- ALUGUEIS ---
+// --- ALUGUÉIS ---
 function calcTotal() {
   var inicio  = document.getElementById('aluguel-inicio').value;
   var fim     = document.getElementById('aluguel-fim').value;
@@ -209,33 +211,35 @@ function calcTotal() {
   }
 }
 
-function renderAlugueis() {
-  var motos = getMotos();
-  var alugueis = getAlugueis();
-  var fm = document.getElementById('filtro-moto-aluguel');
-  var fs = document.getElementById('filtro-status-aluguel');
-  if (fm && fm.value) alugueis = alugueis.filter(function(a){ return a.motoId === fm.value; });
-  if (fs && fs.value) alugueis = alugueis.filter(function(a){ return a.status === fs.value; });
+async function renderAlugueis() {
+  showLoading('alugueis-tbody', 12);
+  var fmId = document.getElementById('filtro-moto-aluguel') ? document.getElementById('filtro-moto-aluguel').value : '';
+  var fsId = document.getElementById('filtro-status-aluguel') ? document.getElementById('filtro-status-aluguel').value : '';
 
-  var tbody = document.getElementById('alugueis-tbody');
-  tbody.innerHTML = alugueis.length
-    ? alugueis.slice().reverse().map(function(a) {
-        var moto = motos.find(function(m){ return m.id === a.motoId; });
+  var query = db.from('alugueis').select('*, veiculos(modelo, placa)').order('created_at', { ascending: false });
+  if (fmId) query = query.eq('veiculo_id', fmId);
+  if (fsId) query = query.eq('status', fsId);
+
+  const { data } = await query;
+  const a = data || [];
+  document.getElementById('alugueis-tbody').innerHTML = a.length
+    ? a.map(function(x) {
+        var vei = x.veiculos;
         return '<tr>' +
-          '<td>' + (moto ? motoLabel(moto) : '-') + '</td>' +
-          '<td>' + a.cliente + '</td>' +
-          '<td>' + (a.cpf || '-') + '</td>' +
-          '<td>' + (a.telefone || '-') + '</td>' +
-          '<td>' + fmtDate(a.inicio) + '</td>' +
-          '<td>' + fmtDate(a.fim) + '</td>' +
-          '<td>' + (periodoLabel[a.periodo] || '-') + '</td>' +
-          '<td>' + fmtBRL(a.valor) + '</td>' +
-          '<td><strong>' + fmtBRL(a.total) + '</strong></td>' +
-          '<td>' + (a.caucao ? fmtBRL(a.caucao) : '-') + '</td>' +
-          '<td>' + statusBadge(a.status,'aluguel') + '</td>' +
+          '<td>' + (vei ? veiculoLabel(vei) : '-') + '</td>' +
+          '<td>' + x.cliente + '</td>' +
+          '<td>' + (x.cpf || '-') + '</td>' +
+          '<td>' + (x.telefone || '-') + '</td>' +
+          '<td>' + fmtDate(x.inicio) + '</td>' +
+          '<td>' + fmtDate(x.fim) + '</td>' +
+          '<td>' + (periodoLabel[x.periodo] || '-') + '</td>' +
+          '<td>' + fmtBRL(x.valor) + '</td>' +
+          '<td><strong>' + fmtBRL(x.total) + '</strong></td>' +
+          '<td>' + (x.caucao ? fmtBRL(x.caucao) : '-') + '</td>' +
+          '<td>' + statusBadge(x.status, 'aluguel') + '</td>' +
           '<td>' +
-            '<button class="btn btn-sm btn-secondary" onclick="editAluguel(\'' + a.id + '\')">Editar</button> ' +
-            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'aluguel\',\'' + a.id + '\')">Excluir</button>' +
+            '<button class="btn btn-sm btn-secondary" onclick="editAluguel(\'' + x.id + '\')">Editar</button> ' +
+            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'aluguel\',\'' + x.id + '\')">Excluir</button>' +
           '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="12">Nenhum aluguel encontrado</td></tr>';
@@ -245,80 +249,80 @@ function openNewAluguel() {
   document.getElementById('form-aluguel').reset();
   document.getElementById('aluguel-id').value = '';
   document.getElementById('modal-aluguel-title').textContent = 'Novo Aluguel';
-  populateMotoSelects();
+  populateVeiculoSelects();
   openModal('modal-aluguel');
 }
 
-function editAluguel(id) {
-  var a = getAlugueis().find(function(x){ return x.id === id; });
+async function editAluguel(id) {
+  const { data: a } = await db.from('alugueis').select('*').eq('id', id).single();
   if (!a) return;
-  populateMotoSelects();
-  document.getElementById('aluguel-id').value = a.id;
-  document.getElementById('aluguel-moto').value = a.motoId || '';
-  document.getElementById('aluguel-cliente').value = a.cliente || '';
-  document.getElementById('aluguel-cpf').value = a.cpf || '';
+  await populateVeiculoSelects();
+  document.getElementById('aluguel-id').value       = a.id;
+  document.getElementById('aluguel-moto').value     = a.veiculo_id || '';
+  document.getElementById('aluguel-cliente').value  = a.cliente || '';
+  document.getElementById('aluguel-cpf').value      = a.cpf || '';
   document.getElementById('aluguel-telefone').value = a.telefone || '';
-  document.getElementById('aluguel-cnh').value = a.cnh || '';
+  document.getElementById('aluguel-cnh').value      = a.cnh || '';
   document.getElementById('aluguel-endereco').value = a.endereco || '';
-  document.getElementById('aluguel-inicio').value = a.inicio || '';
-  document.getElementById('aluguel-fim').value = a.fim || '';
-  document.getElementById('aluguel-periodo').value = a.periodo || 'semana';
-  document.getElementById('aluguel-valor').value = a.valor || '';
-  document.getElementById('aluguel-total').value = a.total || '';
-  document.getElementById('aluguel-caucao').value = a.caucao || '';
-  document.getElementById('aluguel-status').value = a.status || 'ativo';
+  document.getElementById('aluguel-inicio').value   = a.inicio || '';
+  document.getElementById('aluguel-fim').value      = a.fim || '';
+  document.getElementById('aluguel-periodo').value  = a.periodo || 'semana';
+  document.getElementById('aluguel-valor').value    = a.valor || '';
+  document.getElementById('aluguel-total').value    = a.total || '';
+  document.getElementById('aluguel-caucao').value   = a.caucao || '';
+  document.getElementById('aluguel-status').value   = a.status || 'ativo';
   document.getElementById('modal-aluguel-title').textContent = 'Editar Aluguel';
   openModal('modal-aluguel');
 }
 
-function submitAluguel(e) {
+async function submitAluguel(e) {
   e.preventDefault();
-  var id = document.getElementById('aluguel-id').value || uid();
-  var alugueis = getAlugueis();
-  var aluguel = {
-    id: id,
-    motoId:   document.getElementById('aluguel-moto').value,
-    cliente:  document.getElementById('aluguel-cliente').value.trim(),
-    cpf:      document.getElementById('aluguel-cpf').value.trim(),
-    telefone: document.getElementById('aluguel-telefone').value.trim(),
-    cnh:      document.getElementById('aluguel-cnh').value.trim(),
-    endereco: document.getElementById('aluguel-endereco').value.trim(),
-    inicio:   document.getElementById('aluguel-inicio').value,
-    fim:      document.getElementById('aluguel-fim').value,
-    periodo:  document.getElementById('aluguel-periodo').value,
-    valor:    document.getElementById('aluguel-valor').value,
-    total:    document.getElementById('aluguel-total').value,
-    caucao:   document.getElementById('aluguel-caucao').value,
-    status:   document.getElementById('aluguel-status').value
+  const id = document.getElementById('aluguel-id').value;
+  const aluguel = {
+    veiculo_id: document.getElementById('aluguel-moto').value || null,
+    cliente:    document.getElementById('aluguel-cliente').value.trim(),
+    cpf:        document.getElementById('aluguel-cpf').value.trim(),
+    telefone:   document.getElementById('aluguel-telefone').value.trim(),
+    cnh:        document.getElementById('aluguel-cnh').value.trim(),
+    endereco:   document.getElementById('aluguel-endereco').value.trim(),
+    inicio:     document.getElementById('aluguel-inicio').value,
+    fim:        document.getElementById('aluguel-fim').value || null,
+    periodo:    document.getElementById('aluguel-periodo').value,
+    valor:      document.getElementById('aluguel-valor').value || null,
+    total:      document.getElementById('aluguel-total').value || null,
+    caucao:     document.getElementById('aluguel-caucao').value || null,
+    status:     document.getElementById('aluguel-status').value
   };
-  var idx = alugueis.findIndex(function(a){ return a.id === id; });
-  if (idx >= 0) alugueis[idx] = aluguel; else alugueis.push(aluguel);
-  saveAlugueis(alugueis);
+  if (id) {
+    await db.from('alugueis').update(aluguel).eq('id', id);
+  } else {
+    await db.from('alugueis').insert(aluguel);
+  }
   closeModal('modal-aluguel');
   renderAlugueis();
 }
 
-// --- MANUTENCOES ---
-function renderManutencoes() {
-  var motos = getMotos();
-  var manutencoes = getManutencoes();
-  var fm = document.getElementById('filtro-moto-manut');
-  if (fm && fm.value) manutencoes = manutencoes.filter(function(m){ return m.motoId === fm.value; });
-
-  var tbody = document.getElementById('manutencoes-tbody');
-  tbody.innerHTML = manutencoes.length
-    ? manutencoes.slice().reverse().map(function(m) {
-        var moto = motos.find(function(x){ return x.id === m.motoId; });
+// --- MANUTENÇÕES ---
+async function renderManutencoes() {
+  showLoading('manutencoes-tbody', 7);
+  var fmId = document.getElementById('filtro-moto-manut') ? document.getElementById('filtro-moto-manut').value : '';
+  var query = db.from('manutencoes').select('*, veiculos(modelo, placa)').order('created_at', { ascending: false });
+  if (fmId) query = query.eq('veiculo_id', fmId);
+  const { data } = await query;
+  const m = data || [];
+  document.getElementById('manutencoes-tbody').innerHTML = m.length
+    ? m.map(function(x) {
+        var vei = x.veiculos;
         return '<tr>' +
-          '<td>' + (moto ? motoLabel(moto) : '-') + '</td>' +
-          '<td>' + m.tipo + '</td>' +
-          '<td>' + (m.desc || '-') + '</td>' +
-          '<td><span class="text-red">' + fmtBRL(m.custo) + '</span></td>' +
-          '<td>' + fmtDate(m.data) + '</td>' +
-          '<td>' + (m.oficina || '-') + '</td>' +
+          '<td>' + (vei ? veiculoLabel(vei) : '-') + '</td>' +
+          '<td>' + x.tipo + '</td>' +
+          '<td>' + (x.descricao || '-') + '</td>' +
+          '<td><span class="text-red">' + fmtBRL(x.custo) + '</span></td>' +
+          '<td>' + fmtDate(x.data) + '</td>' +
+          '<td>' + (x.oficina || '-') + '</td>' +
           '<td>' +
-            '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + m.id + '\')">Editar</button> ' +
-            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + m.id + '\')">Excluir</button>' +
+            '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button> ' +
+            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
           '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="7">Nenhuma manutenção encontrada</td></tr>';
@@ -328,68 +332,68 @@ function openNewManutencao() {
   document.getElementById('form-manutencao').reset();
   document.getElementById('manut-id').value = '';
   document.getElementById('modal-manut-title').textContent = 'Nova Manutenção';
-  populateMotoSelects();
+  populateVeiculoSelects();
   openModal('modal-manutencao');
 }
 
-function editManutencao(id) {
-  var m = getManutencoes().find(function(x){ return x.id === id; });
+async function editManutencao(id) {
+  const { data: m } = await db.from('manutencoes').select('*').eq('id', id).single();
   if (!m) return;
-  populateMotoSelects();
-  document.getElementById('manut-id').value = m.id;
-  document.getElementById('manut-moto').value = m.motoId || '';
-  document.getElementById('manut-tipo').value = m.tipo || '';
-  document.getElementById('manut-data').value = m.data || '';
-  document.getElementById('manut-custo').value = m.custo || '';
+  await populateVeiculoSelects();
+  document.getElementById('manut-id').value      = m.id;
+  document.getElementById('manut-moto').value    = m.veiculo_id || '';
+  document.getElementById('manut-tipo').value    = m.tipo || '';
+  document.getElementById('manut-data').value    = m.data || '';
+  document.getElementById('manut-custo').value   = m.custo || '';
   document.getElementById('manut-oficina').value = m.oficina || '';
-  document.getElementById('manut-prox-km').value = m.proxKm || '';
-  document.getElementById('manut-desc').value = m.desc || '';
+  document.getElementById('manut-prox-km').value = m.prox_km || '';
+  document.getElementById('manut-desc').value    = m.descricao || '';
   document.getElementById('modal-manut-title').textContent = 'Editar Manutenção';
   openModal('modal-manutencao');
 }
 
-function submitManutencao(e) {
+async function submitManutencao(e) {
   e.preventDefault();
-  var id = document.getElementById('manut-id').value || uid();
-  var manutencoes = getManutencoes();
-  var m = {
-    id: id,
-    motoId:  document.getElementById('manut-moto').value,
-    tipo:    document.getElementById('manut-tipo').value,
-    data:    document.getElementById('manut-data').value,
-    custo:   document.getElementById('manut-custo').value,
-    oficina: document.getElementById('manut-oficina').value.trim(),
-    proxKm:  document.getElementById('manut-prox-km').value,
-    desc:    document.getElementById('manut-desc').value.trim()
+  const id = document.getElementById('manut-id').value;
+  const m = {
+    veiculo_id: document.getElementById('manut-moto').value || null,
+    tipo:       document.getElementById('manut-tipo').value,
+    data:       document.getElementById('manut-data').value,
+    custo:      document.getElementById('manut-custo').value || null,
+    oficina:    document.getElementById('manut-oficina').value.trim(),
+    prox_km:    document.getElementById('manut-prox-km').value || null,
+    descricao:  document.getElementById('manut-desc').value.trim()
   };
-  var idx = manutencoes.findIndex(function(x){ return x.id === id; });
-  if (idx >= 0) manutencoes[idx] = m; else manutencoes.push(m);
-  saveManutencoes(manutencoes);
+  if (id) {
+    await db.from('manutencoes').update(m).eq('id', id);
+  } else {
+    await db.from('manutencoes').insert(m);
+  }
   closeModal('modal-manutencao');
   renderManutencoes();
 }
 
-// --- DESPESAS FIXAS ---
-function renderDespesas() {
-  var motos = getMotos();
-  var despesas = getDespesas();
-  var fm = document.getElementById('filtro-moto-despesa');
-  if (fm && fm.value) despesas = despesas.filter(function(d){ return d.motoId === fm.value; });
-
-  var tbody = document.getElementById('despesas-tbody');
-  tbody.innerHTML = despesas.length
-    ? despesas.slice().reverse().map(function(d) {
-        var moto = motos.find(function(x){ return x.id === d.motoId; });
+// --- DESPESAS ---
+async function renderDespesas() {
+  showLoading('despesas-tbody', 7);
+  var fmId = document.getElementById('filtro-moto-despesa') ? document.getElementById('filtro-moto-despesa').value : '';
+  var query = db.from('despesas').select('*, veiculos(modelo, placa)').order('created_at', { ascending: false });
+  if (fmId) query = query.eq('veiculo_id', fmId);
+  const { data } = await query;
+  const d = data || [];
+  document.getElementById('despesas-tbody').innerHTML = d.length
+    ? d.map(function(x) {
+        var vei = x.veiculos;
         return '<tr>' +
-          '<td>' + (moto ? motoLabel(moto) : '-') + '</td>' +
-          '<td>' + d.tipo + '</td>' +
-          '<td>' + (d.ano || '-') + '</td>' +
-          '<td><span class="text-red">' + fmtBRL(d.valor) + '</span></td>' +
-          '<td>' + fmtDate(d.vencimento) + '</td>' +
-          '<td>' + (d.obs || '-') + '</td>' +
+          '<td>' + (vei ? veiculoLabel(vei) : '-') + '</td>' +
+          '<td>' + x.tipo + '</td>' +
+          '<td>' + (x.ano || '-') + '</td>' +
+          '<td><span class="text-red">' + fmtBRL(x.valor) + '</span></td>' +
+          '<td>' + fmtDate(x.vencimento) + '</td>' +
+          '<td>' + (x.obs || '-') + '</td>' +
           '<td>' +
-            '<button class="btn btn-sm btn-secondary" onclick="editDespesa(\'' + d.id + '\')">Editar</button> ' +
-            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + d.id + '\')">Excluir</button>' +
+            '<button class="btn btn-sm btn-secondary" onclick="editDespesa(\'' + x.id + '\')">Editar</button> ' +
+            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
           '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="7">Nenhuma despesa encontrada</td></tr>';
@@ -399,114 +403,114 @@ function openNewDespesa() {
   document.getElementById('form-despesa').reset();
   document.getElementById('despesa-id').value = '';
   document.getElementById('modal-despesa-title').textContent = 'Nova Despesa Fixa';
-  populateMotoSelects();
+  populateVeiculoSelects();
   openModal('modal-despesa');
 }
 
-function editDespesa(id) {
-  var d = getDespesas().find(function(x){ return x.id === id; });
+async function editDespesa(id) {
+  const { data: d } = await db.from('despesas').select('*').eq('id', id).single();
   if (!d) return;
-  populateMotoSelects();
-  document.getElementById('despesa-id').value = d.id;
-  document.getElementById('despesa-moto').value = d.motoId || '';
-  document.getElementById('despesa-tipo').value = d.tipo || '';
-  document.getElementById('despesa-ano').value = d.ano || '';
-  document.getElementById('despesa-valor').value = d.valor || '';
+  await populateVeiculoSelects();
+  document.getElementById('despesa-id').value         = d.id;
+  document.getElementById('despesa-moto').value       = d.veiculo_id || '';
+  document.getElementById('despesa-tipo').value       = d.tipo || '';
+  document.getElementById('despesa-ano').value        = d.ano || '';
+  document.getElementById('despesa-valor').value      = d.valor || '';
   document.getElementById('despesa-vencimento').value = d.vencimento || '';
-  document.getElementById('despesa-obs').value = d.obs || '';
+  document.getElementById('despesa-obs').value        = d.obs || '';
   document.getElementById('modal-despesa-title').textContent = 'Editar Despesa Fixa';
   openModal('modal-despesa');
 }
 
-function submitDespesa(e) {
+async function submitDespesa(e) {
   e.preventDefault();
-  var id = document.getElementById('despesa-id').value || uid();
-  var despesas = getDespesas();
-  var d = {
-    id: id,
-    motoId:     document.getElementById('despesa-moto').value,
-    tipo:       document.getElementById('despesa-tipo').value,
-    ano:        document.getElementById('despesa-ano').value,
-    valor:      document.getElementById('despesa-valor').value,
-    vencimento: document.getElementById('despesa-vencimento').value,
-    obs:        document.getElementById('despesa-obs').value.trim()
+  const id = document.getElementById('despesa-id').value;
+  const d = {
+    veiculo_id:  document.getElementById('despesa-moto').value || null,
+    tipo:        document.getElementById('despesa-tipo').value,
+    ano:         document.getElementById('despesa-ano').value || null,
+    valor:       document.getElementById('despesa-valor').value || null,
+    vencimento:  document.getElementById('despesa-vencimento').value || null,
+    obs:         document.getElementById('despesa-obs').value.trim()
   };
-  var idx = despesas.findIndex(function(x){ return x.id === id; });
-  if (idx >= 0) despesas[idx] = d; else despesas.push(d);
-  saveDespesas(despesas);
+  if (id) {
+    await db.from('despesas').update(d).eq('id', id);
+  } else {
+    await db.from('despesas').insert(d);
+  }
   closeModal('modal-despesa');
   renderDespesas();
 }
 
-// --- RELATORIOS ---
+// --- RELATÓRIOS ---
 function resetFiltroMes() {
   document.getElementById('filtro-mes').value = '';
   renderRelatorios();
 }
 
-function renderRelatorios() {
-  var motos = getMotos();
+async function renderRelatorios() {
   var filtroMes = document.getElementById('filtro-mes').value;
+  const [{ data: veiculos }, { data: alugueis }, { data: manutencoes }, { data: despesas }] = await Promise.all([
+    db.from('veiculos').select('*'),
+    db.from('alugueis').select('*').neq('status', 'cancelado'),
+    db.from('manutencoes').select('*'),
+    db.from('despesas').select('*')
+  ]);
 
-  var alugueis = getAlugueis().filter(function(a){ return a.status !== 'cancelado'; });
-  var manutencoes = getManutencoes();
-  var despesas = getDespesas();
+  var v = veiculos || [];
+  var a = alugueis || [], m = manutencoes || [], d = despesas || [];
 
   if (filtroMes) {
-    alugueis    = alugueis.filter(function(a){ return a.inicio && a.inicio.startsWith(filtroMes); });
-    manutencoes = manutencoes.filter(function(m){ return m.data && m.data.startsWith(filtroMes); });
-    despesas    = despesas.filter(function(d){ return d.vencimento && d.vencimento.startsWith(filtroMes); });
+    a = a.filter(function(x) { return x.inicio && x.inicio.startsWith(filtroMes); });
+    m = m.filter(function(x) { return x.data && x.data.startsWith(filtroMes); });
+    d = d.filter(function(x) { return x.vencimento && x.vencimento.startsWith(filtroMes); });
   }
 
   var totalReceita = 0, totalCustos = 0, totalAlugueis = 0;
 
-  var rows = motos.map(function(moto) {
-    var receita = alugueis
-      .filter(function(a){ return a.motoId === moto.id; })
-      .reduce(function(s, a){ return s + Number(a.total || 0); }, 0);
-    var custos = manutencoes
-      .filter(function(m){ return m.motoId === moto.id; })
-      .reduce(function(s, m){ return s + Number(m.custo || 0); }, 0)
-      + despesas
-      .filter(function(d){ return d.motoId === moto.id; })
-      .reduce(function(s, d){ return s + Number(d.valor || 0); }, 0);
-    var qtd = alugueis.filter(function(a){ return a.motoId === moto.id; }).length;
+  var rows = v.map(function(vei) {
+    var receita = a.filter(function(x) { return x.veiculo_id === vei.id; })
+                  .reduce(function(s, x) { return s + Number(x.total || 0); }, 0);
+    var custos  = m.filter(function(x) { return x.veiculo_id === vei.id; })
+                  .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
+                + d.filter(function(x) { return x.veiculo_id === vei.id; })
+                  .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+    var qtd = a.filter(function(x) { return x.veiculo_id === vei.id; }).length;
     totalReceita  += receita;
     totalCustos   += custos;
     totalAlugueis += qtd;
-    return { moto: moto, receita: receita, custos: custos, lucro: receita - custos, qtd: qtd };
+    return { vei: vei, receita: receita, custos: custos, lucro: receita - custos, qtd: qtd };
   });
 
   var grid = document.getElementById('relatorio-motos-grid');
   grid.innerHTML = rows.length
     ? rows.map(function(r) {
-        var lucroColor = r.lucro >= 0 ? 'text-green' : 'text-red';
+        var lc = r.lucro >= 0 ? 'text-green' : 'text-red';
         return '<div class="relatorio-card">' +
-          '<h4>' + motoLabel(r.moto) + '</h4>' +
+          '<h4>' + veiculoLabel(r.vei) + '</h4>' +
           '<div class="rel-row"><span>Receita</span><span class="text-green">' + fmtBRL(r.receita) + '</span></div>' +
-          '<div class="rel-row"><span>Manutenções</span><span class="text-red">' + fmtBRL(r.custos) + '</span></div>' +
+          '<div class="rel-row"><span>Custos</span><span class="text-red">' + fmtBRL(r.custos) + '</span></div>' +
           '<div class="rel-row"><span>Aluguéis</span><span>' + r.qtd + '</span></div>' +
-          '<div class="rel-row"><span>Lucro/Prejuízo</span><span class="' + lucroColor + '">' + fmtBRL(r.lucro) + '</span></div>' +
+          '<div class="rel-row"><span>Lucro/Prejuízo</span><span class="' + lc + '">' + fmtBRL(r.lucro) + '</span></div>' +
           '</div>';
       }).join('')
-    : '<p style="color:var(--text2)">Nenhuma moto cadastrada.</p>';
+    : '<p style="color:var(--text2)">Nenhum veículo cadastrado.</p>';
 
   var tbody = document.getElementById('relatorio-tbody');
   tbody.innerHTML = rows.length
     ? rows.map(function(r) {
-        var lucroColor = r.lucro >= 0 ? 'text-green' : 'text-red';
+        var lc = r.lucro >= 0 ? 'text-green' : 'text-red';
         return '<tr>' +
-          '<td>' + motoLabel(r.moto) + '</td>' +
+          '<td>' + veiculoLabel(r.vei) + '</td>' +
           '<td class="text-green">' + fmtBRL(r.receita) + '</td>' +
           '<td class="text-red">'   + fmtBRL(r.custos)  + '</td>' +
-          '<td class="' + lucroColor + '"><strong>' + fmtBRL(r.lucro) + '</strong></td>' +
+          '<td class="' + lc + '"><strong>' + fmtBRL(r.lucro) + '</strong></td>' +
           '<td>' + r.qtd + '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="5">Nenhum dado encontrado</td></tr>';
 
   var lucroTotal = totalReceita - totalCustos;
-  var tfoot = document.getElementById('relatorio-tfoot');
-  tfoot.innerHTML =
+  document.getElementById('relatorio-tfoot').innerHTML =
     '<td><strong>TOTAL</strong></td>' +
     '<td class="text-green"><strong>' + fmtBRL(totalReceita) + '</strong></td>' +
     '<td class="text-red"><strong>'   + fmtBRL(totalCustos)  + '</strong></td>' +
@@ -517,22 +521,17 @@ function renderRelatorios() {
 // --- DELETE ---
 function confirmDelete(type, id) {
   var btn = document.getElementById('confirm-delete-btn');
-  btn.onclick = function() {
-    if (type === 'moto') {
-      saveMotos(getMotos().filter(function(m){ return m.id !== id; }));
-      renderMotos();
-      populateMotoSelects();
-    } else if (type === 'aluguel') {
-      saveAlugueis(getAlugueis().filter(function(a){ return a.id !== id; }));
-      renderAlugueis();
-    } else if (type === 'manutencao') {
-      saveManutencoes(getManutencoes().filter(function(m){ return m.id !== id; }));
-      renderManutencoes();
-    } else if (type === 'despesa') {
-      saveDespesas(getDespesas().filter(function(d){ return d.id !== id; }));
-      renderDespesas();
-    }
+  btn.onclick = async function() {
+    var tableMap  = { veiculo: 'veiculos', aluguel: 'alugueis', manutencao: 'manutencoes', despesa: 'despesas' };
+    var renderMap = {
+      veiculo:    function() { renderVeiculos(); populateVeiculoSelects(); },
+      aluguel:    renderAlugueis,
+      manutencao: renderManutencoes,
+      despesa:    renderDespesas
+    };
+    await db.from(tableMap[type]).delete().eq('id', id);
     closeModal('modal-confirm');
+    renderMap[type]();
   };
   openModal('modal-confirm');
 }
