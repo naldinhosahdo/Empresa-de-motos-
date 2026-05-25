@@ -572,6 +572,63 @@ form { padding: 1.4rem 1.5rem; }
   background: var(--border);
 }
 
+/* ── LOGIN ── */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(59,130,246,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(168,85,247,0.07) 0%, transparent 60%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 1rem;
+}
+
+.login-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: var(--shadow-lg), 0 0 60px rgba(59,130,246,0.1);
+  animation: slideUp 0.3s ease;
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+.login-brand {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--blue2), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.login-sub {
+  font-size: 0.78rem;
+  color: var(--text2);
+  margin-top: 0.25rem;
+  letter-spacing: 0.03em;
+}
+
+.login-erro {
+  color: #f87171;
+  font-size: 0.8rem;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
 /* ── CHECKLIST PLACA ── */
 .checklist-placa-box {
   background: var(--bg2);

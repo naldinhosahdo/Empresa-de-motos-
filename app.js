@@ -30,6 +30,44 @@ function showLoading(tbodyId, cols) {
   if (el) el.innerHTML = '<tr class="empty-row"><td colspan="' + cols + '">Carregando...</td></tr>';
 }
 
+// --- AUTH ---
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-wrapper').style.display = 'block';
+  renderDashboard();
+}
+
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-wrapper').style.display = 'none';
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  var btn = document.getElementById('login-btn');
+  btn.textContent = 'Entrando...';
+  btn.disabled = true;
+  var email = document.getElementById('login-email').value.trim();
+  var pass  = document.getElementById('login-pass').value;
+  var { error } = await db.auth.signInWithPassword({ email: email, password: pass });
+  if (error) {
+    document.getElementById('login-erro').style.display = 'block';
+    btn.textContent = 'Entrar';
+    btn.disabled = false;
+  } else {
+    showApp();
+  }
+}
+
+async function doLogout() {
+  await db.auth.signOut();
+  showLogin();
+}
+
+db.auth.getSession().then(function(res) {
+  if (res.data.session) { showApp(); } else { showLogin(); }
+});
+
 // --- NAVIGATION ---
 function showSection(name) {
   document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
@@ -693,4 +731,3 @@ function resetChecklist() {
 }
 
 // --- INIT ---
-renderDashboard();

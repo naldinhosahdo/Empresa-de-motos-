@@ -8,6 +8,32 @@
 </head>
 <body>
 
+<!-- TELA DE LOGIN -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-icon">🏍️</div>
+      <h1 class="login-brand">GereMoto</h1>
+      <p class="login-sub">Gestão de Aluguel de Veículos</p>
+    </div>
+    <form id="form-login" onsubmit="doLogin(event)">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" required>
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <p id="login-erro" class="login-erro" style="display:none">E-mail ou senha incorretos.</p>
+      <button type="submit" id="login-btn" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.75rem">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<!-- APP (oculto até login) -->
+<div id="app-wrapper" style="display:none">
+
 <nav class="navbar">
   <div class="nav-brand">&#127949; GereMoto</div>
   <ul class="nav-links" id="navLinks">
@@ -19,6 +45,7 @@
     <li><a href="#" class="nav-item" data-section="checklist">Checklist</a></li>
   </ul>
   <button class="hamburger" id="hamburger">&#9776;</button>
+  <button class="btn btn-secondary btn-sm" onclick="doLogout()" style="margin-left:0.5rem">Sair</button>
 </nav>
 
 <main class="container">
@@ -480,7 +507,9 @@
   </div>
 </div>
 
+</div><!-- /app-wrapper -->
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>
