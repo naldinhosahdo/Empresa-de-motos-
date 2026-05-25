@@ -621,7 +621,7 @@ function consultarPlaca() {
   document.getElementById('link-sinesp').href =
     'https://sinespcidadao.serpro.gov.br/sinesp-cidadao/';
   document.getElementById('link-detran').href =
-    'https://www.detran.ce.gov.br/index.php/servicos/veiculos/consultar-debitos-e-restricoes?placa=' + placa;
+    'https://www.detran.ce.gov.br/servicos/veiculo/';
   document.getElementById('chk-consulta-links').style.display = 'flex';
 }
 
