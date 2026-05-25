@@ -575,7 +575,7 @@ var CHECKLIST = [
     { id: 'c19', text: 'Pastilhas ou lonas com espessura suficiente' },
     { id: 'c20', text: 'Sem barulhos ao frear (chiado, rangido)' },
   ]},
-  { cat: '🌀 Suspensão', items: [
+  { cat: '➿ Suspensão', items: [
     { id: 'c21', text: 'Garfo dianteiro sem vazamento de óleo' },
     { id: 'c22', text: 'Amortecedor traseiro sem folga excessiva ou barulho' },
     { id: 'c23', text: 'Sem vibrações ou batidas fortes ao passar em lombadas' },
