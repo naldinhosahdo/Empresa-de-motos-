@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GereMoto — Gestão de Aluguel de Motos</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-brand">&#127949; GereMoto</div>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#" class="nav-item active" data-section="dashboard">Dashboard</a></li>
+    <li><a href="#" class="nav-item" data-section="motos">Motos</a></li>
+    <li><a href="#" class="nav-item" data-section="alugueis">Aluguéis</a></li>
+    <li><a href="#" class="nav-item" data-section="manutencoes">Manutenções</a></li>
+    <li><a href="#" class="nav-item" data-section="relatorios">Relatórios</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger">&#9776;</button>
+</nav>
+
+<main class="container">
+
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="section active">
+    <h2 class="section-title">Dashboard</h2>
+    <div class="cards-grid">
+      <div class="card card-blue">
+        <div class="card-icon">&#127949;</div>
+        <div class="card-info">
+          <span class="card-label">Total de Motos</span>
+          <span class="card-value" id="dash-total-motos">0</span>
+        </div>
+      </div>
+      <div class="card card-green">
+        <div class="card-icon">&#128176;</div>
+        <div class="card-info">
+          <span class="card-label">Receita Total</span>
+          <span class="card-value" id="dash-receita">R$ 0,00</span>
+        </div>
+      </div>
+      <div class="card card-red">
+        <div class="card-icon">&#128296;</div>
+        <div class="card-info">
+          <span class="card-label">Custos de Manutenção</span>
+          <span class="card-value" id="dash-custos">R$ 0,00</span>
+        </div>
+      </div>
+      <div class="card card-purple">
+        <div class="card-icon">&#128200;</div>
+        <div class="card-info">
+          <span class="card-label">Lucro Líquido</span>
+          <span class="card-value" id="dash-lucro">R$ 0,00</span>
+        </div>
+      </div>
+    </div>
+    <div class="dash-tables">
+      <div class="dash-block">
+        <h3>Últimos Aluguéis</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Moto</th><th>Cliente</th><th>Valor</th><th>Status</th></tr></thead>
+            <tbody id="dash-alugueis-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="dash-block">
+        <h3>Últimas Manutenções</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Moto</th><th>Tipo</th><th>Custo</th><th>Data</th></tr></thead>
+            <tbody id="dash-manut-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MOTOS -->
+  <section id="motos" class="section">
+    <div class="section-header">
+      <h2 class="section-title">Motos</h2>
+      <button class="btn btn-primary" onclick="openNewMoto()">+ Nova Moto</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Modelo</th><th>Placa</th><th>Ano</th><th>Cor</th><th>Valor Compra</th><th>Status</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="motos-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ALUGUÉIS -->
+  <section id="alugueis" class="section">
+    <div class="section-header">
+      <h2 class="section-title">Aluguéis</h2>
+      <button class="btn btn-primary" onclick="openNewAluguel()">+ Novo Aluguel</button>
+    </div>
+    <div class="filter-bar">
+      <label>Moto: <select id="filtro-moto-aluguel" onchange="renderAlugueis()"><option value="">Todas</option></select></label>
+      <label>Status:
+        <select id="filtro-status-aluguel" onchange="renderAlugueis()">
+          <option value="">Todos</option>
+          <option value="ativo">Ativo</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </label>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Moto</th><th>Cliente</th><th>CPF/Tel</th><th>Início</th><th>Fim</th><th>R$/Dia</th><th>Total</th><th>Status</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="alugueis-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- MANUTENÇÕES -->
+  <section id="manutencoes" class="section">
+    <div class="section-header">
+      <h2 class="section-title">Manutenções</h2>
+      <button class="btn btn-primary" onclick="openNewManutencao()">+ Nova Manutenção</button>
+    </div>
+    <div class="filter-bar">
+      <label>Moto: <select id="filtro-moto-manut" onchange="renderManutencoes()"><option value="">Todas</option></select></label>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Moto</th><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Oficina</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="manutencoes-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- RELATÓRIOS -->
+  <section id="relatorios" class="section">
+    <h2 class="section-title">Relatórios</h2>
+    <div class="filter-bar">
+      <label>Mês/Ano: <input type="month" id="filtro-mes" onchange="renderRelatorios()"></label>
+      <button class="btn btn-secondary" onclick="resetFiltroMes()">Ver Tudo</button>
+    </div>
+    <h3 style="margin: 1.25rem 0 0.75rem">Resultado por Moto</h3>
+    <div id="relatorio-motos-grid" class="relatorio-grid"></div>
+    <h3 style="margin: 1.5rem 0 0.75rem">Resumo Geral</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Moto</th><th>Receita</th><th>Manutenções</th><th>Lucro/Prejuízo</th><th>Aluguéis</th></tr></thead>
+        <tbody id="relatorio-tbody"></tbody>
+        <tfoot><tr id="relatorio-tfoot"></tr></tfoot>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- MODAL MOTO -->
+<div class="modal-overlay" id="modal-moto">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-moto-title">Nova Moto</h3>
+      <button class="modal-close" onclick="closeModal('modal-moto')">&times;</button>
+    </div>
+    <form id="form-moto" onsubmit="submitMoto(event)">
+      <input type="hidden" id="moto-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Modelo *</label>
+          <input type="text" id="moto-modelo" required placeholder="Ex: Honda CG 160">
+        </div>
+        <div class="form-group">
+          <label>Placa *</label>
+          <input type="text" id="moto-placa" required placeholder="ABC-1D23">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ano</label>
+          <input type="number" id="moto-ano" min="2000" max="2030" placeholder="2023">
+        </div>
+        <div class="form-group">
+          <label>Cor</label>
+          <input type="text" id="moto-cor" placeholder="Vermelha">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Valor de Compra (R$)</label>
+          <input type="number" id="moto-valor-compra" step="0.01" min="0" placeholder="8000.00">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="moto-status">
+            <option value="disponivel">Disponível</option>
+            <option value="alugada">Alugada</option>
+            <option value="manutencao">Em Manutenção</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Observações</label>
+        <textarea id="moto-obs" rows="2" placeholder="Observações..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-moto')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL ALUGUEL -->
+<div class="modal-overlay" id="modal-aluguel">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-aluguel-title">Novo Aluguel</h3>
+      <button class="modal-close" onclick="closeModal('modal-aluguel')">&times;</button>
+    </div>
+    <form id="form-aluguel" onsubmit="submitAluguel(event)">
+      <input type="hidden" id="aluguel-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Moto *</label>
+          <select id="aluguel-moto" required></select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="aluguel-status">
+            <option value="ativo">Ativo</option>
+            <option value="finalizado">Finalizado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome do Cliente *</label>
+          <input type="text" id="aluguel-cliente" required placeholder="Nome completo">
+        </div>
+        <div class="form-group">
+          <label>CPF / Telefone</label>
+          <input type="text" id="aluguel-contato" placeholder="000.000.000-00">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data de Início *</label>
+          <input type="date" id="aluguel-inicio" required onchange="calcTotal()">
+        </div>
+        <div class="form-group">
+          <label>Data de Fim</label>
+          <input type="date" id="aluguel-fim" onchange="calcTotal()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Valor por Dia (R$) *</label>
+          <input type="number" id="aluguel-valor-dia" step="0.01" min="0" required placeholder="50.00" oninput="calcTotal()">
+        </div>
+        <div class="form-group">
+          <label>Total (R$)</label>
+          <input type="number" id="aluguel-total" step="0.01" min="0" placeholder="Calculado automaticamente">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Observações</label>
+        <textarea id="aluguel-obs" rows="2" placeholder="CNH, cauções..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-aluguel')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL MANUTENÇÃO -->
+<div class="modal-overlay" id="modal-manutencao">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-manut-title">Nova Manutenção</h3>
+      <button class="modal-close" onclick="closeModal('modal-manutencao')">&times;</button>
+    </div>
+    <form id="form-manutencao" onsubmit="submitManutencao(event)">
+      <input type="hidden" id="manut-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Moto *</label>
+          <select id="manut-moto" required></select>
+        </div>
+        <div class="form-group">
+          <label>Tipo *</label>
+          <select id="manut-tipo" required>
+            <option value="">Selecione...</option>
+            <option>Troca de óleo</option>
+            <option>Pneu</option>
+            <option>Freios</option>
+            <option>Corrente</option>
+            <option>Revisão geral</option>
+            <option>Elétrica</option>
+            <option>Motor</option>
+            <option>Suspensão</option>
+            <option>Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data *</label>
+          <input type="date" id="manut-data" required>
+        </div>
+        <div class="form-group">
+          <label>Custo (R$) *</label>
+          <input type="number" id="manut-custo" step="0.01" min="0" required placeholder="150.00">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Oficina</label>
+          <input type="text" id="manut-oficina" placeholder="Nome da oficina">
+        </div>
+        <div class="form-group">
+          <label>Próxima manutenção (km)</label>
+          <input type="number" id="manut-prox-km" placeholder="3000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Descrição</label>
+        <textarea id="manut-desc" rows="2" placeholder="Detalhe o serviço realizado..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-manutencao')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR EXCLUSÃO -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3>Confirmar exclusão</h3>
+      <button class="modal-close" onclick="closeModal('modal-confirm')">&times;</button>
+    </div>
+    <p style="padding:1.25rem 1.5rem">Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-confirm')">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-delete-btn">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
