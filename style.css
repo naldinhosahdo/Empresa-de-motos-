@@ -592,6 +592,33 @@ form { padding: 1.4rem 1.5rem; }
   margin-bottom: 0.65rem;
 }
 
+.checklist-placa-row {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.checklist-placa-row input {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.9rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  width: 130px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.checklist-placa-row input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+
 .consulta-links {
   display: flex;
   align-items: center;

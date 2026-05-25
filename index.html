@@ -170,11 +170,13 @@
     </div>
     <p class="checklist-intro">Avalie a moto antes de comprar. Marque <strong style="color:#4ade80">✓ Aprovado</strong>, <strong style="color:#fbbf24">X Não aplicável</strong> ou <strong style="color:#f87171">R Reprovado</strong> em cada item.</p>
     <div class="checklist-placa-box">
-      <label class="checklist-placa-label">Consultar placa nos órgãos oficiais</label>
-      <div class="consulta-links" style="margin-top:0">
-        <a href="https://sinespcidadao.serpro.gov.br/sinesp-cidadao/" target="_blank" class="consulta-link consulta-link-blue">🚨 Roubo/Furto (SINESP)</a>
-        <a href="https://www.detran.ce.gov.br/servicos/veiculo/" target="_blank" class="consulta-link consulta-link-green">📋 Multas e Débitos (DETRAN-CE)</a>
+      <label class="checklist-placa-label">Placa do veículo</label>
+      <div class="checklist-placa-row">
+        <input type="text" id="chk-placa" placeholder="ABC1D23" maxlength="8" oninput="onPlacaInput(this)">
+        <button class="btn btn-primary" id="chk-btn-detran" onclick="abrirDetran()" style="display:none">📋 Consultar DETRAN-CE</button>
+        <a href="https://sinespcidadao.serpro.gov.br/sinesp-cidadao/" target="_blank" class="consulta-link consulta-link-blue">🚨 SINESP</a>
       </div>
+      <p id="chk-copiado" style="display:none;font-size:0.8rem;color:#4ade80;margin-top:0.6rem">✓ Placa copiada! No DETRAN clique em "Certidão negativa de débitos por PLACA" e cole no campo PLACA.</p>
     </div>
     <div id="checklist-score" class="checklist-score"></div>
     <div id="checklist-body"></div>

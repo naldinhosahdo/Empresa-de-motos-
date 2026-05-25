@@ -602,6 +602,19 @@ var CHECKLIST = [
 
 var checklistState = JSON.parse(localStorage.getItem('chk') || '{}');
 
+function onPlacaInput(input) {
+  input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  document.getElementById('chk-btn-detran').style.display = input.value.length >= 7 ? 'inline-flex' : 'none';
+  document.getElementById('chk-copiado').style.display = 'none';
+}
+
+function abrirDetran() {
+  var placa = document.getElementById('chk-placa').value.toUpperCase();
+  navigator.clipboard.writeText(placa).catch(function() {});
+  document.getElementById('chk-copiado').style.display = 'block';
+  window.open('https://sistemas.detran.ce.gov.br/central', '_blank');
+}
+
 
 function buildChecklist() {
   var body = document.getElementById('checklist-body');
