@@ -602,6 +602,29 @@ var CHECKLIST = [
 
 var checklistState = JSON.parse(localStorage.getItem('chk') || '{}');
 
+function onPlacaInput(input) {
+  input.value = input.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+  var placa = input.value.replace('-', '');
+  var btn = document.getElementById('chk-consultar-btn');
+  var links = document.getElementById('chk-consulta-links');
+  if (placa.length >= 7) {
+    btn.style.display = 'inline-flex';
+  } else {
+    btn.style.display = 'none';
+    links.style.display = 'none';
+  }
+}
+
+function consultarPlaca() {
+  var placa = document.getElementById('chk-placa').value.replace('-', '').toUpperCase();
+  if (placa.length < 7) return;
+  document.getElementById('link-sinesp').href =
+    'https://sinespcidadao.serpro.gov.br/sinesp-cidadao/';
+  document.getElementById('link-detran').href =
+    'https://www.detran.ce.gov.br/index.php/servicos/veiculos/consultar-debitos-e-restricoes?placa=' + placa;
+  document.getElementById('chk-consulta-links').style.display = 'flex';
+}
+
 function buildChecklist() {
   var body = document.getElementById('checklist-body');
   body.innerHTML = CHECKLIST.map(function(group) {
