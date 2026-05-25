@@ -44,6 +44,7 @@ function showSection(name) {
   if (name === 'alugueis')   { populateVeiculoSelects(); renderAlugueis(); }
   if (name === 'custos')     { populateVeiculoSelects(); renderManutencoes(); renderDespesas(); }
   if (name === 'relatorios') renderRelatorios();
+  if (name === 'checklist')  buildChecklist();
 }
 
 document.querySelectorAll('.nav-item').forEach(function(a) {
@@ -542,6 +543,133 @@ function confirmDelete(type, id) {
     renderMap[type]();
   };
   openModal('modal-confirm');
+}
+
+// --- CHECKLIST DE COMPRA ---
+var CHECKLIST = [
+  { cat: '📄 Documentação', items: [
+    { id: 'c01', text: 'CRLV em dia e no nome do vendedor' },
+    { id: 'c02', text: 'Número do chassi confere com o documento' },
+    { id: 'c03', text: 'Sem multas, débitos ou recall pendente' },
+    { id: 'c04', text: 'Sem financiamento em aberto (checar no Detran)' },
+    { id: 'c05', text: 'Chassi original — sem sinais de lixa, solda ou adulteração' },
+  ]},
+  { cat: '🔧 Motor', items: [
+    { id: 'c06', text: 'Parte fácil a frio, sem empurrar ou esquentar antes' },
+    { id: 'c07', text: 'Sem barulhos estranhos (batidas, chiados, estalos)' },
+    { id: 'c08', text: 'Sem fumaça azul ou preta no escapamento' },
+    { id: 'c09', text: 'Sem vazamento de óleo embaixo ou nas juntas' },
+    { id: 'c10', text: 'Óleo com nível OK e cor clara (não preto nem com água)' },
+    { id: 'c11', text: 'Temperatura normal após rodar — não esquenta rápido demais' },
+  ]},
+  { cat: '⚡ Parte Elétrica', items: [
+    { id: 'c12', text: 'Farol dianteiro e lanterna traseira funcionando' },
+    { id: 'c13', text: 'Setas (pisca-pisca) dos dois lados funcionando' },
+    { id: 'c14', text: 'Painel de instrumentos (velocímetro, hodômetro) funcionando' },
+    { id: 'c15', text: 'Buzina funcionando' },
+    { id: 'c16', text: 'Bateria OK — parte sem ajuda externa ou troca recente' },
+  ]},
+  { cat: '🛑 Freios', items: [
+    { id: 'c17', text: 'Freio dianteiro com boa pressão, sem esponjamento' },
+    { id: 'c18', text: 'Freio traseiro travando corretamente' },
+    { id: 'c19', text: 'Pastilhas ou lonas com espessura suficiente' },
+    { id: 'c20', text: 'Sem barulhos ao frear (chiado, rangido)' },
+  ]},
+  { cat: '🔩 Suspensão', items: [
+    { id: 'c21', text: 'Garfo dianteiro sem vazamento de óleo' },
+    { id: 'c22', text: 'Amortecedor traseiro sem folga excessiva ou barulho' },
+    { id: 'c23', text: 'Sem vibrações ou batidas fortes ao passar em lombadas' },
+  ]},
+  { cat: '🛞 Pneus, Rodas e Corrente', items: [
+    { id: 'c24', text: 'Pneu dianteiro OK — sem rachaduras, borracha com vida' },
+    { id: 'c25', text: 'Pneu traseiro OK — sem desgaste excessivo' },
+    { id: 'c26', text: 'Rodas sem amassados, trincas ou empenamento' },
+    { id: 'c27', text: 'Corrente lubrificada, tensão OK, sem elos travados' },
+  ]},
+  { cat: '🏍️ Funilaria e Estrutura', items: [
+    { id: 'c28', text: 'Quadro sem sinais de batida, dobra ou solda improvisada' },
+    { id: 'c29', text: 'Sem ferrugem excessiva no chassi ou escapamento' },
+    { id: 'c30', text: 'Plásticos e carenagens sem trincas graves' },
+    { id: 'c31', text: 'Retrovisores, para-lama e banco em bom estado' },
+  ]},
+  { cat: '🚦 Teste em Movimento', items: [
+    { id: 'c32', text: 'Câmbio troca suavemente todas as marchas' },
+    { id: 'c33', text: 'Embreagem com boa regulagem — não patina nem agarra' },
+    { id: 'c34', text: 'Moto não puxa para um lado (alinhamento OK)' },
+    { id: 'c35', text: 'Aceleração e frenagem suaves, sem sustos' },
+  ]},
+];
+
+var checklistState = JSON.parse(localStorage.getItem('chk') || '{}');
+
+function buildChecklist() {
+  var body = document.getElementById('checklist-body');
+  body.innerHTML = CHECKLIST.map(function(group) {
+    var items = group.items.map(function(item) {
+      return '<div class="checklist-item" id="chk-row-' + item.id + '">' +
+        '<span class="checklist-text">' + item.text + '</span>' +
+        '<div class="checklist-btns">' +
+          '<button class="chk-btn chk-ok" onclick="setCheck(\'' + item.id + '\',\'ok\')" title="OK">✓</button>' +
+          '<button class="chk-btn chk-bad" onclick="setCheck(\'' + item.id + '\',\'bad\')" title="Problema">✗</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    return '<div class="checklist-group">' +
+      '<div class="checklist-group-title">' + group.cat + '</div>' +
+      items +
+    '</div>';
+  }).join('');
+  updateChecklistUI();
+}
+
+function setCheck(id, val) {
+  checklistState[id] = checklistState[id] === val ? null : val;
+  localStorage.setItem('chk', JSON.stringify(checklistState));
+  updateChecklistUI();
+}
+
+function updateChecklistUI() {
+  var ok = 0, bad = 0, total = 0;
+  CHECKLIST.forEach(function(group) {
+    group.items.forEach(function(item) {
+      total++;
+      var row = document.getElementById('chk-row-' + item.id);
+      if (!row) return;
+      var state = checklistState[item.id];
+      row.className = 'checklist-item' + (state === 'ok' ? ' item-ok' : state === 'bad' ? ' item-bad' : '');
+      row.querySelector('.chk-ok').className  = 'chk-btn chk-ok'  + (state === 'ok'  ? ' active' : '');
+      row.querySelector('.chk-bad').className = 'chk-btn chk-bad' + (state === 'bad' ? ' active' : '');
+      if (state === 'ok')  ok++;
+      if (state === 'bad') bad++;
+    });
+  });
+  var avaliados = ok + bad;
+  var verdict = '', vclass = 'verdict-none';
+  if (avaliados === 0) {
+    verdict = 'Nenhum item avaliado';
+  } else if (bad === 0 && ok === total) {
+    verdict = '✓ Excelente — pode comprar!'; vclass = 'verdict-great';
+  } else if (bad <= 2) {
+    verdict = '⚠ Atenção — negocie o preço'; vclass = 'verdict-ok';
+  } else if (bad <= 5) {
+    verdict = '⚠ Muito cuidado — avalie bem'; vclass = 'verdict-ok';
+  } else {
+    verdict = '✗ Não compre — muitos problemas'; vclass = 'verdict-bad';
+  }
+  document.getElementById('checklist-score').innerHTML =
+    '<div class="score-stat"><span class="score-num" style="color:#4ade80">' + ok + '</span><span class="score-lbl">OK</span></div>' +
+    '<div class="score-divider"></div>' +
+    '<div class="score-stat"><span class="score-num" style="color:#f87171">' + bad + '</span><span class="score-lbl">Problemas</span></div>' +
+    '<div class="score-divider"></div>' +
+    '<div class="score-stat"><span class="score-num" style="color:var(--text2)">' + (total - avaliados) + '</span><span class="score-lbl">Pendentes</span></div>' +
+    '<span class="score-verdict ' + vclass + '">' + verdict + '</span>';
+}
+
+function resetChecklist() {
+  if (!confirm('Resetar todos os itens do checklist?')) return;
+  checklistState = {};
+  localStorage.removeItem('chk');
+  updateChecklistUI();
 }
 
 // --- INIT ---

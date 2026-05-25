@@ -572,6 +572,113 @@ form { padding: 1.4rem 1.5rem; }
   background: var(--border);
 }
 
+/* ── CHECKLIST ── */
+.checklist-intro {
+  font-size: 0.88rem;
+  color: var(--text2);
+  margin-bottom: 1.25rem;
+  line-height: 1.6;
+}
+
+.checklist-score {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.score-stat { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+.score-num  { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+.score-lbl  { font-size: 0.68rem; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+
+.score-divider { width: 1px; height: 36px; background: var(--border); }
+
+.score-verdict {
+  margin-left: auto;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.verdict-great  { background: rgba(34,197,94,0.12);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+.verdict-ok     { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+.verdict-bad    { background: rgba(239,68,68,0.12);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.verdict-none   { background: var(--bg4); color: var(--text2); border: 1px solid var(--border); }
+
+.checklist-group {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.checklist-group-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text2);
+  padding: 0.75rem 1.1rem;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 1.1rem;
+  border-bottom: 1px solid rgba(99,130,190,0.07);
+  transition: background 0.15s;
+}
+.checklist-item:last-child { border-bottom: none; }
+.checklist-item:hover { background: rgba(59,130,246,0.03); }
+
+.checklist-item.item-ok  { border-left: 3px solid var(--green); }
+.checklist-item.item-bad { border-left: 3px solid var(--red);   }
+
+.checklist-text {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.checklist-btns { display: flex; gap: 0.4rem; flex-shrink: 0; }
+
+.chk-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg4);
+  color: var(--text2);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+.chk-btn:hover { border-color: rgba(99,130,190,0.4); color: var(--text); }
+
+.chk-ok.active  { background: rgba(34,197,94,0.15);  color: #4ade80; border-color: rgba(34,197,94,0.4); }
+.chk-bad.active { background: rgba(239,68,68,0.15);  color: #f87171; border-color: rgba(239,68,68,0.4); }
+
 /* ── UTILITIES ── */
 .text-green { color: #4ade80 !important; }
 .text-red   { color: #f87171 !important; }

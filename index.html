@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GereMoto — Gestão de Aluguel de Motos</title>
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -16,6 +16,7 @@
     <li><a href="#" class="nav-item" data-section="alugueis">Aluguéis</a></li>
     <li><a href="#" class="nav-item" data-section="custos">Custos</a></li>
     <li><a href="#" class="nav-item" data-section="relatorios">Relatórios</a></li>
+    <li><a href="#" class="nav-item" data-section="checklist">Checklist</a></li>
   </ul>
   <button class="hamburger" id="hamburger">&#9776;</button>
 </nav>
@@ -159,6 +160,17 @@
         <tbody id="despesas-tbody"></tbody>
       </table>
     </div>
+  </section>
+
+  <!-- CHECKLIST DE COMPRA -->
+  <section id="checklist" class="section">
+    <div class="section-header">
+      <h2 class="section-title">Checklist de Compra</h2>
+      <button class="btn btn-secondary" onclick="resetChecklist()">↺ Resetar</button>
+    </div>
+    <p class="checklist-intro">Avalie a moto antes de comprar. Marque <strong style="color:#4ade80">✓ OK</strong> ou <strong style="color:#f87171">✗ Problema</strong> em cada item.</p>
+    <div id="checklist-score" class="checklist-score"></div>
+    <div id="checklist-body"></div>
   </section>
 
   <!-- RELATÓRIOS -->
@@ -460,6 +472,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=7"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>
