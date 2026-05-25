@@ -554,7 +554,7 @@ var CHECKLIST = [
     { id: 'c04', text: 'Sem financiamento em aberto (checar no Detran)' },
     { id: 'c05', text: 'Chassi original — sem sinais de lixa, solda ou adulteração' },
   ]},
-  { cat: '🔧 Motor', items: [
+  { cat: '⚙️ Motor', items: [
     { id: 'c06', text: 'Parte fácil a frio, sem empurrar ou esquentar antes' },
     { id: 'c07', text: 'Sem barulhos estranhos (batidas, chiados, estalos)' },
     { id: 'c08', text: 'Sem fumaça azul ou preta no escapamento' },
@@ -575,7 +575,7 @@ var CHECKLIST = [
     { id: 'c19', text: 'Pastilhas ou lonas com espessura suficiente' },
     { id: 'c20', text: 'Sem barulhos ao frear (chiado, rangido)' },
   ]},
-  { cat: '🔩 Suspensão', items: [
+  { cat: '🌀 Suspensão', items: [
     { id: 'c21', text: 'Garfo dianteiro sem vazamento de óleo' },
     { id: 'c22', text: 'Amortecedor traseiro sem folga excessiva ou barulho' },
     { id: 'c23', text: 'Sem vibrações ou batidas fortes ao passar em lombadas' },
