@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 480 560" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Fundo escuro -->
+  <rect width="480" height="560" fill="#080c14" rx="24"/>
+
+  <!-- Anel externo: roda -->
+  <circle cx="240" cy="210" r="130" stroke="url(#g1)" stroke-width="18" fill="none" filter="url(#glow)"/>
+
+  <!-- Linha de velocidade diagonal — corta o anel -->
+  <line x1="80" y1="310" x2="400" y2="110" stroke="url(#g1)" stroke-width="18" stroke-linecap="round" filter="url(#glow)"/>
+
+  <!-- Ponto central: cubo da roda -->
+  <circle cx="240" cy="210" r="14" fill="url(#g1)" filter="url(#glow)"/>
+
+  <!-- Nome da empresa -->
+  <text
+    x="240" y="410"
+    text-anchor="middle"
+    font-family="'Arial Black', 'Impact', sans-serif"
+    font-weight="900"
+    font-size="72"
+    fill="white"
+    letter-spacing="-3"
+  >VELOX</text>
+
+  <!-- Linha divisória fina -->
+  <line x1="140" y1="432" x2="340" y2="432" stroke="url(#g2)" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Tagline -->
+  <text
+    x="240" y="460"
+    text-anchor="middle"
+    font-family="Arial, sans-serif"
+    font-weight="400"
+    font-size="13"
+    fill="#7a93b8"
+    letter-spacing="7"
+  >ALUGUEL DE MOTOS</text>
+
+</svg>
