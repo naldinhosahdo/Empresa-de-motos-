@@ -581,8 +581,8 @@ var CHECKLIST = [
     { id: 'c23', text: 'Sem vibrações ou batidas fortes ao passar em lombadas' },
   ]},
   { cat: '🛞 Pneus, Rodas e Corrente', items: [
-    { id: 'c24', text: 'Pneu dianteiro' },
-    { id: 'c25', text: 'Pneu traseiro' },
+    { id: 'c24', text: 'Pneu dianteiro — sem rachado, bolha, careca ou desgaste irregular' },
+    { id: 'c25', text: 'Pneu traseiro — sem rachado, bolha, careca ou desgaste irregular' },
     { id: 'c26', text: 'Rodas sem amassados, trincas ou empenamento' },
     { id: 'c27', text: 'Corrente lubrificada, tensão OK, sem elos travados' },
   ]},
