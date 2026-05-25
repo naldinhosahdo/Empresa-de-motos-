@@ -14,7 +14,7 @@
     <li><a href="#" class="nav-item active" data-section="dashboard">Dashboard</a></li>
     <li><a href="#" class="nav-item" data-section="motos">Motos</a></li>
     <li><a href="#" class="nav-item" data-section="alugueis">Aluguéis</a></li>
-    <li><a href="#" class="nav-item" data-section="manutencoes">Manutenções</a></li>
+    <li><a href="#" class="nav-item" data-section="custos">Custos</a></li>
     <li><a href="#" class="nav-item" data-section="relatorios">Relatórios</a></li>
   </ul>
   <button class="hamburger" id="hamburger">&#9776;</button>
@@ -120,10 +120,13 @@
     </div>
   </section>
 
-  <!-- MANUTENÇÕES -->
-  <section id="manutencoes" class="section">
-    <div class="section-header">
-      <h2 class="section-title">Manutenções</h2>
+  <!-- CUSTOS -->
+  <section id="custos" class="section">
+    <h2 class="section-title">Custos</h2>
+
+    <!-- Sub-seção: Manutenções -->
+    <div class="section-header" style="margin-top:0.5rem">
+      <h3 style="margin:0">Manutenções</h3>
       <button class="btn btn-primary" onclick="openNewManutencao()">+ Nova Manutenção</button>
     </div>
     <div class="filter-bar">
@@ -135,6 +138,23 @@
           <tr><th>Moto</th><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Oficina</th><th>Ações</th></tr>
         </thead>
         <tbody id="manutencoes-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Sub-seção: Despesas Fixas -->
+    <div class="section-header" style="margin-top:2rem">
+      <h3 style="margin:0">Despesas Fixas</h3>
+      <button class="btn btn-primary" onclick="openNewDespesa()">+ Nova Despesa</button>
+    </div>
+    <div class="filter-bar">
+      <label>Moto: <select id="filtro-moto-despesa" onchange="renderDespesas()"><option value="">Todas</option></select></label>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Moto</th><th>Tipo</th><th>Ano Ref.</th><th>Valor</th><th>Vencimento</th><th>Observação</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="despesas-tbody"></tbody>
       </table>
     </div>
   </section>
@@ -383,6 +403,60 @@
   </div>
 </div>
 
-<script src="app.js?v=3"></script>
+<!-- MODAL DESPESA FIXA -->
+<div class="modal-overlay" id="modal-despesa">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-despesa-title">Nova Despesa Fixa</h3>
+      <button class="modal-close" onclick="closeModal('modal-despesa')">&times;</button>
+    </div>
+    <form id="form-despesa" onsubmit="submitDespesa(event)">
+      <input type="hidden" id="despesa-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Moto *</label>
+          <select id="despesa-moto" required></select>
+        </div>
+        <div class="form-group">
+          <label>Tipo *</label>
+          <select id="despesa-tipo" required>
+            <option value="">Selecione...</option>
+            <option>IPVA</option>
+            <option>Licenciamento</option>
+            <option>Multa</option>
+            <option>Seguro</option>
+            <option>Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ano de Referência</label>
+          <input type="number" id="despesa-ano" placeholder="2025" min="2000" max="2099">
+        </div>
+        <div class="form-group">
+          <label>Valor (R$) *</label>
+          <input type="number" id="despesa-valor" step="0.01" min="0" required placeholder="0.00">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vencimento</label>
+          <input type="date" id="despesa-vencimento">
+        </div>
+        <div class="form-group">
+          <label>Observação</label>
+          <input type="text" id="despesa-obs" placeholder="Nº da multa, detalhes...">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-despesa')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="app.js?v=4"></script>
 </body>
 </html>

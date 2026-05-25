@@ -4,10 +4,12 @@
 function getMotos()      { return JSON.parse(localStorage.getItem('gm_motos')      || '[]'); }
 function getAlugueis()   { return JSON.parse(localStorage.getItem('gm_alugueis')   || '[]'); }
 function getManutencoes(){ return JSON.parse(localStorage.getItem('gm_manutencoes')|| '[]'); }
+function getDespesas()   { return JSON.parse(localStorage.getItem('gm_despesas')   || '[]'); }
 
 function saveMotos(d)      { localStorage.setItem('gm_motos',      JSON.stringify(d)); }
 function saveAlugueis(d)   { localStorage.setItem('gm_alugueis',   JSON.stringify(d)); }
 function saveManutencoes(d){ localStorage.setItem('gm_manutencoes',JSON.stringify(d)); }
+function saveDespesas(d)   { localStorage.setItem('gm_despesas',   JSON.stringify(d)); }
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
@@ -40,11 +42,11 @@ function showSection(name) {
   if (link) link.classList.add('active');
   document.getElementById('navLinks').classList.remove('open');
 
-  if (name === 'dashboard')   renderDashboard();
-  if (name === 'motos')       renderMotos();
-  if (name === 'alugueis')    { populateMotoSelects(); renderAlugueis(); }
-  if (name === 'manutencoes') { populateMotoSelects(); renderManutencoes(); }
-  if (name === 'relatorios')  renderRelatorios();
+  if (name === 'dashboard')  renderDashboard();
+  if (name === 'motos')      renderMotos();
+  if (name === 'alugueis')   { populateMotoSelects(); renderAlugueis(); }
+  if (name === 'custos')     { populateMotoSelects(); renderManutencoes(); renderDespesas(); }
+  if (name === 'relatorios') renderRelatorios();
 }
 
 document.querySelectorAll('.nav-item').forEach(function(a) {
@@ -77,7 +79,9 @@ function renderDashboard() {
   var receita = alugueis
     .filter(function(a){ return a.status !== 'cancelado'; })
     .reduce(function(s, a){ return s + Number(a.total || 0); }, 0);
-  var custos = manutencoes.reduce(function(s, m){ return s + Number(m.custo || 0); }, 0);
+  var despesas = getDespesas();
+  var custos = manutencoes.reduce(function(s, m){ return s + Number(m.custo || 0); }, 0)
+             + despesas.reduce(function(s, d){ return s + Number(d.valor || 0); }, 0);
   var lucro = receita - custos;
 
   document.getElementById('dash-total-motos').textContent = motos.length;
@@ -176,12 +180,12 @@ function populateMotoSelects() {
   var motos = getMotos();
   var opts = motos.map(function(m){ return '<option value="' + m.id + '">' + motoLabel(m) + '</option>'; }).join('');
   var noOpt = '<option value="">Nenhuma moto cadastrada</option>';
-  ['aluguel-moto','manut-moto'].forEach(function(id) {
+  ['aluguel-moto','manut-moto','despesa-moto'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.innerHTML = motos.length ? opts : noOpt;
   });
   var filterOpts = '<option value="">Todas</option>' + opts;
-  ['filtro-moto-aluguel','filtro-moto-manut'].forEach(function(id) {
+  ['filtro-moto-aluguel','filtro-moto-manut','filtro-moto-despesa'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.innerHTML = filterOpts;
   });
@@ -365,6 +369,75 @@ function submitManutencao(e) {
   renderManutencoes();
 }
 
+// --- DESPESAS FIXAS ---
+function renderDespesas() {
+  var motos = getMotos();
+  var despesas = getDespesas();
+  var fm = document.getElementById('filtro-moto-despesa');
+  if (fm && fm.value) despesas = despesas.filter(function(d){ return d.motoId === fm.value; });
+
+  var tbody = document.getElementById('despesas-tbody');
+  tbody.innerHTML = despesas.length
+    ? despesas.slice().reverse().map(function(d) {
+        var moto = motos.find(function(x){ return x.id === d.motoId; });
+        return '<tr>' +
+          '<td>' + (moto ? motoLabel(moto) : '-') + '</td>' +
+          '<td>' + d.tipo + '</td>' +
+          '<td>' + (d.ano || '-') + '</td>' +
+          '<td><span class="text-red">' + fmtBRL(d.valor) + '</span></td>' +
+          '<td>' + fmtDate(d.vencimento) + '</td>' +
+          '<td>' + (d.obs || '-') + '</td>' +
+          '<td>' +
+            '<button class="btn btn-sm btn-secondary" onclick="editDespesa(\'' + d.id + '\')">Editar</button> ' +
+            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + d.id + '\')">Excluir</button>' +
+          '</td></tr>';
+      }).join('')
+    : '<tr class="empty-row"><td colspan="7">Nenhuma despesa encontrada</td></tr>';
+}
+
+function openNewDespesa() {
+  document.getElementById('form-despesa').reset();
+  document.getElementById('despesa-id').value = '';
+  document.getElementById('modal-despesa-title').textContent = 'Nova Despesa Fixa';
+  populateMotoSelects();
+  openModal('modal-despesa');
+}
+
+function editDespesa(id) {
+  var d = getDespesas().find(function(x){ return x.id === id; });
+  if (!d) return;
+  populateMotoSelects();
+  document.getElementById('despesa-id').value = d.id;
+  document.getElementById('despesa-moto').value = d.motoId || '';
+  document.getElementById('despesa-tipo').value = d.tipo || '';
+  document.getElementById('despesa-ano').value = d.ano || '';
+  document.getElementById('despesa-valor').value = d.valor || '';
+  document.getElementById('despesa-vencimento').value = d.vencimento || '';
+  document.getElementById('despesa-obs').value = d.obs || '';
+  document.getElementById('modal-despesa-title').textContent = 'Editar Despesa Fixa';
+  openModal('modal-despesa');
+}
+
+function submitDespesa(e) {
+  e.preventDefault();
+  var id = document.getElementById('despesa-id').value || uid();
+  var despesas = getDespesas();
+  var d = {
+    id: id,
+    motoId:     document.getElementById('despesa-moto').value,
+    tipo:       document.getElementById('despesa-tipo').value,
+    ano:        document.getElementById('despesa-ano').value,
+    valor:      document.getElementById('despesa-valor').value,
+    vencimento: document.getElementById('despesa-vencimento').value,
+    obs:        document.getElementById('despesa-obs').value.trim()
+  };
+  var idx = despesas.findIndex(function(x){ return x.id === id; });
+  if (idx >= 0) despesas[idx] = d; else despesas.push(d);
+  saveDespesas(despesas);
+  closeModal('modal-despesa');
+  renderDespesas();
+}
+
 // --- RELATORIOS ---
 function resetFiltroMes() {
   document.getElementById('filtro-mes').value = '';
@@ -377,10 +450,12 @@ function renderRelatorios() {
 
   var alugueis = getAlugueis().filter(function(a){ return a.status !== 'cancelado'; });
   var manutencoes = getManutencoes();
+  var despesas = getDespesas();
 
   if (filtroMes) {
-    alugueis     = alugueis.filter(function(a){ return a.inicio && a.inicio.startsWith(filtroMes); });
-    manutencoes  = manutencoes.filter(function(m){ return m.data && m.data.startsWith(filtroMes); });
+    alugueis    = alugueis.filter(function(a){ return a.inicio && a.inicio.startsWith(filtroMes); });
+    manutencoes = manutencoes.filter(function(m){ return m.data && m.data.startsWith(filtroMes); });
+    despesas    = despesas.filter(function(d){ return d.vencimento && d.vencimento.startsWith(filtroMes); });
   }
 
   var totalReceita = 0, totalCustos = 0, totalAlugueis = 0;
@@ -391,7 +466,10 @@ function renderRelatorios() {
       .reduce(function(s, a){ return s + Number(a.total || 0); }, 0);
     var custos = manutencoes
       .filter(function(m){ return m.motoId === moto.id; })
-      .reduce(function(s, m){ return s + Number(m.custo || 0); }, 0);
+      .reduce(function(s, m){ return s + Number(m.custo || 0); }, 0)
+      + despesas
+      .filter(function(d){ return d.motoId === moto.id; })
+      .reduce(function(s, d){ return s + Number(d.valor || 0); }, 0);
     var qtd = alugueis.filter(function(a){ return a.motoId === moto.id; }).length;
     totalReceita  += receita;
     totalCustos   += custos;
@@ -450,6 +528,9 @@ function confirmDelete(type, id) {
     } else if (type === 'manutencao') {
       saveManutencoes(getManutencoes().filter(function(m){ return m.id !== id; }));
       renderManutencoes();
+    } else if (type === 'despesa') {
+      saveDespesas(getDespesas().filter(function(d){ return d.id !== id; }));
+      renderDespesas();
     }
     closeModal('modal-confirm');
   };
