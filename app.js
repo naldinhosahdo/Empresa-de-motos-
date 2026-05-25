@@ -191,10 +191,11 @@ function populateMotoSelects() {
 function calcTotal() {
   var inicio = document.getElementById('aluguel-inicio').value;
   var fim    = document.getElementById('aluguel-fim').value;
-  var dia    = parseFloat(document.getElementById('aluguel-valor-dia').value) || 0;
+  var dia    = parseFloat(document.getElementById('aluguel-valor-semana').value) || 0;
   if (inicio && fim && dia) {
     var dias = Math.max(1, Math.ceil((new Date(fim) - new Date(inicio)) / 86400000));
-    document.getElementById('aluguel-total').value = (dias * dia).toFixed(2);
+    var semanas = Math.ceil(dias / 7);
+    document.getElementById('aluguel-total').value = (semanas * dia).toFixed(2);
   }
 }
 
@@ -216,7 +217,7 @@ function renderAlugueis() {
           '<td>' + (a.contato || '-') + '</td>' +
           '<td>' + fmtDate(a.inicio) + '</td>' +
           '<td>' + fmtDate(a.fim) + '</td>' +
-          '<td>' + fmtBRL(a.valorDia) + '</td>' +
+          '<td>' + fmtBRL(a.valorSemana) + '</td>' +
           '<td><strong>' + fmtBRL(a.total) + '</strong></td>' +
           '<td>' + statusBadge(a.status,'aluguel') + '</td>' +
           '<td>' +
@@ -245,7 +246,7 @@ function editAluguel(id) {
   document.getElementById('aluguel-contato').value = a.contato || '';
   document.getElementById('aluguel-inicio').value = a.inicio || '';
   document.getElementById('aluguel-fim').value = a.fim || '';
-  document.getElementById('aluguel-valor-dia').value = a.valorDia || '';
+  document.getElementById('aluguel-valor-semana').value = a.valorSemana || '';
   document.getElementById('aluguel-total').value = a.total || '';
   document.getElementById('aluguel-status').value = a.status || 'ativo';
   document.getElementById('aluguel-obs').value = a.obs || '';
@@ -264,7 +265,7 @@ function submitAluguel(e) {
     contato:  document.getElementById('aluguel-contato').value.trim(),
     inicio:   document.getElementById('aluguel-inicio').value,
     fim:      document.getElementById('aluguel-fim').value,
-    valorDia: document.getElementById('aluguel-valor-dia').value,
+    valorSemana: document.getElementById('aluguel-valor-semana').value,
     total:    document.getElementById('aluguel-total').value,
     status:   document.getElementById('aluguel-status').value,
     obs:      document.getElementById('aluguel-obs').value.trim()
