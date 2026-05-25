@@ -113,7 +113,7 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Moto</th><th>Cliente</th><th>CPF/Tel</th><th>Início</th><th>Fim</th><th>R$/Semana</th><th>Total</th><th>Status</th><th>Ações</th></tr>
+          <tr><th>Moto</th><th>Cliente</th><th>CPF/Tel</th><th>Início</th><th>Fim</th><th>Período</th><th>Valor</th><th>Total</th><th>Status</th><th>Ações</th></tr>
         </thead>
         <tbody id="alugueis-tbody"></tbody>
       </table>
@@ -260,9 +260,19 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Valor por Semana (R$) *</label>
-          <input type="number" id="aluguel-valor-semana" step="0.01" min="0" required placeholder="250.00" oninput="calcTotal()">
+          <label>Período *</label>
+          <select id="aluguel-periodo" onchange="calcTotal()">
+            <option value="dia">Por Dia</option>
+            <option value="semana" selected>Por Semana</option>
+            <option value="mes">Por Mês</option>
+          </select>
         </div>
+        <div class="form-group">
+          <label>Valor (R$) *</label>
+          <input type="number" id="aluguel-valor" step="0.01" min="0" required placeholder="250.00" oninput="calcTotal()">
+        </div>
+      </div>
+      <div class="form-row">
         <div class="form-group">
           <label>Total (R$)</label>
           <input type="number" id="aluguel-total" step="0.01" min="0" placeholder="Calculado automaticamente">

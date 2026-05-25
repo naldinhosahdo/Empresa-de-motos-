@@ -187,15 +187,21 @@ function populateMotoSelects() {
   });
 }
 
+var periodoLabel = { dia: 'Dia', semana: 'Semana', mes: 'Mês' };
+
 // --- ALUGUEIS ---
 function calcTotal() {
-  var inicio = document.getElementById('aluguel-inicio').value;
-  var fim    = document.getElementById('aluguel-fim').value;
-  var dia    = parseFloat(document.getElementById('aluguel-valor-semana').value) || 0;
-  if (inicio && fim && dia) {
+  var inicio  = document.getElementById('aluguel-inicio').value;
+  var fim     = document.getElementById('aluguel-fim').value;
+  var valor   = parseFloat(document.getElementById('aluguel-valor').value) || 0;
+  var periodo = document.getElementById('aluguel-periodo').value;
+  if (inicio && fim && valor) {
     var dias = Math.max(1, Math.ceil((new Date(fim) - new Date(inicio)) / 86400000));
-    var semanas = Math.ceil(dias / 7);
-    document.getElementById('aluguel-total').value = (semanas * dia).toFixed(2);
+    var unidades;
+    if (periodo === 'dia')    unidades = dias;
+    if (periodo === 'semana') unidades = Math.ceil(dias / 7);
+    if (periodo === 'mes')    unidades = Math.ceil(dias / 30);
+    document.getElementById('aluguel-total').value = (unidades * valor).toFixed(2);
   }
 }
 
@@ -217,7 +223,8 @@ function renderAlugueis() {
           '<td>' + (a.contato || '-') + '</td>' +
           '<td>' + fmtDate(a.inicio) + '</td>' +
           '<td>' + fmtDate(a.fim) + '</td>' +
-          '<td>' + fmtBRL(a.valorSemana) + '</td>' +
+          '<td>' + (periodoLabel[a.periodo] || '-') + '</td>' +
+          '<td>' + fmtBRL(a.valor) + '</td>' +
           '<td><strong>' + fmtBRL(a.total) + '</strong></td>' +
           '<td>' + statusBadge(a.status,'aluguel') + '</td>' +
           '<td>' +
@@ -225,7 +232,7 @@ function renderAlugueis() {
             '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'aluguel\',\'' + a.id + '\')">Excluir</button>' +
           '</td></tr>';
       }).join('')
-    : '<tr class="empty-row"><td colspan="9">Nenhum aluguel encontrado</td></tr>';
+    : '<tr class="empty-row"><td colspan="10">Nenhum aluguel encontrado</td></tr>';
 }
 
 function openNewAluguel() {
@@ -246,7 +253,8 @@ function editAluguel(id) {
   document.getElementById('aluguel-contato').value = a.contato || '';
   document.getElementById('aluguel-inicio').value = a.inicio || '';
   document.getElementById('aluguel-fim').value = a.fim || '';
-  document.getElementById('aluguel-valor-semana').value = a.valorSemana || '';
+  document.getElementById('aluguel-periodo').value = a.periodo || 'semana';
+  document.getElementById('aluguel-valor').value = a.valor || '';
   document.getElementById('aluguel-total').value = a.total || '';
   document.getElementById('aluguel-status').value = a.status || 'ativo';
   document.getElementById('aluguel-obs').value = a.obs || '';
@@ -265,7 +273,8 @@ function submitAluguel(e) {
     contato:  document.getElementById('aluguel-contato').value.trim(),
     inicio:   document.getElementById('aluguel-inicio').value,
     fim:      document.getElementById('aluguel-fim').value,
-    valorSemana: document.getElementById('aluguel-valor-semana').value,
+    periodo: document.getElementById('aluguel-periodo').value,
+    valor:   document.getElementById('aluguel-valor').value,
     total:    document.getElementById('aluguel-total').value,
     status:   document.getElementById('aluguel-status').value,
     obs:      document.getElementById('aluguel-obs').value.trim()
