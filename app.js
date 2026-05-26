@@ -522,7 +522,7 @@ async function submitAluguel() {
   var savedId = id || (result.data && result.data[0] ? result.data[0].id : null);
   closeModal('modal-aluguel');
   renderAlugueis();
-  if (savedId && contratoWin) gerarContrato(savedId, contratoWin);
+  if (!id && savedId && contratoWin) gerarContrato(savedId, contratoWin);
   else if (contratoWin) contratoWin.close();
 }
 
