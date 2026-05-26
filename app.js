@@ -491,7 +491,6 @@ async function editAluguel(id) {
 
 async function submitAluguel(e) {
   e.preventDefault();
-  alert('PASSO 1: função chamada');
   const id  = document.getElementById('aluguel-id').value;
   const sel = document.getElementById('aluguel-cliente-select');
   const aluguel = {
@@ -512,11 +511,9 @@ async function submitAluguel(e) {
     caucao_data:      document.getElementById('aluguel-caucao-data').value || null,
     status:           document.getElementById('aluguel-status').value
   };
-  alert('PASSO 2: antes de salvar no banco');
   var result = id
     ? await db.from('alugueis').update(aluguel).eq('id', id)
     : await db.from('alugueis').insert(aluguel);
-  alert('PASSO 3: resultado = ' + JSON.stringify(result.error));
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-aluguel');
   renderAlugueis();
