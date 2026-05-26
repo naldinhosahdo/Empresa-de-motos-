@@ -228,7 +228,7 @@ async function renderDashboard() {
 
   document.getElementById('dash-receita-mes').textContent       = fmtBRL(receitaMes);
   document.getElementById('dash-receita-mes-label').textContent = fmtBRL(receitaMes);
-  document.getElementById('dash-receita-sem').textContent       = fmtBRL(receitaSem);
+  document.getElementById('dash-receita-total').textContent     = fmtBRL(receitaTotal);
 
   document.getElementById('dash-custos-mes').textContent       = fmtBRL(custosMes);
   document.getElementById('dash-custos-mes-label').textContent = fmtBRL(custosMes);
