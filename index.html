@@ -406,7 +406,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>Data de Início *</label>
-          <input type="date" id="aluguel-inicio" required onchange="calcTotal()">
+          <input type="date" id="aluguel-inicio" onchange="calcTotal()">
         </div>
         <div class="form-group">
           <label>Data de Fim <span id="aluguel-dias-label" style="font-size:0.78rem;color:var(--accent);font-weight:600;margin-left:6px"></span></label>
@@ -424,7 +424,7 @@
         </div>
         <div class="form-group">
           <label>Valor (R$) *</label>
-          <input type="number" id="aluguel-valor" step="0.01" min="0" required placeholder="0.00" oninput="calcTotal()">
+          <input type="number" id="aluguel-valor" step="0.01" min="0" placeholder="0.00" oninput="calcTotal()">
         </div>
       </div>
       <div class="form-row">
@@ -594,6 +594,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=21"></script>
+<script src="app.js?v=22"></script>
 </body>
 </html>

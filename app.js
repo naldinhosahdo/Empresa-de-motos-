@@ -488,48 +488,46 @@ async function editAluguel(id) {
 
 async function submitAluguel(e) {
   e.preventDefault();
-  const id = document.getElementById('aluguel-id').value;
+  try {
+    var id        = document.getElementById('aluguel-id').value;
+    var clienteEl = document.getElementById('aluguel-cliente-select');
+    var clienteNome = clienteEl.options[clienteEl.selectedIndex] ? clienteEl.options[clienteEl.selectedIndex].text : '';
 
-  var clienteSel = document.getElementById('aluguel-cliente-select').value;
-  var motoSel    = document.getElementById('aluguel-moto').value;
-  var inicio     = document.getElementById('aluguel-inicio').value;
-  var valor      = document.getElementById('aluguel-valor').value;
+    if (!clienteEl.value) { alert('Selecione o cliente.'); return; }
+    if (!document.getElementById('aluguel-moto').value) { alert('Selecione a moto.'); return; }
+    if (!document.getElementById('aluguel-inicio').value) { alert('Informe a data de início.'); return; }
+    if (!document.getElementById('aluguel-valor').value) { alert('Informe o valor.'); return; }
 
-  if (!clienteSel) { alert('Selecione o cliente antes de salvar.'); return; }
-  if (!motoSel)    { alert('Selecione a moto antes de salvar.'); return; }
-  if (!inicio)     { alert('Informe a data de início.'); return; }
-  if (!valor)      { alert('Informe o valor do aluguel.'); return; }
+    var aluguel = {
+      cliente_id:       clienteEl.value,
+      cliente:          clienteNome,
+      veiculo_id:       document.getElementById('aluguel-moto').value || null,
+      cpf:              document.getElementById('aluguel-cpf').value.trim(),
+      telefone:         document.getElementById('aluguel-telefone').value.trim(),
+      cnh:              document.getElementById('aluguel-cnh').value.trim(),
+      endereco:         document.getElementById('aluguel-endereco').value.trim(),
+      inicio:           document.getElementById('aluguel-inicio').value,
+      fim:              document.getElementById('aluguel-fim').value || null,
+      periodo:          document.getElementById('aluguel-periodo').value,
+      valor:            parseFloat(document.getElementById('aluguel-valor').value) || null,
+      total:            parseFloat(document.getElementById('aluguel-total').value) || null,
+      caucao:           parseFloat(document.getElementById('aluguel-caucao').value) || null,
+      caucao_devolvido: document.getElementById('aluguel-caucao-devolvido').value,
+      caucao_data:      document.getElementById('aluguel-caucao-data').value || null,
+      status:           document.getElementById('aluguel-status').value
+    };
 
-  const aluguel = {
-    veiculo_id: document.getElementById('aluguel-moto').value || null,
-    cpf:        document.getElementById('aluguel-cpf').value.trim(),
-    telefone:   document.getElementById('aluguel-telefone').value.trim(),
-    cnh:        document.getElementById('aluguel-cnh').value.trim(),
-    endereco:   document.getElementById('aluguel-endereco').value.trim(),
-    inicio:     document.getElementById('aluguel-inicio').value,
-    fim:        document.getElementById('aluguel-fim').value || null,
-    periodo:    document.getElementById('aluguel-periodo').value,
-    valor:      document.getElementById('aluguel-valor').value || null,
-    total:      document.getElementById('aluguel-total').value || null,
-    caucao:            document.getElementById('aluguel-caucao').value || null,
-    caucao_devolvido:  document.getElementById('aluguel-caucao-devolvido').value,
-    caucao_data:       document.getElementById('aluguel-caucao-data').value || null,
-    status:            document.getElementById('aluguel-status').value
-  };
-  aluguel.cliente_id = document.getElementById('aluguel-cliente-select').value || null;
-  aluguel.cliente    = document.getElementById('aluguel-cliente-select').options[document.getElementById('aluguel-cliente-select').selectedIndex]?.text || '';
-  var result;
-  var savedId;
-  if (id) {
-    result = await db.from('alugueis').update(aluguel).eq('id', id);
-    savedId = id;
-  } else {
-    result = await db.from('alugueis').insert(aluguel).select().single();
-    savedId = result.data ? result.data.id : null;
+    var result = id
+      ? await db.from('alugueis').update(aluguel).eq('id', id)
+      : await db.from('alugueis').insert(aluguel);
+
+    if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
+
+    closeModal('modal-aluguel');
+    renderAlugueis();
+  } catch (err) {
+    alert('Erro inesperado: ' + err.message);
   }
-  if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
-  closeModal('modal-aluguel');
-  renderAlugueis();
 }
 
 // --- MANUTENÇÕES ---
