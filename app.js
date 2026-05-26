@@ -486,8 +486,7 @@ async function editAluguel(id) {
   openModal('modal-aluguel');
 }
 
-async function submitAluguel(e) {
-  e.preventDefault();
+async function submitAluguel() {
   try {
     var id        = document.getElementById('aluguel-id').value;
     var clienteEl = document.getElementById('aluguel-cliente-select');

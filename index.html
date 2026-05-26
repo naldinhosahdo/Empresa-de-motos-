@@ -363,7 +363,7 @@
       <h3 id="modal-aluguel-title">Novo Aluguel</h3>
       <button class="modal-close" onclick="closeModal('modal-aluguel')">&times;</button>
     </div>
-    <form id="form-aluguel" onsubmit="submitAluguel(event)">
+    <form id="form-aluguel">
       <input type="hidden" id="aluguel-id">
       <div class="form-row">
         <div class="form-group">
@@ -454,7 +454,7 @@
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-aluguel')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Salvar</button>
+        <button type="button" class="btn btn-primary" onclick="submitAluguel()">Salvar</button>
       </div>
     </form>
   </div>
@@ -594,6 +594,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=22"></script>
+<script src="app.js?v=23"></script>
 </body>
 </html>
