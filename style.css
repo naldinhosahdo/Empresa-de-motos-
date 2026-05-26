@@ -720,6 +720,19 @@ form { padding: 1.4rem 1.5rem; }
   font-size: 0.82rem;
 }
 
+@media (max-width: 768px) {
+  .notif-dropdown {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    border-radius: 0 0 var(--radius) var(--radius);
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+}
+
 /* ── CHECKLIST PLACA ── */
 .checklist-placa-box {
   background: var(--bg2);
