@@ -467,9 +467,10 @@ async function editAluguel(id) {
   const { data: a } = await db.from('alugueis').select('*').eq('id', id).single();
   if (!a) return;
   await populateVeiculoSelects();
+  await populateClienteSelect();
   document.getElementById('aluguel-id').value       = a.id;
   document.getElementById('aluguel-moto').value     = a.veiculo_id || '';
-  document.getElementById('aluguel-cliente').value  = a.cliente || '';
+  document.getElementById('aluguel-cliente-select').value = a.cliente_id || '';
   document.getElementById('aluguel-cpf').value      = a.cpf || '';
   document.getElementById('aluguel-telefone').value = a.telefone || '';
   document.getElementById('aluguel-cnh').value      = a.cnh || '';
