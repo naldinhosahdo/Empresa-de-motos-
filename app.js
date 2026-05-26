@@ -103,6 +103,7 @@ document.addEventListener('click', function(e) {
 function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-wrapper').style.display = 'block';
+  history.replaceState({ section: 'dashboard' }, '', '#dashboard');
   renderDashboard();
   loadNotificacoes();
 }
@@ -139,7 +140,7 @@ db.auth.getSession().then(function(res) {
 });
 
 // --- NAVIGATION ---
-function showSection(name) {
+function showSection(name, addHistory) {
   document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
   document.querySelectorAll('.nav-item').forEach(function(a) { a.classList.remove('active'); });
   document.getElementById(name).classList.add('active');
@@ -154,7 +155,16 @@ function showSection(name) {
   if (name === 'custos')     { populateVeiculoSelects(); renderManutencoes(); renderDespesas(); }
   if (name === 'relatorios') renderRelatorios();
   if (name === 'checklist')  buildChecklist();
+
+  if (addHistory !== false) {
+    history.pushState({ section: name }, '', '#' + name);
+  }
 }
+
+window.addEventListener('popstate', function(e) {
+  var section = (e.state && e.state.section) || 'dashboard';
+  showSection(section, false);
+});
 
 document.querySelectorAll('.nav-item').forEach(function(a) {
   a.addEventListener('click', function(e) {
