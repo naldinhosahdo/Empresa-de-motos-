@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Notesns — Gestão de Aluguel de Veículos</title>
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
 
@@ -190,7 +190,7 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Moto</th><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Oficina</th><th>Ações</th></tr>
+          <tr><th>Moto</th><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Próx. Manutenção</th><th>Ações</th></tr>
         </thead>
         <tbody id="manutencoes-tbody"></tbody>
       </table>
@@ -502,12 +502,12 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Oficina</label>
-          <input type="text" id="manut-oficina" placeholder="Nome da oficina">
-        </div>
-        <div class="form-group">
           <label>Próxima manutenção (km)</label>
           <input type="number" id="manut-prox-km" placeholder="3000">
+        </div>
+        <div class="form-group">
+          <label>Próxima manutenção (data)</label>
+          <input type="date" id="manut-prox-data">
         </div>
       </div>
       <div class="form-group">
@@ -594,6 +594,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=13"></script>
+<script src="app.js?v=14"></script>
 </body>
 </html>

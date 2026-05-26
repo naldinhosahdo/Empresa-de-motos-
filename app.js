@@ -37,13 +37,24 @@ async function loadNotificacoes() {
   var em30 = new Date(hoje.getTime() + 30 * 86400000);
   var em30Str = em30.toISOString().split('T')[0];
 
-  var { data } = await db.from('despesas')
-    .select('*, veiculos(modelo, placa)')
-    .lte('vencimento', em30Str)
-    .not('vencimento', 'is', null)
-    .order('vencimento');
+  var [{ data: despesasData }, { data: manutData }] = await Promise.all([
+    db.from('despesas').select('*, veiculos(modelo, placa)')
+      .lte('vencimento', em30Str).not('vencimento', 'is', null).order('vencimento'),
+    db.from('manutencoes').select('*, veiculos(modelo, placa)')
+      .lte('prox_data', em30Str).not('prox_data', 'is', null).order('prox_data')
+  ]);
 
-  var alertas = (data || []).filter(function(d) { return d.vencimento; });
+  var alertasDespesas = (despesasData || []).map(function(d) {
+    return { data: d.vencimento, label: d.tipo, veiculo: d.veiculos, valor: fmtBRL(d.valor), tipo: 'despesa' };
+  });
+  var alertasManut = (manutData || []).map(function(m) {
+    return { data: m.prox_data, label: 'Manutenção: ' + (m.descricao || 'sem descrição'), veiculo: m.veiculos, valor: m.prox_km ? m.prox_km + ' km' : '', tipo: 'manut' };
+  });
+
+  var alertas = alertasDespesas.concat(alertasManut).sort(function(a, b) {
+    return a.data < b.data ? -1 : a.data > b.data ? 1 : 0;
+  });
+
   var badge = document.getElementById('notif-badge');
   var list  = document.getElementById('notif-list');
 
@@ -56,13 +67,13 @@ async function loadNotificacoes() {
   badge.style.display = 'flex';
   badge.textContent = alertas.length;
 
-  list.innerHTML = alertas.map(function(d) {
-    var venc   = new Date(d.vencimento + 'T00:00:00');
-    var diff   = Math.ceil((venc - hoje) / 86400000);
+  list.innerHTML = alertas.map(function(a) {
+    var venc    = new Date(a.data + 'T00:00:00');
+    var diff    = Math.ceil((venc - hoje) / 86400000);
     var urgente = diff <= 7;
-    var cls    = urgente ? 'notif-urgente' : 'notif-atencao';
-    var vei    = d.veiculos ? (d.veiculos.modelo + (d.veiculos.placa ? ' · ' + d.veiculos.placa : '')) : '-';
-    var quando = diff < 0
+    var cls     = urgente ? 'notif-urgente' : 'notif-atencao';
+    var vei     = a.veiculo ? (a.veiculo.modelo + (a.veiculo.placa ? ' · ' + a.veiculo.placa : '')) : '-';
+    var quando  = diff < 0
       ? '⚠️ Venceu há ' + Math.abs(diff) + ' dia(s)'
       : diff === 0
         ? '🔴 Vence hoje!'
@@ -70,8 +81,8 @@ async function loadNotificacoes() {
           ? '🔴 Vence em ' + diff + ' dia(s)'
           : '🟡 Vence em ' + diff + ' dia(s)';
     return '<div class="notif-item ' + cls + '">' +
-      '<div class="notif-item-titulo">' + d.tipo + ' — ' + vei + '</div>' +
-      '<div class="notif-item-desc">' + quando + ' · ' + fmtBRL(d.valor) + '</div>' +
+      '<div class="notif-item-titulo">' + a.label + ' — ' + vei + '</div>' +
+      '<div class="notif-item-desc">' + quando + (a.valor ? ' · ' + a.valor : '') + '</div>' +
     '</div>';
   }).join('');
 }
@@ -519,7 +530,7 @@ async function renderManutencoes() {
           '<td>' + (x.descricao || '-') + '</td>' +
           '<td><span class="text-red">' + fmtBRL(x.custo) + '</span></td>' +
           '<td>' + fmtDate(x.data) + '</td>' +
-          '<td>' + (x.oficina || '-') + '</td>' +
+          '<td>' + (x.prox_data ? fmtDate(x.prox_data) : (x.prox_km ? x.prox_km + ' km' : '-')) + '</td>' +
           '<td>' +
             '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button> ' +
             '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
@@ -546,8 +557,9 @@ async function editManutencao(id) {
   document.getElementById('manut-data').value    = m.data || '';
   document.getElementById('manut-custo').value   = m.custo || '';
   document.getElementById('manut-oficina').value = m.oficina || '';
-  document.getElementById('manut-prox-km').value = m.prox_km || '';
-  document.getElementById('manut-desc').value    = m.descricao || '';
+  document.getElementById('manut-prox-km').value   = m.prox_km || '';
+  document.getElementById('manut-prox-data').value = m.prox_data || '';
+  document.getElementById('manut-desc').value      = m.descricao || '';
   document.getElementById('modal-manut-title').textContent = 'Editar Manutenção';
   openModal('modal-manutencao');
 }
@@ -562,6 +574,7 @@ async function submitManutencao(e) {
     custo:      document.getElementById('manut-custo').value || null,
     oficina:    document.getElementById('manut-oficina').value.trim(),
     prox_km:    document.getElementById('manut-prox-km').value || null,
+    prox_data:  document.getElementById('manut-prox-data').value || null,
     descricao:  document.getElementById('manut-desc').value.trim()
   };
   var result;
