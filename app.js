@@ -502,7 +502,6 @@ async function submitAluguel(e) {
 
   const aluguel = {
     veiculo_id: document.getElementById('aluguel-moto').value || null,
-    cliente:    document.getElementById('aluguel-cliente').value.trim(),
     cpf:        document.getElementById('aluguel-cpf').value.trim(),
     telefone:   document.getElementById('aluguel-telefone').value.trim(),
     cnh:        document.getElementById('aluguel-cnh').value.trim(),
