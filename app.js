@@ -417,7 +417,7 @@ async function renderAlugueis() {
   var fmId = document.getElementById('filtro-moto-aluguel') ? document.getElementById('filtro-moto-aluguel').value : '';
   var fsId = document.getElementById('filtro-status-aluguel') ? document.getElementById('filtro-status-aluguel').value : '';
 
-  var query = db.from('alugueis').select('*, veiculos(modelo, placa)').order('created_at', { ascending: false });
+  var query = db.from('alugueis').select('*, veiculos(modelo, placa, ano, cor)').order('created_at', { ascending: false });
   if (fmId) query = query.eq('veiculo_id', fmId);
   if (fsId) query = query.eq('status', fsId);
 
@@ -439,6 +439,7 @@ async function renderAlugueis() {
           '<td>' + (x.caucao ? fmtBRL(x.caucao) + (x.caucao_devolvido === 'sim' ? ' <span class="badge badge-green">Dev.</span>' : ' <span class="badge badge-red">Pend.</span>') : '-') + '</td>' +
           '<td>' + statusBadge(x.status, 'aluguel') + '</td>' +
           '<td>' +
+            '<button class="btn btn-sm btn-info" onclick="gerarContrato(\'' + x.id + '\')">📄 Contrato</button> ' +
             '<button class="btn btn-sm btn-secondary" onclick="editAluguel(\'' + x.id + '\')">Editar</button> ' +
             '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'aluguel\',\'' + x.id + '\')">Excluir</button>' +
           '</td></tr>';
@@ -899,6 +900,128 @@ function resetChecklist() {
   checklistState = {};
   localStorage.removeItem('chk');
   updateChecklistUI();
+}
+
+// --- CONTRATO ---
+async function gerarContrato(id) {
+  var { data: a } = await db.from('alugueis')
+    .select('*, veiculos(modelo, placa, ano, cor)')
+    .eq('id', id).single();
+  if (!a) return;
+
+  var vei = a.veiculos || {};
+  var nomeCliente = a.cliente || '-';
+  var cpfCliente  = a.cpf    || '-';
+  var cnhCliente  = a.cnh    || '-';
+  var endCliente  = a.endereco  || '-';
+  var telCliente  = a.telefone  || '-';
+
+  function fmtCPF(c) {
+    if (!c) return '-';
+    c = c.replace(/\D/g,'');
+    return c.length === 11 ? c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4') : c;
+  }
+  function fmtValor(v) {
+    return v ? 'R$ ' + parseFloat(v).toFixed(2).replace('.',',') : '-';
+  }
+  function fmtD(d) {
+    return d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+  }
+  var periodoTexto = { dia: 'Diária', semana: 'Semanal', quinzena: 'Quinzenal', mes: 'Mensal' };
+  var hoje = new Date().toLocaleDateString('pt-BR');
+  var contratoNum = 'CTR-' + id.substring(0,8).toUpperCase();
+
+  var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+    '<title>Contrato — ' + nomeCliente + '</title><style>' +
+    '*{margin:0;padding:0;box-sizing:border-box}' +
+    'body{font-family:"Times New Roman",Times,serif;font-size:12pt;line-height:1.7;color:#000;background:#fff;padding:2cm;max-width:21cm;margin:0 auto}' +
+    'h1{text-align:center;font-size:16pt;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}' +
+    '.sub{text-align:center;font-size:10pt;color:#444;margin-bottom:20px}' +
+    '.ref{text-align:right;font-size:10pt;color:#555;margin-bottom:18px}' +
+    '.sec{font-size:11pt;font-weight:bold;text-transform:uppercase;margin:18px 0 8px;border-bottom:1px solid #000;padding-bottom:2px}' +
+    '.cl{margin-bottom:10px;text-align:justify}' +
+    'table{width:100%;border-collapse:collapse;margin-bottom:12px}' +
+    'td{padding:4px 8px;border:1px solid #ccc;font-size:11pt}' +
+    'td.lb{font-weight:bold;width:36%;background:#f5f5f5}' +
+    '.asrow{display:flex;justify-content:space-between;gap:32px;margin-top:40px}' +
+    '.asbox{flex:1;text-align:center}' +
+    '.asline{border-top:1px solid #000;margin-bottom:6px;margin-top:48px}' +
+    '.asname{font-size:10pt}' +
+    '.pbtn{position:fixed;top:16px;right:16px;padding:10px 20px;background:#1a73e8;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-family:sans-serif}' +
+    '@media print{.pbtn{display:none}body{padding:1.5cm}}' +
+    '</style></head><body>' +
+    '<button class="pbtn" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>' +
+    '<h1>Contrato de Locação de Motocicleta</h1>' +
+    '<div class="sub">Instrumento Particular de Locação celebrado entre as partes abaixo qualificadas.</div>' +
+    '<div class="ref">Nº ' + contratoNum + ' &nbsp;|&nbsp; Fortaleza/CE, ' + hoje + '</div>' +
+
+    '<div class="sec">1. Das Partes</div>' +
+    '<table>' +
+      '<tr><td class="lb">Locador (Proprietário)</td><td>Arisnaldo Sahdo Freire</td></tr>' +
+      '<tr><td class="lb">CPF do Locador</td><td>071.235.863-36</td></tr>' +
+      '<tr><td class="lb">Endereço do Locador</td><td>Rua Alameda das Borboletas, nº 69, Fortaleza - CE</td></tr>' +
+      '<tr><td class="lb">Locatário</td><td>' + nomeCliente + '</td></tr>' +
+      '<tr><td class="lb">CPF do Locatário</td><td>' + fmtCPF(cpfCliente) + '</td></tr>' +
+      '<tr><td class="lb">CNH do Locatário</td><td>' + cnhCliente + '</td></tr>' +
+      '<tr><td class="lb">Endereço do Locatário</td><td>' + endCliente + '</td></tr>' +
+      '<tr><td class="lb">Telefone do Locatário</td><td>' + telCliente + '</td></tr>' +
+    '</table>' +
+
+    '<div class="sec">2. Do Objeto</div>' +
+    '<table>' +
+      '<tr><td class="lb">Motocicleta</td><td>' + (vei.modelo||'-') + '</td></tr>' +
+      '<tr><td class="lb">Placa</td><td>' + (vei.placa||'-') + '</td></tr>' +
+      '<tr><td class="lb">Ano</td><td>' + (vei.ano||'-') + '</td></tr>' +
+      '<tr><td class="lb">Cor</td><td>' + (vei.cor||'-') + '</td></tr>' +
+    '</table>' +
+
+    '<div class="sec">3. Do Prazo e Valor</div>' +
+    '<table>' +
+      '<tr><td class="lb">Início da Locação</td><td>' + fmtD(a.inicio) + '</td></tr>' +
+      '<tr><td class="lb">Fim da Locação</td><td>' + (a.fim ? fmtD(a.fim) : 'A combinar') + '</td></tr>' +
+      '<tr><td class="lb">Modalidade</td><td>' + (periodoTexto[a.periodo]||a.periodo||'-') + '</td></tr>' +
+      '<tr><td class="lb">Valor por período</td><td>' + fmtValor(a.valor) + '</td></tr>' +
+      '<tr><td class="lb">Valor Total</td><td>' + fmtValor(a.total) + '</td></tr>' +
+      '<tr><td class="lb">Caução</td><td>' + (a.caucao ? fmtValor(a.caucao) : 'Não aplicável') + '</td></tr>' +
+    '</table>' +
+
+    '<div class="sec">4. Das Obrigações do Locatário</div>' +
+    '<div class="cl"><strong>4.1</strong> O Locatário se compromete a devolver o veículo nas mesmas condições em que o recebeu, salvo desgaste natural de uso.</div>' +
+    '<div class="cl"><strong>4.2</strong> É obrigatório o uso de capacete e demais equipamentos de segurança previstos no Código de Trânsito Brasileiro.</div>' +
+    '<div class="cl"><strong>4.3</strong> É vedado ao Locatário sublocar, ceder ou emprestar o veículo a terceiros sem autorização prévia e por escrito do Locador.</div>' +
+    '<div class="cl"><strong>4.4</strong> O Locatário é responsável pelo abastecimento e pelo nível de óleo do veículo durante o período de locação.</div>' +
+    '<div class="cl"><strong>4.5</strong> Todas as multas de trânsito, infrações e penalidades ocorridas durante o período de locação são de inteira responsabilidade do Locatário.</div>' +
+    '<div class="cl"><strong>4.6</strong> Fica proibida a utilização do veículo para atividades ilícitas, transporte de cargas não autorizadas ou participação em competições de qualquer natureza.</div>' +
+    '<div class="cl"><strong>4.7</strong> O Locatário se obriga a comunicar imediatamente o Locador em caso de acidente, roubo, furto ou qualquer ocorrência policial envolvendo o veículo.</div>' +
+
+    '<div class="sec">5. Da Responsabilidade por Danos</div>' +
+    '<div class="cl"><strong>5.1</strong> O Locatário responde por todos os danos causados ao veículo durante o período de locação, sejam por colisão, tombamento, vandalismo ou qualquer outro sinistro, exceto os decorrentes de desgaste natural.</div>' +
+    '<div class="cl"><strong>5.2</strong> O valor da caução poderá ser retido total ou parcialmente para cobrir danos, multas ou débitos pendentes ao final do contrato.</div>' +
+
+    '<div class="sec">6. Da Rescisão</div>' +
+    '<div class="cl"><strong>6.1</strong> O presente contrato poderá ser rescindido por qualquer das partes mediante aviso prévio de 24 (vinte e quatro) horas.</div>' +
+    '<div class="cl"><strong>6.2</strong> A devolução do veículo fora do prazo acordado implicará cobrança proporcional pelo período excedente, conforme a modalidade contratada.</div>' +
+    '<div class="cl"><strong>6.3</strong> O descumprimento de qualquer cláusula deste contrato autoriza o Locador a reaver o veículo imediatamente, independentemente de notificação judicial.</div>' +
+
+    '<div class="sec">7. Do Foro</div>' +
+    '<div class="cl"><strong>7.1</strong> As partes elegem o foro da Comarca de Fortaleza, Estado do Ceará, para dirimir quaisquer controvérsias oriundas deste contrato, com renúncia a qualquer outro, por mais privilegiado que seja.</div>' +
+
+    '<div class="cl" style="margin-top:16px;text-align:justify">E, por estarem assim justas e contratadas, as partes assinam o presente instrumento em 2 (duas) vias de igual teor e forma.</div>' +
+    '<div class="cl" style="text-align:center;margin-top:8px"><strong>Fortaleza - CE, ' + hoje + '</strong></div>' +
+
+    '<div class="asrow">' +
+      '<div class="asbox"><div class="asline"></div><div class="asname"><strong>Arisnaldo Sahdo Freire</strong><br>Locador — CPF 071.235.863-36</div></div>' +
+      '<div class="asbox"><div class="asline"></div><div class="asname"><strong>' + nomeCliente + '</strong><br>Locatário — CPF ' + fmtCPF(cpfCliente) + '</div></div>' +
+    '</div>' +
+    '<div class="asrow" style="margin-top:32px">' +
+      '<div class="asbox"><div class="asline"></div><div class="asname">Testemunha 1<br>Nome: _________________________ &nbsp; CPF: ___________________</div></div>' +
+      '<div class="asbox"><div class="asline"></div><div class="asname">Testemunha 2<br>Nome: _________________________ &nbsp; CPF: ___________________</div></div>' +
+    '</div>' +
+    '</body></html>';
+
+  var win = window.open('', '_blank', 'width=920,height=750,scrollbars=yes');
+  win.document.write(html);
+  win.document.close();
 }
 
 // --- INIT ---
