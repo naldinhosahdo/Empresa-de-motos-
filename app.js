@@ -405,9 +405,10 @@ function calcTotal() {
   if (inicio && fim && valor) {
     var dias = Math.max(1, Math.ceil((new Date(fim) - new Date(inicio)) / 86400000));
     var unidades;
-    if (periodo === 'dia')    unidades = dias;
-    if (periodo === 'semana') unidades = Math.ceil(dias / 7);
-    if (periodo === 'mes')    unidades = Math.ceil(dias / 30);
+    if (periodo === 'dia')      unidades = dias;
+    if (periodo === 'semana')   unidades = dias / 7;
+    if (periodo === 'quinzena') unidades = dias / 15;
+    if (periodo === 'mes')      unidades = dias / 30;
     document.getElementById('aluguel-total').value = (unidades * valor).toFixed(2);
   }
 }
