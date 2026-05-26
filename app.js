@@ -291,10 +291,9 @@ async function populateClienteSelect() {
     el.innerHTML = '<option value="">Nenhum cliente cadastrado</option>';
     return;
   }
-  el.innerHTML = c.map(function(cl) {
+  el.innerHTML = '<option value="">Selecione o cliente...</option>' + c.map(function(cl) {
     return '<option value="' + cl.id + '" data-cpf="' + (cl.cpf||'') + '" data-tel="' + (cl.telefone||'') + '" data-cnh="' + (cl.cnh||'') + '" data-end="' + (cl.endereco||'') + '">' + cl.nome + '</option>';
   }).join('');
-  if (c.length === 1) preencherCliente();
 }
 
 function preencherCliente() {
@@ -490,6 +489,7 @@ async function editAluguel(id) {
 }
 
 async function submitAluguel() {
+  var contratoWin = window.open('', '_blank');
   const id  = document.getElementById('aluguel-id').value;
   const sel = document.getElementById('aluguel-cliente-select');
   const aluguel = {
@@ -511,11 +511,18 @@ async function submitAluguel() {
     status:           document.getElementById('aluguel-status').value
   };
   var result = id
-    ? await db.from('alugueis').update(aluguel).eq('id', id)
-    : await db.from('alugueis').insert(aluguel);
-  if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
+    ? await db.from('alugueis').update(aluguel).eq('id', id).select()
+    : await db.from('alugueis').insert(aluguel).select();
+  if (result.error) {
+    if (contratoWin) contratoWin.close();
+    alert('Erro ao salvar: ' + result.error.message);
+    return;
+  }
+  var savedId = id || (result.data && result.data[0] ? result.data[0].id : null);
   closeModal('modal-aluguel');
   renderAlugueis();
+  if (savedId && contratoWin) gerarContrato(savedId, contratoWin);
+  else if (contratoWin) contratoWin.close();
 }
 
 // --- MANUTENÇÕES ---
@@ -901,7 +908,7 @@ function resetChecklist() {
 }
 
 // --- CONTRATO ---
-async function gerarContrato(id) {
+async function gerarContrato(id, win) {
   var { data: a } = await db.from('alugueis')
     .select('*, veiculos(modelo, placa, ano, cor)')
     .eq('id', id).single();
@@ -1017,9 +1024,9 @@ async function gerarContrato(id) {
     '</div>' +
     '</body></html>';
 
-  var win = window.open('', '_blank', 'width=920,height=750,scrollbars=yes');
-  win.document.write(html);
-  win.document.close();
+  var w = win || window.open('', '_blank', 'width=920,height=750,scrollbars=yes');
+  w.document.write(html);
+  w.document.close();
 }
 
 // --- INIT ---
