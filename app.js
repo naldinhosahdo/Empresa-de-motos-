@@ -489,6 +489,17 @@ async function editAluguel(id) {
 async function submitAluguel(e) {
   e.preventDefault();
   const id = document.getElementById('aluguel-id').value;
+
+  var clienteSel = document.getElementById('aluguel-cliente-select').value;
+  var motoSel    = document.getElementById('aluguel-moto').value;
+  var inicio     = document.getElementById('aluguel-inicio').value;
+  var valor      = document.getElementById('aluguel-valor').value;
+
+  if (!clienteSel) { alert('Selecione o cliente antes de salvar.'); return; }
+  if (!motoSel)    { alert('Selecione a moto antes de salvar.'); return; }
+  if (!inicio)     { alert('Informe a data de início.'); return; }
+  if (!valor)      { alert('Informe o valor do aluguel.'); return; }
+
   const aluguel = {
     veiculo_id: document.getElementById('aluguel-moto').value || null,
     cliente:    document.getElementById('aluguel-cliente').value.trim(),
