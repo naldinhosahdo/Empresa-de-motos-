@@ -489,8 +489,7 @@ async function editAluguel(id) {
   openModal('modal-aluguel');
 }
 
-async function submitAluguel(e) {
-  e.preventDefault();
+async function submitAluguel() {
   const id  = document.getElementById('aluguel-id').value;
   const sel = document.getElementById('aluguel-cliente-select');
   const aluguel = {
@@ -562,7 +561,6 @@ async function editManutencao(id) {
   document.getElementById('manut-tipo').value    = m.tipo || '';
   document.getElementById('manut-data').value    = m.data || '';
   document.getElementById('manut-custo').value   = m.custo || '';
-  document.getElementById('manut-oficina').value = m.oficina || '';
   document.getElementById('manut-prox-km').value   = m.prox_km || '';
   document.getElementById('manut-prox-data').value = m.prox_data || '';
   document.getElementById('manut-desc').value      = m.descricao || '';
@@ -570,8 +568,7 @@ async function editManutencao(id) {
   openModal('modal-manutencao');
 }
 
-async function submitManutencao(e) {
-  e.preventDefault();
+async function submitManutencao() {
   const id = document.getElementById('manut-id').value;
   const m = {
     veiculo_id: document.getElementById('manut-moto').value || null,
