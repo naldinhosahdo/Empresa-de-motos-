@@ -509,14 +509,18 @@ async function submitAluguel(e) {
   aluguel.cliente_id = document.getElementById('aluguel-cliente-select').value || null;
   aluguel.cliente    = document.getElementById('aluguel-cliente-select').options[document.getElementById('aluguel-cliente-select').selectedIndex]?.text || '';
   var result;
+  var savedId;
   if (id) {
     result = await db.from('alugueis').update(aluguel).eq('id', id);
+    savedId = id;
   } else {
-    result = await db.from('alugueis').insert(aluguel);
+    result = await db.from('alugueis').insert(aluguel).select().single();
+    savedId = result.data ? result.data.id : null;
   }
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-aluguel');
   renderAlugueis();
+  if (savedId) gerarContrato(savedId);
 }
 
 // --- MANUTENÇÕES ---
