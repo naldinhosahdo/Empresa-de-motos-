@@ -137,8 +137,9 @@ function showSection(name) {
   document.getElementById('navLinks').classList.remove('open');
 
   if (name === 'dashboard')  renderDashboard();
+  if (name === 'clientes')   renderClientes();
   if (name === 'motos')      renderVeiculos();
-  if (name === 'alugueis')   { populateVeiculoSelects(); renderAlugueis(); }
+  if (name === 'alugueis')   { populateClienteSelect(); populateVeiculoSelects(); renderAlugueis(); }
   if (name === 'custos')     { populateVeiculoSelects(); renderManutencoes(); renderDespesas(); }
   if (name === 'relatorios') renderRelatorios();
   if (name === 'checklist')  buildChecklist();
@@ -206,6 +207,90 @@ async function renderDashboard() {
         return '<tr><td>' + (vei ? veiculoLabel(vei) : '-') + '</td><td>' + x.tipo + '</td><td>' + fmtBRL(x.custo) + '</td><td>' + fmtDate(x.data) + '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="4">Nenhum custo registrado</td></tr>';
+}
+
+// --- CLIENTES ---
+async function renderClientes() {
+  showLoading('clientes-tbody', 6);
+  const { data } = await db.from('clientes').select('*').order('nome');
+  const c = data || [];
+  document.getElementById('clientes-tbody').innerHTML = c.length
+    ? c.map(function(cl) {
+        return '<tr>' +
+          '<td><strong>' + cl.nome + '</strong></td>' +
+          '<td>' + (cl.cpf || '-') + '</td>' +
+          '<td>' + (cl.telefone || '-') + '</td>' +
+          '<td>' + (cl.cnh || '-') + '</td>' +
+          '<td>' + (cl.endereco || '-') + '</td>' +
+          '<td>' +
+            '<button class="btn btn-sm btn-secondary" onclick="editCliente(\'' + cl.id + '\')">Editar</button> ' +
+            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'cliente\',\'' + cl.id + '\')">Excluir</button>' +
+          '</td></tr>';
+      }).join('')
+    : '<tr class="empty-row"><td colspan="6">Nenhum cliente cadastrado</td></tr>';
+}
+
+function openNewCliente() {
+  document.getElementById('form-cliente').reset();
+  document.getElementById('cliente-id').value = '';
+  document.getElementById('modal-cliente-title').textContent = 'Novo Cliente';
+  openModal('modal-cliente');
+}
+
+async function editCliente(id) {
+  const { data: cl } = await db.from('clientes').select('*').eq('id', id).single();
+  if (!cl) return;
+  document.getElementById('cliente-id').value      = cl.id;
+  document.getElementById('cliente-nome').value    = cl.nome || '';
+  document.getElementById('cliente-cpf').value     = cl.cpf || '';
+  document.getElementById('cliente-telefone').value= cl.telefone || '';
+  document.getElementById('cliente-cnh').value     = cl.cnh || '';
+  document.getElementById('cliente-endereco').value= cl.endereco || '';
+  document.getElementById('cliente-obs').value     = cl.obs || '';
+  document.getElementById('modal-cliente-title').textContent = 'Editar Cliente';
+  openModal('modal-cliente');
+}
+
+async function submitCliente(e) {
+  e.preventDefault();
+  const id = document.getElementById('cliente-id').value;
+  const cl = {
+    nome:     document.getElementById('cliente-nome').value.trim(),
+    cpf:      document.getElementById('cliente-cpf').value.trim(),
+    telefone: document.getElementById('cliente-telefone').value.trim(),
+    cnh:      document.getElementById('cliente-cnh').value.trim(),
+    endereco: document.getElementById('cliente-endereco').value.trim(),
+    obs:      document.getElementById('cliente-obs').value.trim()
+  };
+  var result = id
+    ? await db.from('clientes').update(cl).eq('id', id)
+    : await db.from('clientes').insert(cl);
+  if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
+  closeModal('modal-cliente');
+  renderClientes();
+  populateClienteSelect();
+}
+
+async function populateClienteSelect() {
+  const { data } = await db.from('clientes').select('*').order('nome');
+  const c = data || [];
+  var el = document.getElementById('aluguel-cliente-select');
+  if (!el) return;
+  el.innerHTML = c.length
+    ? '<option value="">Selecione o cliente...</option>' + c.map(function(cl) {
+        return '<option value="' + cl.id + '" data-cpf="' + (cl.cpf||'') + '" data-tel="' + (cl.telefone||'') + '" data-cnh="' + (cl.cnh||'') + '" data-end="' + (cl.endereco||'') + '">' + cl.nome + '</option>';
+      }).join('')
+    : '<option value="">Nenhum cliente cadastrado</option>';
+}
+
+function preencherCliente() {
+  var sel = document.getElementById('aluguel-cliente-select');
+  var opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+  document.getElementById('aluguel-cpf').value      = opt.dataset.cpf || '';
+  document.getElementById('aluguel-telefone').value = opt.dataset.tel || '';
+  document.getElementById('aluguel-cnh').value      = opt.dataset.cnh || '';
+  document.getElementById('aluguel-endereco').value = opt.dataset.end || '';
 }
 
 // --- VEÍCULOS ---
@@ -350,6 +435,7 @@ function openNewAluguel() {
   document.getElementById('aluguel-id').value = '';
   document.getElementById('modal-aluguel-title').textContent = 'Novo Aluguel';
   populateVeiculoSelects();
+  populateClienteSelect();
   openModal('modal-aluguel');
 }
 
@@ -393,6 +479,8 @@ async function submitAluguel(e) {
     caucao:     document.getElementById('aluguel-caucao').value || null,
     status:     document.getElementById('aluguel-status').value
   };
+  aluguel.cliente_id = document.getElementById('aluguel-cliente-select').value || null;
+  aluguel.cliente    = document.getElementById('aluguel-cliente-select').options[document.getElementById('aluguel-cliente-select').selectedIndex]?.text || '';
   var result;
   if (id) {
     result = await db.from('alugueis').update(aluguel).eq('id', id);
@@ -628,8 +716,9 @@ async function renderRelatorios() {
 function confirmDelete(type, id) {
   var btn = document.getElementById('confirm-delete-btn');
   btn.onclick = async function() {
-    var tableMap  = { veiculo: 'veiculos', aluguel: 'alugueis', manutencao: 'manutencoes', despesa: 'despesas' };
+    var tableMap  = { cliente: 'clientes', veiculo: 'veiculos', aluguel: 'alugueis', manutencao: 'manutencoes', despesa: 'despesas' };
     var renderMap = {
+      cliente:    function() { renderClientes(); populateClienteSelect(); },
       veiculo:    function() { renderVeiculos(); populateVeiculoSelects(); },
       aluguel:    renderAlugueis,
       manutencao: renderManutencoes,

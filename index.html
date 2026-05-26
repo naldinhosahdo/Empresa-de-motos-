@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Notesns — Gestão de Aluguel de Veículos</title>
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 
@@ -38,6 +38,7 @@
   <div class="nav-brand">&#127949; Notesns</div>
   <ul class="nav-links" id="navLinks">
     <li><a href="#" class="nav-item active" data-section="dashboard">Dashboard</a></li>
+    <li><a href="#" class="nav-item" data-section="clientes">Clientes</a></li>
     <li><a href="#" class="nav-item" data-section="motos">Veículos</a></li>
     <li><a href="#" class="nav-item" data-section="alugueis">Aluguéis</a></li>
     <li><a href="#" class="nav-item" data-section="custos">Custos</a></li>
@@ -111,6 +112,22 @@
           </table>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- CLIENTES -->
+  <section id="clientes" class="section">
+    <div class="section-header">
+      <h2 class="section-title">Clientes</h2>
+      <button class="btn btn-primary" onclick="openNewCliente()">+ Novo Cliente</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>CNH</th><th>Endereço</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="clientes-tbody"></tbody>
+      </table>
     </div>
   </section>
 
@@ -239,6 +256,51 @@
 
 </main>
 
+<!-- MODAL CLIENTE -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-cliente-title">Novo Cliente</h3>
+      <button class="modal-close" onclick="closeModal('modal-cliente')">&times;</button>
+    </div>
+    <form id="form-cliente" onsubmit="submitCliente(event)">
+      <input type="hidden" id="cliente-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome *</label>
+          <input type="text" id="cliente-nome" required placeholder="Nome completo">
+        </div>
+        <div class="form-group">
+          <label>CPF</label>
+          <input type="text" id="cliente-cpf" placeholder="000.000.000-00">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="text" id="cliente-telefone" placeholder="(00) 00000-0000">
+        </div>
+        <div class="form-group">
+          <label>CNH</label>
+          <input type="text" id="cliente-cnh" placeholder="Número da CNH">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Endereço</label>
+        <input type="text" id="cliente-endereco" placeholder="Rua, número, bairro, cidade">
+      </div>
+      <div class="form-group">
+        <label>Observações</label>
+        <textarea id="cliente-obs" rows="2" placeholder="Observações sobre o cliente..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-cliente')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- MODAL VEÍCULO -->
 <div class="modal-overlay" id="modal-moto">
   <div class="modal">
@@ -317,29 +379,29 @@
           </select>
         </div>
       </div>
+      <div class="form-group">
+        <label>Cliente *</label>
+        <select id="aluguel-cliente-select" required onchange="preencherCliente()"></select>
+      </div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Nome do Cliente *</label>
-          <input type="text" id="aluguel-cliente" required placeholder="Nome completo">
-        </div>
         <div class="form-group">
           <label>CPF</label>
           <input type="text" id="aluguel-cpf" placeholder="000.000.000-00">
         </div>
-      </div>
-      <div class="form-row">
         <div class="form-group">
           <label>Telefone</label>
           <input type="text" id="aluguel-telefone" placeholder="(00) 00000-0000">
         </div>
+      </div>
+      <div class="form-row">
         <div class="form-group">
           <label>CNH</label>
           <input type="text" id="aluguel-cnh" placeholder="Número da CNH">
         </div>
-      </div>
-      <div class="form-group">
-        <label>Endereço</label>
-        <input type="text" id="aluguel-endereco" placeholder="Rua, número, bairro, cidade">
+        <div class="form-group">
+          <label>Endereço</label>
+          <input type="text" id="aluguel-endereco" placeholder="Rua, número, bairro">
+        </div>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -519,6 +581,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=12"></script>
+<script src="app.js?v=13"></script>
 </body>
 </html>
