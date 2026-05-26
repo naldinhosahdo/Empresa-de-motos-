@@ -64,7 +64,7 @@
   <section id="dashboard" class="section active">
     <h2 class="section-title">Dashboard</h2>
     <div class="cards-grid">
-      <div class="card card-blue">
+      <div class="card card-blue" onclick="showSection('motos')" style="cursor:pointer">
         <div class="card-icon">&#127949;</div>
         <div class="card-info">
           <span class="card-label">Total de Veículos</span>
@@ -78,7 +78,7 @@
           <span class="card-value" id="dash-receita">R$ 0,00</span>
         </div>
       </div>
-      <div class="card card-red">
+      <div class="card card-red" onclick="showSection('custos')" style="cursor:pointer">
         <div class="card-icon">&#128296;</div>
         <div class="card-info">
           <span class="card-label">Custos</span>
@@ -594,6 +594,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=32"></script>
+<script src="app.js?v=33"></script>
 </body>
 </html>
