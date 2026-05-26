@@ -381,6 +381,11 @@ async function populateVeiculoSelects() {
 var periodoLabel = { dia: 'Dia', semana: 'Semana', mes: 'Mês' };
 
 // --- ALUGUÉIS ---
+function toggleCaucaoData() {
+  var val = document.getElementById('aluguel-caucao-devolvido').value;
+  document.getElementById('row-caucao-data').style.display = val === 'sim' ? 'block' : 'none';
+}
+
 function calcTotal() {
   var inicio  = document.getElementById('aluguel-inicio').value;
   var fim     = document.getElementById('aluguel-fim').value;
@@ -420,7 +425,7 @@ async function renderAlugueis() {
           '<td>' + (periodoLabel[x.periodo] || '-') + '</td>' +
           '<td>' + fmtBRL(x.valor) + '</td>' +
           '<td><strong>' + fmtBRL(x.total) + '</strong></td>' +
-          '<td>' + (x.caucao ? fmtBRL(x.caucao) : '-') + '</td>' +
+          '<td>' + (x.caucao ? fmtBRL(x.caucao) + (x.caucao_devolvido === 'sim' ? ' <span class="badge badge-green">Dev.</span>' : ' <span class="badge badge-red">Pend.</span>') : '-') + '</td>' +
           '<td>' + statusBadge(x.status, 'aluguel') + '</td>' +
           '<td>' +
             '<button class="btn btn-sm btn-secondary" onclick="editAluguel(\'' + x.id + '\')">Editar</button> ' +
@@ -455,8 +460,11 @@ async function editAluguel(id) {
   document.getElementById('aluguel-periodo').value  = a.periodo || 'semana';
   document.getElementById('aluguel-valor').value    = a.valor || '';
   document.getElementById('aluguel-total').value    = a.total || '';
-  document.getElementById('aluguel-caucao').value   = a.caucao || '';
-  document.getElementById('aluguel-status').value   = a.status || 'ativo';
+  document.getElementById('aluguel-caucao').value             = a.caucao || '';
+  document.getElementById('aluguel-caucao-devolvido').value   = a.caucao_devolvido || 'nao';
+  document.getElementById('aluguel-caucao-data').value        = a.caucao_data || '';
+  document.getElementById('row-caucao-data').style.display    = a.caucao_devolvido === 'sim' ? 'block' : 'none';
+  document.getElementById('aluguel-status').value             = a.status || 'ativo';
   document.getElementById('modal-aluguel-title').textContent = 'Editar Aluguel';
   openModal('modal-aluguel');
 }
@@ -476,8 +484,10 @@ async function submitAluguel(e) {
     periodo:    document.getElementById('aluguel-periodo').value,
     valor:      document.getElementById('aluguel-valor').value || null,
     total:      document.getElementById('aluguel-total').value || null,
-    caucao:     document.getElementById('aluguel-caucao').value || null,
-    status:     document.getElementById('aluguel-status').value
+    caucao:            document.getElementById('aluguel-caucao').value || null,
+    caucao_devolvido:  document.getElementById('aluguel-caucao-devolvido').value,
+    caucao_data:       document.getElementById('aluguel-caucao-data').value || null,
+    status:            document.getElementById('aluguel-status').value
   };
   aluguel.cliente_id = document.getElementById('aluguel-cliente-select').value || null;
   aluguel.cliente    = document.getElementById('aluguel-cliente-select').options[document.getElementById('aluguel-cliente-select').selectedIndex]?.text || '';

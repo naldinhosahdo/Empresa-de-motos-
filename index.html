@@ -438,6 +438,19 @@
           <label>Caução (R$)</label>
           <input type="number" id="aluguel-caucao" step="0.01" min="0" placeholder="0.00">
         </div>
+        <div class="form-group">
+          <label>Caução Devolvido?</label>
+          <select id="aluguel-caucao-devolvido" onchange="toggleCaucaoData()">
+            <option value="nao">Não devolvido</option>
+            <option value="sim">Devolvido</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" id="row-caucao-data" style="display:none">
+        <div class="form-group">
+          <label>Data da Devolução</label>
+          <input type="date" id="aluguel-caucao-data">
+        </div>
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-aluguel')">Cancelar</button>
