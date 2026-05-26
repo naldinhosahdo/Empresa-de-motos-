@@ -198,18 +198,49 @@ async function renderDashboard() {
 
   const v = veiculos || [], a = alugueis || [], m = manutencoes || [], d = despesas || [];
 
-  const receita = a.filter(function(x) { return x.status !== 'cancelado'; })
-                   .reduce(function(s, x) { return s + Number(x.total || 0); }, 0);
-  const custos  = m.reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
-                + d.reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
-  const lucro   = receita - custos;
+  var hoje = new Date();
+  var anoMes = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
+  var diaSem = hoje.getDay();
+  var inicioSemana = new Date(hoje);
+  inicioSemana.setDate(hoje.getDate() - (diaSem === 0 ? 6 : diaSem - 1));
+  inicioSemana.setHours(0,0,0,0);
+  var inicioSemStr = inicioSemana.toISOString().split('T')[0];
+
+  var aNaoCancelado = a.filter(function(x) { return x.status !== 'cancelado'; });
+
+  var receitaTotal = aNaoCancelado.reduce(function(s, x) { return s + Number(x.total || 0); }, 0);
+  var receitaMes   = aNaoCancelado.filter(function(x) { return x.inicio && x.inicio.startsWith(anoMes); })
+                                  .reduce(function(s, x) { return s + Number(x.total || 0); }, 0);
+  var receitaSem   = aNaoCancelado.filter(function(x) { return x.inicio && x.inicio >= inicioSemStr; })
+                                  .reduce(function(s, x) { return s + Number(x.total || 0); }, 0);
+
+  var custosTotal = m.reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
+                  + d.reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+  var custosMes   = m.filter(function(x) { return x.data && x.data.startsWith(anoMes); })
+                    .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
+                  + d.filter(function(x) { return x.vencimento && x.vencimento.startsWith(anoMes); })
+                    .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+
+  var lucroTotal = receitaTotal - custosTotal;
+  var lucroMes   = receitaMes - custosMes;
 
   document.getElementById('dash-total-motos').textContent = v.length;
-  document.getElementById('dash-receita').textContent = fmtBRL(receita);
-  document.getElementById('dash-custos').textContent  = fmtBRL(custos);
-  var lucroEl = document.getElementById('dash-lucro');
-  lucroEl.textContent  = fmtBRL(lucro);
-  lucroEl.style.color  = lucro >= 0 ? 'var(--green)' : 'var(--red)';
+
+  document.getElementById('dash-receita-mes').textContent       = fmtBRL(receitaMes);
+  document.getElementById('dash-receita-mes-label').textContent = fmtBRL(receitaMes);
+  document.getElementById('dash-receita-sem').textContent       = fmtBRL(receitaSem);
+
+  document.getElementById('dash-custos-mes').textContent       = fmtBRL(custosMes);
+  document.getElementById('dash-custos-mes-label').textContent = fmtBRL(custosMes);
+  document.getElementById('dash-custos').textContent           = fmtBRL(custosTotal);
+
+  var lucroMesEl = document.getElementById('dash-lucro-mes');
+  lucroMesEl.textContent = fmtBRL(lucroMes);
+  lucroMesEl.style.color = lucroMes >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('dash-lucro-mes-label').textContent = fmtBRL(lucroMes);
+  var lucroTotalEl = document.getElementById('dash-lucro');
+  lucroTotalEl.textContent = fmtBRL(lucroTotal);
+  lucroTotalEl.style.color = lucroTotal >= 0 ? 'var(--green)' : 'var(--red)';
 
   var tbody1 = document.getElementById('dash-alugueis-tbody');
   var lastA   = a.slice().reverse().slice(0, 5);
@@ -440,10 +471,6 @@ async function renderAlugueis() {
 
   const { data } = await query;
   const a = data || [];
-  var somaReceita = a.reduce(function(acc, x) { return acc + (parseFloat(x.total) || 0); }, 0);
-  var elReceita = document.getElementById('alugueis-receita-total');
-  if (elReceita) elReceita.textContent = fmtBRL(somaReceita);
-
   document.getElementById('alugueis-tbody').innerHTML = a.length
     ? a.map(function(x) {
         var vei = x.veiculos;
