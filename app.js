@@ -287,11 +287,14 @@ async function populateClienteSelect() {
   const c = data || [];
   var el = document.getElementById('aluguel-cliente-select');
   if (!el) return;
-  el.innerHTML = c.length
-    ? '<option value="">Selecione o cliente...</option>' + c.map(function(cl) {
-        return '<option value="' + cl.id + '" data-cpf="' + (cl.cpf||'') + '" data-tel="' + (cl.telefone||'') + '" data-cnh="' + (cl.cnh||'') + '" data-end="' + (cl.endereco||'') + '">' + cl.nome + '</option>';
-      }).join('')
-    : '<option value="">Nenhum cliente cadastrado</option>';
+  if (!c.length) {
+    el.innerHTML = '<option value="">Nenhum cliente cadastrado</option>';
+    return;
+  }
+  el.innerHTML = c.map(function(cl) {
+    return '<option value="' + cl.id + '" data-cpf="' + (cl.cpf||'') + '" data-tel="' + (cl.telefone||'') + '" data-cnh="' + (cl.cnh||'') + '" data-end="' + (cl.endereco||'') + '">' + cl.nome + '</option>';
+  }).join('');
+  if (c.length === 1) preencherCliente();
 }
 
 function preencherCliente() {
@@ -580,28 +583,31 @@ async function editManutencao(id) {
   openModal('modal-manutencao');
 }
 
-async function submitManutencao(e) {
-  e.preventDefault();
-  const id = document.getElementById('manut-id').value;
-  const m = {
-    veiculo_id: document.getElementById('manut-moto').value || null,
-    tipo:       document.getElementById('manut-tipo').value,
-    data:       document.getElementById('manut-data').value,
-    custo:      document.getElementById('manut-custo').value || null,
-    oficina:    document.getElementById('manut-oficina').value.trim(),
-    prox_km:    document.getElementById('manut-prox-km').value || null,
-    prox_data:  document.getElementById('manut-prox-data').value || null,
-    descricao:  document.getElementById('manut-desc').value.trim()
-  };
-  var result;
-  if (id) {
-    result = await db.from('manutencoes').update(m).eq('id', id);
-  } else {
-    result = await db.from('manutencoes').insert(m);
+async function submitManutencao() {
+  try {
+    var id = document.getElementById('manut-id').value;
+    if (!document.getElementById('manut-moto').value)  { alert('Selecione a moto.'); return; }
+    if (!document.getElementById('manut-tipo').value)  { alert('Selecione o tipo de manutenção.'); return; }
+    if (!document.getElementById('manut-data').value)  { alert('Informe a data.'); return; }
+    if (!document.getElementById('manut-custo').value) { alert('Informe o custo.'); return; }
+    var m = {
+      veiculo_id: document.getElementById('manut-moto').value || null,
+      tipo:       document.getElementById('manut-tipo').value,
+      data:       document.getElementById('manut-data').value,
+      custo:      parseFloat(document.getElementById('manut-custo').value) || null,
+      prox_km:    document.getElementById('manut-prox-km').value || null,
+      prox_data:  document.getElementById('manut-prox-data').value || null,
+      descricao:  document.getElementById('manut-desc').value.trim()
+    };
+    var result = id
+      ? await db.from('manutencoes').update(m).eq('id', id)
+      : await db.from('manutencoes').insert(m);
+    if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
+    closeModal('modal-manutencao');
+    renderManutencoes();
+  } catch(err) {
+    alert('Erro: ' + err.message);
   }
-  if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
-  closeModal('modal-manutencao');
-  renderManutencoes();
 }
 
 // --- DESPESAS ---

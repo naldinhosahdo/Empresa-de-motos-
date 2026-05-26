@@ -467,16 +467,16 @@
       <h3 id="modal-manut-title">Nova Manutenção</h3>
       <button class="modal-close" onclick="closeModal('modal-manutencao')">&times;</button>
     </div>
-    <form id="form-manutencao" onsubmit="submitManutencao(event)">
+    <form id="form-manutencao">
       <input type="hidden" id="manut-id">
       <div class="form-row">
         <div class="form-group">
           <label>Moto *</label>
-          <select id="manut-moto" required></select>
+          <select id="manut-moto"></select>
         </div>
         <div class="form-group">
           <label>Tipo *</label>
-          <select id="manut-tipo" required>
+          <select id="manut-tipo">
             <option value="">Selecione...</option>
             <option>Troca de óleo</option>
             <option>Pneu</option>
@@ -493,11 +493,11 @@
       <div class="form-row">
         <div class="form-group">
           <label>Data *</label>
-          <input type="date" id="manut-data" required>
+          <input type="date" id="manut-data">
         </div>
         <div class="form-group">
           <label>Custo (R$) *</label>
-          <input type="number" id="manut-custo" step="0.01" min="0" required placeholder="150.00">
+          <input type="number" id="manut-custo" step="0.01" min="0" placeholder="150.00">
         </div>
       </div>
       <div class="form-row">
@@ -516,7 +516,7 @@
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-manutencao')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Salvar</button>
+        <button type="button" class="btn btn-primary" onclick="submitManutencao()">Salvar</button>
       </div>
     </form>
   </div>
@@ -594,6 +594,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=23"></script>
+<script src="app.js?v=24"></script>
 </body>
 </html>
