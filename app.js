@@ -520,7 +520,6 @@ async function submitAluguel(e) {
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-aluguel');
   renderAlugueis();
-  if (savedId) gerarContrato(savedId);
 }
 
 // --- MANUTENÇÕES ---
