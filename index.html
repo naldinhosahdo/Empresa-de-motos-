@@ -363,7 +363,7 @@
       <h3 id="modal-aluguel-title">Novo Aluguel</h3>
       <button class="modal-close" onclick="closeModal('modal-aluguel')">&times;</button>
     </div>
-    <form id="form-aluguel">
+    <form id="form-aluguel" onsubmit="submitAluguel(event)">
       <input type="hidden" id="aluguel-id">
       <div class="form-row">
         <div class="form-group">
@@ -454,7 +454,7 @@
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-aluguel')">Cancelar</button>
-        <button type="button" class="btn btn-primary" onclick="submitAluguel()">Salvar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
       </div>
     </form>
   </div>
@@ -467,7 +467,7 @@
       <h3 id="modal-manut-title">Nova Manutenção</h3>
       <button class="modal-close" onclick="closeModal('modal-manutencao')">&times;</button>
     </div>
-    <form id="form-manutencao">
+    <form id="form-manutencao" onsubmit="submitManutencao(event)">
       <input type="hidden" id="manut-id">
       <div class="form-row">
         <div class="form-group">
@@ -516,7 +516,7 @@
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-manutencao')">Cancelar</button>
-        <button type="button" class="btn btn-primary" onclick="submitManutencao()">Salvar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
       </div>
     </form>
   </div>
@@ -594,6 +594,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=24"></script>
+<script src="app.js?v=25"></script>
 </body>
 </html>

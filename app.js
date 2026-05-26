@@ -489,47 +489,34 @@ async function editAluguel(id) {
   openModal('modal-aluguel');
 }
 
-async function submitAluguel() {
-  try {
-    var id        = document.getElementById('aluguel-id').value;
-    var clienteEl = document.getElementById('aluguel-cliente-select');
-    var clienteNome = clienteEl.options[clienteEl.selectedIndex] ? clienteEl.options[clienteEl.selectedIndex].text : '';
-
-    if (!clienteEl.value) { alert('Selecione o cliente.'); return; }
-    if (!document.getElementById('aluguel-moto').value) { alert('Selecione a moto.'); return; }
-    if (!document.getElementById('aluguel-inicio').value) { alert('Informe a data de início.'); return; }
-    if (!document.getElementById('aluguel-valor').value) { alert('Informe o valor.'); return; }
-
-    var aluguel = {
-      cliente_id:       clienteEl.value,
-      cliente:          clienteNome,
-      veiculo_id:       document.getElementById('aluguel-moto').value || null,
-      cpf:              document.getElementById('aluguel-cpf').value.trim(),
-      telefone:         document.getElementById('aluguel-telefone').value.trim(),
-      cnh:              document.getElementById('aluguel-cnh').value.trim(),
-      endereco:         document.getElementById('aluguel-endereco').value.trim(),
-      inicio:           document.getElementById('aluguel-inicio').value,
-      fim:              document.getElementById('aluguel-fim').value || null,
-      periodo:          document.getElementById('aluguel-periodo').value,
-      valor:            parseFloat(document.getElementById('aluguel-valor').value) || null,
-      total:            parseFloat(document.getElementById('aluguel-total').value) || null,
-      caucao:           parseFloat(document.getElementById('aluguel-caucao').value) || null,
-      caucao_devolvido: document.getElementById('aluguel-caucao-devolvido').value,
-      caucao_data:      document.getElementById('aluguel-caucao-data').value || null,
-      status:           document.getElementById('aluguel-status').value
-    };
-
-    var result = id
-      ? await db.from('alugueis').update(aluguel).eq('id', id)
-      : await db.from('alugueis').insert(aluguel);
-
-    if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
-
-    closeModal('modal-aluguel');
-    renderAlugueis();
-  } catch (err) {
-    alert('Erro inesperado: ' + err.message);
-  }
+async function submitAluguel(e) {
+  e.preventDefault();
+  const id  = document.getElementById('aluguel-id').value;
+  const sel = document.getElementById('aluguel-cliente-select');
+  const aluguel = {
+    cliente_id:       sel.value || null,
+    cliente:          sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '',
+    veiculo_id:       document.getElementById('aluguel-moto').value || null,
+    cpf:              document.getElementById('aluguel-cpf').value.trim(),
+    telefone:         document.getElementById('aluguel-telefone').value.trim(),
+    cnh:              document.getElementById('aluguel-cnh').value.trim(),
+    endereco:         document.getElementById('aluguel-endereco').value.trim(),
+    inicio:           document.getElementById('aluguel-inicio').value,
+    fim:              document.getElementById('aluguel-fim').value || null,
+    periodo:          document.getElementById('aluguel-periodo').value,
+    valor:            parseFloat(document.getElementById('aluguel-valor').value) || null,
+    total:            parseFloat(document.getElementById('aluguel-total').value) || null,
+    caucao:           parseFloat(document.getElementById('aluguel-caucao').value) || null,
+    caucao_devolvido: document.getElementById('aluguel-caucao-devolvido').value,
+    caucao_data:      document.getElementById('aluguel-caucao-data').value || null,
+    status:           document.getElementById('aluguel-status').value
+  };
+  var result = id
+    ? await db.from('alugueis').update(aluguel).eq('id', id)
+    : await db.from('alugueis').insert(aluguel);
+  if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
+  closeModal('modal-aluguel');
+  renderAlugueis();
 }
 
 // --- MANUTENÇÕES ---
@@ -583,31 +570,24 @@ async function editManutencao(id) {
   openModal('modal-manutencao');
 }
 
-async function submitManutencao() {
-  try {
-    var id = document.getElementById('manut-id').value;
-    if (!document.getElementById('manut-moto').value)  { alert('Selecione a moto.'); return; }
-    if (!document.getElementById('manut-tipo').value)  { alert('Selecione o tipo de manutenção.'); return; }
-    if (!document.getElementById('manut-data').value)  { alert('Informe a data.'); return; }
-    if (!document.getElementById('manut-custo').value) { alert('Informe o custo.'); return; }
-    var m = {
-      veiculo_id: document.getElementById('manut-moto').value || null,
-      tipo:       document.getElementById('manut-tipo').value,
-      data:       document.getElementById('manut-data').value,
-      custo:      parseFloat(document.getElementById('manut-custo').value) || null,
-      prox_km:    document.getElementById('manut-prox-km').value || null,
-      prox_data:  document.getElementById('manut-prox-data').value || null,
-      descricao:  document.getElementById('manut-desc').value.trim()
-    };
-    var result = id
-      ? await db.from('manutencoes').update(m).eq('id', id)
-      : await db.from('manutencoes').insert(m);
-    if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
-    closeModal('modal-manutencao');
-    renderManutencoes();
-  } catch(err) {
-    alert('Erro: ' + err.message);
-  }
+async function submitManutencao(e) {
+  e.preventDefault();
+  const id = document.getElementById('manut-id').value;
+  const m = {
+    veiculo_id: document.getElementById('manut-moto').value || null,
+    tipo:       document.getElementById('manut-tipo').value,
+    data:       document.getElementById('manut-data').value,
+    custo:      parseFloat(document.getElementById('manut-custo').value) || null,
+    prox_km:    document.getElementById('manut-prox-km').value || null,
+    prox_data:  document.getElementById('manut-prox-data').value || null,
+    descricao:  document.getElementById('manut-desc').value.trim()
+  };
+  var result = id
+    ? await db.from('manutencoes').update(m).eq('id', id)
+    : await db.from('manutencoes').insert(m);
+  if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
+  closeModal('modal-manutencao');
+  renderManutencoes();
 }
 
 // --- DESPESAS ---
