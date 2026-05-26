@@ -440,6 +440,10 @@ async function renderAlugueis() {
 
   const { data } = await query;
   const a = data || [];
+  var somaReceita = a.reduce(function(acc, x) { return acc + (parseFloat(x.total) || 0); }, 0);
+  var elReceita = document.getElementById('alugueis-receita-total');
+  if (elReceita) elReceita.textContent = fmtBRL(somaReceita);
+
   document.getElementById('alugueis-tbody').innerHTML = a.length
     ? a.map(function(x) {
         var vei = x.veiculos;

@@ -151,7 +151,13 @@
   <section id="alugueis" class="section">
     <div class="section-header">
       <h2 class="section-title">Aluguéis</h2>
-      <button class="btn btn-primary" onclick="openNewAluguel()">+ Novo Aluguel</button>
+      <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+        <div style="text-align:right;line-height:1.2">
+          <span style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">Receita</span><br>
+          <span id="alugueis-receita-total" style="font-size:1.05rem;font-weight:700;color:#4ade80">R$ 0,00</span>
+        </div>
+        <button class="btn btn-primary" onclick="openNewAluguel()">+ Novo Aluguel</button>
+      </div>
     </div>
     <div class="filter-bar">
       <label>Moto: <select id="filtro-moto-aluguel" onchange="renderAlugueis()"><option value="">Todas</option></select></label>
@@ -594,6 +600,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=35"></script>
+<script src="app.js?v=36"></script>
 </body>
 </html>
