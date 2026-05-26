@@ -402,14 +402,18 @@ function calcTotal() {
   var fim     = document.getElementById('aluguel-fim').value;
   var valor   = parseFloat(document.getElementById('aluguel-valor').value) || 0;
   var periodo = document.getElementById('aluguel-periodo').value;
+  var diasLabel = document.getElementById('aluguel-dias-label');
   if (inicio && fim && valor) {
     var dias = Math.max(1, Math.ceil((new Date(fim) - new Date(inicio)) / 86400000));
+    if (diasLabel) diasLabel.textContent = '(' + dias + ' dia' + (dias !== 1 ? 's' : '') + ')';
     var unidades;
     if (periodo === 'dia')      unidades = dias;
     if (periodo === 'semana')   unidades = dias / 7;
     if (periodo === 'quinzena') unidades = dias / 15;
     if (periodo === 'mes')      unidades = dias / 30;
     document.getElementById('aluguel-total').value = (unidades * valor).toFixed(2);
+  } else {
+    if (diasLabel) diasLabel.textContent = '';
   }
 }
 
