@@ -629,6 +629,97 @@ form { padding: 1.4rem 1.5rem; }
   text-align: center;
 }
 
+/* ── NOTIFICAÇÕES ── */
+.notif-wrapper {
+  position: relative;
+  margin-left: 0.5rem;
+}
+
+.notif-btn {
+  background: var(--bg4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 1.1rem;
+  width: 38px;
+  height: 38px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.15s;
+}
+.notif-btn:hover { background: var(--bg3); }
+
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  border: 2px solid var(--bg);
+}
+
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 300px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+  animation: slideUp 0.2s ease;
+  overflow: hidden;
+}
+
+.notif-header {
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+
+.notif-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(99,130,190,0.07);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.notif-item:last-child { border-bottom: none; }
+
+.notif-urgente { border-left: 3px solid var(--red); }
+.notif-atencao { border-left: 3px solid var(--yellow); }
+
+.notif-item-titulo {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.15rem;
+}
+.notif-item-desc { color: var(--text2); font-size: 0.78rem; }
+
+.notif-vazio {
+  padding: 1.25rem 1rem;
+  text-align: center;
+  color: var(--text2);
+  font-size: 0.82rem;
+}
+
 /* ── CHECKLIST PLACA ── */
 .checklist-placa-box {
   background: var(--bg2);

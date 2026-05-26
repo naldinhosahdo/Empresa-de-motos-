@@ -30,11 +30,70 @@ function showLoading(tbodyId, cols) {
   if (el) el.innerHTML = '<tr class="empty-row"><td colspan="' + cols + '">Carregando...</td></tr>';
 }
 
+// --- NOTIFICAÇÕES ---
+async function loadNotificacoes() {
+  var hoje = new Date();
+  hoje.setHours(0,0,0,0);
+  var em30 = new Date(hoje.getTime() + 30 * 86400000);
+  var em30Str = em30.toISOString().split('T')[0];
+
+  var { data } = await db.from('despesas')
+    .select('*, veiculos(modelo, placa)')
+    .lte('vencimento', em30Str)
+    .not('vencimento', 'is', null)
+    .order('vencimento');
+
+  var alertas = (data || []).filter(function(d) { return d.vencimento; });
+  var badge = document.getElementById('notif-badge');
+  var list  = document.getElementById('notif-list');
+
+  if (!alertas.length) {
+    badge.style.display = 'none';
+    list.innerHTML = '<div class="notif-vazio">✅ Nenhum alerta no momento</div>';
+    return;
+  }
+
+  badge.style.display = 'flex';
+  badge.textContent = alertas.length;
+
+  list.innerHTML = alertas.map(function(d) {
+    var venc   = new Date(d.vencimento + 'T00:00:00');
+    var diff   = Math.ceil((venc - hoje) / 86400000);
+    var urgente = diff <= 7;
+    var cls    = urgente ? 'notif-urgente' : 'notif-atencao';
+    var vei    = d.veiculos ? (d.veiculos.modelo + (d.veiculos.placa ? ' · ' + d.veiculos.placa : '')) : '-';
+    var quando = diff < 0
+      ? '⚠️ Venceu há ' + Math.abs(diff) + ' dia(s)'
+      : diff === 0
+        ? '🔴 Vence hoje!'
+        : urgente
+          ? '🔴 Vence em ' + diff + ' dia(s)'
+          : '🟡 Vence em ' + diff + ' dia(s)';
+    return '<div class="notif-item ' + cls + '">' +
+      '<div class="notif-item-titulo">' + d.tipo + ' — ' + vei + '</div>' +
+      '<div class="notif-item-desc">' + quando + ' · ' + fmtBRL(d.valor) + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function toggleNotif() {
+  var dd = document.getElementById('notif-dropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', function(e) {
+  var wrapper = document.querySelector('.notif-wrapper');
+  if (wrapper && !wrapper.contains(e.target)) {
+    document.getElementById('notif-dropdown').style.display = 'none';
+  }
+});
+
 // --- AUTH ---
 function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-wrapper').style.display = 'block';
   renderDashboard();
+  loadNotificacoes();
 }
 
 function showLogin() {

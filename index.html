@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Notesns — Gestão de Aluguel de Veículos</title>
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 
@@ -45,6 +45,15 @@
     <li><a href="#" class="nav-item" data-section="checklist">Checklist</a></li>
   </ul>
   <button class="hamburger" id="hamburger">&#9776;</button>
+  <div class="notif-wrapper">
+    <button class="notif-btn" id="notif-btn" onclick="toggleNotif()">
+      🔔<span class="notif-badge" id="notif-badge" style="display:none">0</span>
+    </button>
+    <div class="notif-dropdown" id="notif-dropdown" style="display:none">
+      <div class="notif-header">Alertas</div>
+      <div id="notif-list"></div>
+    </div>
+  </div>
   <button class="btn btn-secondary btn-sm" onclick="doLogout()" style="margin-left:0.5rem">Sair</button>
 </nav>
 
@@ -510,6 +519,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=11"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>
