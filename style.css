@@ -956,6 +956,29 @@ form { padding: 1.4rem 1.5rem; }
 tr.row-alert td { background: rgba(239,68,68,0.06); }
 tr.row-warn td  { background: rgba(251,191,36,0.06); }
 
+/* Dashboard operational */
+.card-yellow         { border-left: 3px solid var(--yellow); box-shadow: var(--shadow), 0 0 24px rgba(245,158,11,0.2); }
+.card-yellow::before { background: radial-gradient(circle at top left, rgba(245,158,11,0.08), transparent 70%); }
+.card-yellow .card-icon { background: rgba(245,158,11,0.12); }
+.card-cyan           { border-left: 3px solid var(--cyan); box-shadow: var(--shadow), 0 0 24px rgba(6,182,212,0.2); }
+.card-cyan::before   { background: radial-gradient(circle at top left, rgba(6,182,212,0.08), transparent 70%); }
+.card-cyan .card-icon { background: rgba(6,182,212,0.12); }
+.dash-subtitle { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text2); margin: 1.5rem 0 0.75rem; }
+.venc-list { display: flex; flex-direction: column; gap: 0.4rem; max-height: 230px; overflow-y: auto; }
+.venc-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: var(--bg3); border-radius: var(--radius-sm); border-left: 3px solid var(--border); font-size: 0.82rem; gap: 0.5rem; }
+.venc-item.vencido { border-left-color: var(--red); }
+.venc-item.urgente { border-left-color: var(--yellow); }
+.venc-item.proximo { border-left-color: var(--cyan); }
+.venc-badge { font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 999px; white-space: nowrap; }
+.venc-badge.vencido { background: rgba(239,68,68,0.18); color: var(--red); }
+.venc-badge.urgente { background: rgba(245,158,11,0.18); color: var(--yellow); }
+.venc-badge.proximo { background: rgba(6,182,212,0.18); color: var(--cyan); }
+.venc-badge.normal  { background: rgba(34,197,94,0.18); color: var(--green); }
+.moto-rentavel-card { background: var(--bg3); border-radius: var(--radius-sm); padding: 1.1rem; text-align: center; border: 1px solid var(--border); }
+.moto-rentavel-nome { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.25rem; }
+.moto-rentavel-valor { font-size: 0.88rem; color: var(--green); font-weight: 600; }
+.moto-rentavel-sub { font-size: 0.75rem; color: var(--text2); margin-top: 0.2rem; }
+
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
   .hamburger { display: block; }

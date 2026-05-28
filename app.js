@@ -199,19 +199,14 @@ async function renderDashboard() {
   const v = veiculos || [], a = alugueis || [], m = manutencoes || [], d = despesas || [];
 
   var hoje = new Date();
+  var hojeStr = hoje.toISOString().split('T')[0];
   var anoMes = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
-  var diaSem = hoje.getDay();
-  var inicioSemana = new Date(hoje);
-  inicioSemana.setDate(hoje.getDate() - (diaSem === 0 ? 6 : diaSem - 1));
-  inicioSemana.setHours(0,0,0,0);
-  var inicioSemStr = inicioSemana.toISOString().split('T')[0];
 
   var aNaoCancelado = a.filter(function(x) { return x.status !== 'cancelado'; });
 
+  // Financial metrics
   var receitaTotal = aNaoCancelado.reduce(function(s, x) { return s + Number(x.total || 0); }, 0);
   var receitaMes   = aNaoCancelado.filter(function(x) { return x.inicio && x.inicio.startsWith(anoMes); })
-                                  .reduce(function(s, x) { return s + Number(x.total || 0); }, 0);
-  var receitaSem   = aNaoCancelado.filter(function(x) { return x.inicio && x.inicio >= inicioSemStr; })
                                   .reduce(function(s, x) { return s + Number(x.total || 0); }, 0);
 
   var custosTotal = m.reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
@@ -242,6 +237,78 @@ async function renderDashboard() {
   lucroTotalEl.textContent = fmtBRL(lucroTotal);
   lucroTotalEl.style.color = lucroTotal >= 0 ? 'var(--green)' : 'var(--red)';
 
+  // Operational metrics
+  var motosDisponiveis = v.filter(function(x) { return x.status === 'disponivel'; }).length;
+  document.getElementById('dash-disponiveis').textContent = motosDisponiveis + ' / ' + v.length;
+
+  var alugueisAtivos = a.filter(function(x) { return x.status === 'ativo'; }).length;
+  document.getElementById('dash-ativos').textContent = alugueisAtivos;
+
+  var caucaoPendente = aNaoCancelado
+    .filter(function(x) { return x.caucao_devolvido !== 'sim'; })
+    .reduce(function(s, x) { return s + Number(x.caucao || 0); }, 0);
+  document.getElementById('dash-caucao').textContent = fmtBRL(caucaoPendente);
+
+  var ocupacao = v.length > 0 ? Math.round((alugueisAtivos / v.length) * 100) : 0;
+  document.getElementById('dash-ocupacao').textContent = ocupacao + '%';
+
+  // Vencimentos próximos (up to 30 days, including overdue)
+  var vencimentos = [];
+  d.forEach(function(x) {
+    if (!x.vencimento) return;
+    var diffDias = Math.round((new Date(x.vencimento) - new Date(hojeStr)) / 86400000);
+    if (diffDias > 30) return;
+    var vei = v.find(function(vv) { return vv.id === x.veiculo_id; });
+    vencimentos.push({ tipo: 'Despesa', descricao: x.descricao || x.tipo || 'Despesa', moto: vei ? veiculoLabel(vei) : '-', dias: diffDias });
+  });
+  m.forEach(function(x) {
+    if (!x.prox_data) return;
+    var diffDias = Math.round((new Date(x.prox_data) - new Date(hojeStr)) / 86400000);
+    if (diffDias > 30) return;
+    var vei = v.find(function(vv) { return vv.id === x.veiculo_id; });
+    vencimentos.push({ tipo: 'Manutenção', descricao: x.tipo || 'Manutenção', moto: vei ? veiculoLabel(vei) : '-', dias: diffDias });
+  });
+  vencimentos.sort(function(a, b) { return a.dias - b.dias; });
+
+  var vencEl = document.getElementById('dash-vencimentos-list');
+  if (vencimentos.length === 0) {
+    vencEl.innerHTML = '<span style="color:var(--text2);font-size:0.85rem">Nenhum vencimento nos próximos 30 dias</span>';
+  } else {
+    vencEl.innerHTML = vencimentos.map(function(vc) {
+      var cls = vc.dias < 0 ? 'vencido' : vc.dias <= 7 ? 'urgente' : vc.dias <= 15 ? 'proximo' : 'normal';
+      var badge = vc.dias < 0 ? 'Vencido há ' + Math.abs(vc.dias) + 'd' : vc.dias === 0 ? 'Hoje' : 'Em ' + vc.dias + 'd';
+      return '<div class="venc-item ' + cls + '">' +
+        '<div style="min-width:0">' +
+          '<div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + vc.descricao + '</div>' +
+          '<div style="font-size:0.72rem;color:var(--text2)">' + vc.moto + ' &middot; ' + vc.tipo + '</div>' +
+        '</div>' +
+        '<span class="venc-badge ' + cls + '">' + badge + '</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  // Moto mais rentável
+  var motoReceita = {};
+  aNaoCancelado.forEach(function(x) {
+    if (!x.veiculo_id) return;
+    motoReceita[x.veiculo_id] = (motoReceita[x.veiculo_id] || 0) + Number(x.total || 0);
+  });
+  var motoIds = Object.keys(motoReceita);
+  var rentavelEl = document.getElementById('dash-moto-rentavel');
+  if (motoIds.length === 0) {
+    rentavelEl.innerHTML = '<span style="color:var(--text2);font-size:0.85rem">Sem dados</span>';
+  } else {
+    var melhorId = motoIds.reduce(function(best, id) { return motoReceita[id] > motoReceita[best] ? id : best; });
+    var melhorVei = v.find(function(vv) { return vv.id === melhorId; });
+    var totalAlugs = aNaoCancelado.filter(function(x) { return x.veiculo_id === melhorId; }).length;
+    rentavelEl.innerHTML = '<div class="moto-rentavel-card">' +
+      '<div class="moto-rentavel-nome">' + (melhorVei ? veiculoLabel(melhorVei) : melhorId) + '</div>' +
+      '<div class="moto-rentavel-valor">' + fmtBRL(motoReceita[melhorId]) + ' receita total</div>' +
+      '<div class="moto-rentavel-sub">' + totalAlugs + ' aluguel(s) registrado(s)</div>' +
+    '</div>';
+  }
+
+  // Recent tables
   var tbody1 = document.getElementById('dash-alugueis-tbody');
   var lastA   = a.slice().reverse().slice(0, 5);
   tbody1.innerHTML = lastA.length

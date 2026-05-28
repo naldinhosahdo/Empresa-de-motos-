@@ -105,6 +105,39 @@
         </div>
       </div>
     </div>
+
+    <h3 class="dash-subtitle">Operacional</h3>
+    <div class="cards-grid">
+      <div class="card card-green">
+        <div class="card-icon">&#9989;</div>
+        <div class="card-info">
+          <span class="card-label">Motos Disponíveis</span>
+          <span class="card-value" id="dash-disponiveis">0 / 0</span>
+        </div>
+      </div>
+      <div class="card card-blue" onclick="showSection('alugueis')" style="cursor:pointer">
+        <div class="card-icon">&#128273;</div>
+        <div class="card-info">
+          <span class="card-label">Aluguéis Ativos</span>
+          <span class="card-value" id="dash-ativos">0</span>
+        </div>
+      </div>
+      <div class="card card-yellow">
+        <div class="card-icon">&#128176;</div>
+        <div class="card-info">
+          <span class="card-label">Caução Pendente</span>
+          <span class="card-value" id="dash-caucao">R$ 0,00</span>
+        </div>
+      </div>
+      <div class="card card-purple">
+        <div class="card-icon">&#128200;</div>
+        <div class="card-info">
+          <span class="card-label">Taxa de Ocupação</span>
+          <span class="card-value" id="dash-ocupacao">0%</span>
+        </div>
+      </div>
+    </div>
+
     <div class="dash-tables">
       <div class="dash-block">
         <h3>Últimos Aluguéis</h3>
@@ -122,6 +155,21 @@
             <thead><tr><th>Moto</th><th>Tipo</th><th>Custo</th><th>Data</th></tr></thead>
             <tbody id="dash-manut-tbody"></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-tables" style="margin-top:1.5rem">
+      <div class="dash-block">
+        <h3>Vencimentos Próximos <span style="font-size:0.75rem;color:var(--text2)">(30 dias)</span></h3>
+        <div id="dash-vencimentos-list" class="venc-list">
+          <span style="color:var(--text2);font-size:0.85rem">Carregando...</span>
+        </div>
+      </div>
+      <div class="dash-block">
+        <h3>Moto Mais Rentável</h3>
+        <div id="dash-moto-rentavel">
+          <span style="color:var(--text2);font-size:0.85rem">Carregando...</span>
         </div>
       </div>
     </div>
@@ -619,6 +667,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=46"></script>
+<script src="app.js?v=47"></script>
 </body>
 </html>
