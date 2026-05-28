@@ -495,8 +495,7 @@ async function renderVeiculos() {
           '<td>' + fmtBRL(vei.valor_compra) + '</td>' +
           '<td>' + statusBadge(vei.status, 'veiculo') + '</td>' +
           '<td>' +
-            '<div style="display:flex;flex-direction:column;gap:4px;align-items:stretch">' +
-              '<button class="btn btn-sm btn-info" onclick="openMotoDetalhe(\'' + vei.id + '\')">Detalhes</button>' +
+            '<div class="btn-actions">' +
               '<button class="btn btn-sm btn-secondary" onclick="editVeiculo(\'' + vei.id + '\')">Editar</button>' +
               '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'veiculo\',\'' + vei.id + '\')">Excluir</button>' +
             '</div>' +
