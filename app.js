@@ -259,6 +259,13 @@ async function renderDashboard() {
 
   // Vencimentos próximos (up to 30 days, including overdue)
   var vencimentos = [];
+  a.forEach(function(x) {
+    if (x.status !== 'ativo' || !x.fim) return;
+    var diffDias = Math.round((new Date(x.fim) - new Date(hojeStr)) / 86400000);
+    if (diffDias > 30) return;
+    var vei = v.find(function(vv) { return vv.id === x.veiculo_id; });
+    vencimentos.push({ tipo: 'Contrato', descricao: 'Fim do aluguel — ' + (x.cliente || '-'), moto: vei ? veiculoLabel(vei) : '-', dias: diffDias });
+  });
   d.forEach(function(x) {
     if (!x.vencimento) return;
     var diffDias = Math.round((new Date(x.vencimento) - new Date(hojeStr)) / 86400000);
