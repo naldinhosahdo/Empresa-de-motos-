@@ -67,8 +67,12 @@
       <div class="card card-blue" onclick="showSection('motos')" style="cursor:pointer">
         <div class="card-icon">&#127949;</div>
         <div class="card-info">
-          <span class="card-label">Total de Veículos</span>
-          <span class="card-value" id="dash-total-motos">0</span>
+          <span class="card-label">Frota</span>
+          <span class="card-value" id="dash-frota-total">0</span>
+          <div style="display:flex;gap:0.75rem;margin-top:0.2rem">
+            <span style="font-size:0.7rem;color:var(--text2)">Alugadas <strong id="dash-frota-alugadas">0</strong></span>
+            <span style="font-size:0.7rem;color:var(--text2)">Disponíveis <strong id="dash-frota-disponiveis">0</strong></span>
+          </div>
         </div>
       </div>
       <div class="card card-green" onclick="showSection('alugueis')" style="cursor:pointer">
@@ -106,19 +110,7 @@
       </div>
     </div>
 
-    <h3 class="dash-subtitle">Operacional</h3>
-    <div class="cards-grid">
-      <div class="card card-blue" onclick="showSection('motos')" style="cursor:pointer">
-        <div class="card-icon">&#127949;</div>
-        <div class="card-info">
-          <span class="card-label">Frota</span>
-          <span class="card-value" id="dash-frota-total">0</span>
-          <div style="display:flex;gap:0.75rem;margin-top:0.2rem">
-            <span style="font-size:0.7rem;color:var(--text2)">Alugadas <strong id="dash-frota-alugadas">0</strong></span>
-            <span style="font-size:0.7rem;color:var(--text2)">Disponíveis <strong id="dash-frota-disponiveis">0</strong></span>
-          </div>
-        </div>
-      </div>
+    <div class="cards-grid" style="margin-top:1rem">
       <div class="card card-green" onclick="showSection('alugueis')" style="cursor:pointer">
         <div class="card-icon">&#128197;</div>
         <div class="card-info">
@@ -674,6 +666,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=48"></script>
+<script src="app.js?v=49"></script>
 </body>
 </html>

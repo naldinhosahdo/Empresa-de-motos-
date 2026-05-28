@@ -219,8 +219,6 @@ async function renderDashboard() {
   var lucroTotal = receitaTotal - custosTotal;
   var lucroMes   = receitaMes - custosMes;
 
-  document.getElementById('dash-total-motos').textContent = v.length;
-
   document.getElementById('dash-receita-mes').textContent       = fmtBRL(receitaMes);
   document.getElementById('dash-receita-mes-label').textContent = fmtBRL(receitaMes);
   document.getElementById('dash-receita-total').textContent     = fmtBRL(receitaTotal);
