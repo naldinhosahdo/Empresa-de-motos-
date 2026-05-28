@@ -195,39 +195,25 @@
       </div>
     </div>
     <div class="moto-tabs-bar">
-      <button class="moto-tab active" data-tab="revisoes" onclick="showMotoTab('revisoes')">&#128203; Revisões</button>
-      <button class="moto-tab" data-tab="manutencoes" onclick="showMotoTab('manutencoes')">&#128296; Manutenções</button>
+      <button class="moto-tab active" data-tab="manutencoes" onclick="showMotoTab('manutencoes')">&#128296; Manutenções</button>
       <button class="moto-tab" data-tab="despesas" onclick="showMotoTab('despesas')">&#128176; Despesas</button>
       <button class="moto-tab" data-tab="resumo" onclick="showMotoTab('resumo')">&#128200; Resumo</button>
     </div>
-    <!-- Tab: Revisões -->
-    <div id="moto-tab-revisoes" class="moto-tab-content">
+    <!-- Tab: Manutenções -->
+    <div id="moto-tab-manutencoes" class="moto-tab-content">
       <div class="section-header">
         <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;font-weight:500">
           KM atual:
           <input type="text" inputmode="numeric" id="moto-km-atual" placeholder="Ex: 15000" style="width:110px" oninput="atualizarKm()">
         </label>
-        <button class="btn btn-primary" onclick="openNewManutencaoMoto()">+ Registrar Revisão</button>
-      </div>
-      <div id="moto-revisoes-schedule"></div>
-      <h3 style="margin:1.5rem 0 0.75rem;font-size:1rem;font-weight:600">Histórico de Revisões</h3>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Próx. KM</th><th>Ações</th></tr></thead>
-          <tbody id="moto-revisoes-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-    <!-- Tab: Manutenções -->
-    <div id="moto-tab-manutencoes" class="moto-tab-content" style="display:none">
-      <div class="section-header">
-        <span></span>
         <button class="btn btn-primary" onclick="openNewManutencaoMoto()">+ Nova Manutenção</button>
       </div>
+      <div id="moto-revisoes-schedule"></div>
+      <h3 style="margin:1.5rem 0 0.75rem;font-size:1rem;font-weight:600">Histórico</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Próx. KM</th><th>Próx. Data</th><th>Ações</th></tr></thead>
-          <tbody id="moto-manutencoes-tbody"></tbody>
+          <tbody id="moto-revisoes-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -633,6 +619,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=43"></script>
+<script src="app.js?v=44"></script>
 </body>
 </html>

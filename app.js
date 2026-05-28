@@ -610,7 +610,7 @@ async function openMotoDetalhe(id) {
   var km = localStorage.getItem('km_' + id) || '';
   document.getElementById('moto-km-atual').value = km;
   showSection('moto-detalhe');
-  showMotoTab('revisoes');
+  showMotoTab('manutencoes');
 }
 
 function showMotoTab(tab) {
@@ -619,8 +619,7 @@ function showMotoTab(tab) {
   document.getElementById('moto-tab-' + tab).style.display = 'block';
   var btn = document.querySelector('.moto-tab[data-tab="' + tab + '"]');
   if (btn) btn.classList.add('active');
-  if (tab === 'revisoes')    renderMotoRevisoes();
-  if (tab === 'manutencoes') renderMotoManutencoes();
+  if (tab === 'manutencoes') renderMotoRevisoes();
   if (tab === 'despesas')    renderMotoDespesas();
   if (tab === 'resumo')      renderMotoResumo();
 }
@@ -680,12 +679,13 @@ async function renderMotoRevisoesHistorico() {
           '<td><span class="text-red">' + fmtBRL(x.custo) + '</span></td>' +
           '<td>' + fmtDate(x.data) + '</td>' +
           '<td>' + (x.prox_km ? x.prox_km + ' km' : '-') + '</td>' +
+          '<td>' + fmtDate(x.prox_data) + '</td>' +
           '<td>' +
             '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button> ' +
             '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
           '</td></tr>';
       }).join('')
-    : '<tr class="empty-row"><td colspan="6">Nenhuma revis&atilde;o registrada</td></tr>';
+    : '<tr class="empty-row"><td colspan="7">Nenhuma manuten&ccedil;&atilde;o registrada</td></tr>';
 }
 
 async function renderMotoManutencoes() {
