@@ -190,7 +190,6 @@ function showSection(name, addHistory) {
   if (name === 'motos')      renderVeiculos();
   if (name === 'alugueis')   { populateClienteSelect(); populateVeiculoSelects(); renderAlugueis(); }
   if (name === 'moto-detalhe') { /* handled by openMotoDetalhe */ }
-  if (name === 'custos-geral') { renderManutencoes(); renderDespesas(); }
   if (name === 'relatorios') renderRelatorios();
   if (name === 'checklist')  buildChecklist();
 
@@ -224,6 +223,16 @@ document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
     if (e.target === overlay) overlay.classList.remove('open');
   });
 });
+
+async function openCustos() {
+  const { data } = await db.from('veiculos').select('id').order('created_at');
+  const v = data || [];
+  if (v.length === 1) {
+    openMotoDetalhe(v[0].id);
+  } else {
+    showSection('motos');
+  }
+}
 
 // --- DASHBOARD ---
 async function renderDashboard() {
