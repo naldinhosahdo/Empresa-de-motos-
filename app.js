@@ -289,7 +289,7 @@ function consultarCPF(tipo) {
   if (tipo === 'tjce') {
     window.open('https://esaj.tjce.jus.br/cpopg/open.do', '_blank');
   } else {
-    window.open('https://www.pf.gov.br/servicos-pf/antecedentes-criminais', '_blank');
+    window.open('https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais', '_blank');
   }
   alert('CPF ' + cpf + ' copiado! Cole no campo de busca do site que abriu.');
 }
