@@ -44,6 +44,7 @@ function dismissNotif(key) {
   loadNotificacoes();
 }
 function dismissAllNotif() {
+  if (!confirm('Tem certeza que deseja limpar todas as notificações?')) return;
   var items = document.querySelectorAll('#notif-list [data-key]');
   var dismissed = getNotifDismissed();
   items.forEach(function(el) {
