@@ -382,6 +382,7 @@ async function renderClientes() {
   showLoading('clientes-tbody', 6);
   const { data } = await db.from('clientes').select('*').order('nome');
   const c = data || [];
+  document.getElementById('clientes-count').textContent = c.length;
   document.getElementById('clientes-tbody').innerHTML = c.length
     ? c.map(function(cl) {
         return '<tr>' +
@@ -482,6 +483,7 @@ async function renderVeiculos() {
   showLoading('motos-tbody', 7);
   const { data } = await db.from('veiculos').select('*').order('created_at', { ascending: false });
   const v = data || [];
+  document.getElementById('veiculos-count').textContent = v.length;
   document.getElementById('motos-tbody').innerHTML = v.length
     ? v.map(function(vei) {
         return '<tr>' +
@@ -604,6 +606,7 @@ async function renderAlugueis() {
 
   const { data } = await query;
   const a = data || [];
+  document.getElementById('alugueis-count').textContent = a.length;
   document.getElementById('alugueis-tbody').innerHTML = a.length
     ? a.map(function(x) {
         var vei = x.veiculos;

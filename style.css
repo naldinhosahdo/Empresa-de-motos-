@@ -130,6 +130,17 @@ body {
   margin-bottom: 1.25rem;
 }
 .section-header .section-title { margin-bottom: 0; }
+.section-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--bg4);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  vertical-align: middle;
+  margin-left: 0.5rem;
+}
 
 /* ── DASHBOARD CARDS ── */
 .cards-grid {

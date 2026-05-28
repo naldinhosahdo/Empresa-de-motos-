@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Notesns — Gestão de Aluguel de Veículos</title>
-  <link rel="stylesheet" href="style.css?v=18">
+  <link rel="stylesheet" href="style.css?v=19">
 </head>
 <body>
 
@@ -180,7 +180,7 @@
   <!-- CLIENTES -->
   <section id="clientes" class="section">
     <div class="section-header">
-      <h2 class="section-title">Clientes</h2>
+      <h2 class="section-title">Clientes <span class="section-count" id="clientes-count"></span></h2>
       <button class="btn btn-primary" onclick="openNewCliente()">+ Novo Cliente</button>
     </div>
     <div class="table-wrap">
@@ -196,7 +196,7 @@
   <!-- VEÍCULOS -->
   <section id="motos" class="section">
     <div class="section-header">
-      <h2 class="section-title">Veículos</h2>
+      <h2 class="section-title">Veículos <span class="section-count" id="veiculos-count"></span></h2>
       <button class="btn btn-primary" onclick="openNewMoto()">+ Novo Veículo</button>
     </div>
     <div class="table-wrap">
@@ -212,7 +212,7 @@
   <!-- ALUGUÉIS -->
   <section id="alugueis" class="section">
     <div class="section-header">
-      <h2 class="section-title">Aluguéis</h2>
+      <h2 class="section-title">Aluguéis <span class="section-count" id="alugueis-count"></span></h2>
       <button class="btn btn-primary" onclick="openNewAluguel()">+ Novo Aluguel</button>
     </div>
     <div class="filter-bar">
@@ -669,6 +669,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=56"></script>
+<script src="app.js?v=57"></script>
 </body>
 </html>
