@@ -152,7 +152,7 @@ function showSection(name, addHistory) {
   if (name === 'clientes')   renderClientes();
   if (name === 'motos')      renderVeiculos();
   if (name === 'alugueis')   { populateClienteSelect(); populateVeiculoSelects(); renderAlugueis(); }
-  if (name === 'custos')     { populateVeiculoSelects(); renderManutencoes(); renderDespesas(); }
+  if (name === 'moto-detalhe') { /* handled by openMotoDetalhe */ }
   if (name === 'relatorios') renderRelatorios();
   if (name === 'checklist')  buildChecklist();
 
@@ -374,6 +374,7 @@ async function renderVeiculos() {
           '<td>' + fmtBRL(vei.valor_compra) + '</td>' +
           '<td>' + statusBadge(vei.status, 'veiculo') + '</td>' +
           '<td>' +
+            '<button class="btn btn-sm btn-info" onclick="openMotoDetalhe(\'' + vei.id + '\')">&#128203; Detalhes</button> ' +
             '<button class="btn btn-sm btn-secondary" onclick="editVeiculo(\'' + vei.id + '\')">Editar</button> ' +
             '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'veiculo\',\'' + vei.id + '\')">Excluir</button>' +
           '</td></tr>';
@@ -579,6 +580,198 @@ async function submitAluguel() {
   else if (contratoWin) contratoWin.close();
 }
 
+// --- MOTO DETALHE ---
+var currentMotoId = null;
+var currentMotoData = null;
+
+var CG160_SCHEDULE = [
+  { intervalo: 1000,  tipo: 'Verificação',  item: 'Nível de óleo do motor' },
+  { intervalo: 1000,  tipo: 'Verificação',  item: 'Pressão dos pneus (diant. e tras.)' },
+  { intervalo: 1000,  tipo: 'Lubrificação', item: 'Corrente de transmissão' },
+  { intervalo: 3000,  tipo: 'Troca',        item: 'Óleo do motor + filtro de óleo' },
+  { intervalo: 6000,  tipo: 'Limpeza',      item: 'Filtro de ar' },
+  { intervalo: 6000,  tipo: 'Verificação',  item: 'Vela de ignição' },
+  { intervalo: 6000,  tipo: 'Verificação',  item: 'Pastilha / Lona de freio' },
+  { intervalo: 6000,  tipo: 'Verificação',  item: 'Fluido de freio' },
+  { intervalo: 12000, tipo: 'Troca',        item: 'Filtro de ar' },
+  { intervalo: 12000, tipo: 'Troca',        item: 'Vela de ignição' },
+  { intervalo: 12000, tipo: 'Regulagem',    item: 'Folga das válvulas' },
+  { intervalo: 24000, tipo: 'Troca',        item: 'Fluido de freio' },
+  { intervalo: 24000, tipo: 'Troca',        item: 'Corrente e coroa' },
+  { intervalo: 36000, tipo: 'Troca',        item: 'Pneus (avaliar desgaste)' },
+];
+
+async function openMotoDetalhe(id) {
+  currentMotoId = id;
+  const { data: v } = await db.from('veiculos').select('*').eq('id', id).single();
+  if (!v) return;
+  currentMotoData = v;
+  document.getElementById('moto-detalhe-titulo').textContent = v.modelo + (v.placa ? ' · ' + v.placa : '');
+  var km = localStorage.getItem('km_' + id) || '';
+  document.getElementById('moto-km-atual').value = km;
+  showSection('moto-detalhe');
+  showMotoTab('revisoes');
+}
+
+function showMotoTab(tab) {
+  document.querySelectorAll('.moto-tab-content').forEach(function(el) { el.style.display = 'none'; });
+  document.querySelectorAll('.moto-tab').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('moto-tab-' + tab).style.display = 'block';
+  var btn = document.querySelector('.moto-tab[data-tab="' + tab + '"]');
+  if (btn) btn.classList.add('active');
+  if (tab === 'revisoes')    renderMotoRevisoes();
+  if (tab === 'manutencoes') renderMotoManutencoes();
+  if (tab === 'despesas')    renderMotoDespesas();
+  if (tab === 'resumo')      renderMotoResumo();
+}
+
+function atualizarKm() {
+  var raw = document.getElementById('moto-km-atual').value.replace(/\D/g, '');
+  document.getElementById('moto-km-atual').value = raw;
+  if (currentMotoId) localStorage.setItem('km_' + currentMotoId, raw);
+  renderMotoRevisoes();
+}
+
+function renderMotoRevisoes() {
+  var km = parseInt(document.getElementById('moto-km-atual').value) || 0;
+  var el = document.getElementById('moto-revisoes-schedule');
+  if (!km) {
+    el.innerHTML = '<p style="color:var(--text-muted);margin:0.75rem 0 1rem">Informe a quilometragem atual da moto para ver o status das revisões.</p>';
+  } else {
+    var rows = CG160_SCHEDULE.map(function(s) {
+      var nextDue = Math.ceil(km / s.intervalo) * s.intervalo;
+      if (nextDue === 0) nextDue = s.intervalo;
+      var diff = nextDue - km;
+      var trClass = '', badge;
+      if (diff <= 0) {
+        trClass = 'row-alert';
+        badge = '<span class="badge badge-red">&#128308; Fazer agora</span>';
+      } else if (diff <= 500) {
+        trClass = 'row-warn';
+        badge = '<span class="badge badge-yellow">&#9888;&#65039; Faltam ' + diff.toLocaleString('pt-BR') + ' km</span>';
+      } else {
+        badge = '<span class="badge badge-green">&#9989; ' + diff.toLocaleString('pt-BR') + ' km</span>';
+      }
+      return '<tr class="' + trClass + '">' +
+        '<td>A cada ' + s.intervalo.toLocaleString('pt-BR') + ' km</td>' +
+        '<td>' + s.tipo + '</td>' +
+        '<td>' + s.item + '</td>' +
+        '<td>' + nextDue.toLocaleString('pt-BR') + ' km</td>' +
+        '<td>' + badge + '</td>' +
+        '</tr>';
+    }).join('');
+    el.innerHTML = '<h3 style="margin:0 0 0.75rem;font-size:1rem;font-weight:600">Tabela de Revisões &mdash; KM atual: <strong style="color:var(--accent)">' + km.toLocaleString('pt-BR') + ' km</strong></h3>' +
+      '<div class="table-wrap"><table>' +
+      '<thead><tr><th>Intervalo</th><th>Tipo</th><th>Item</th><th>Pr&oacute;xima em</th><th>Status</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>';
+  }
+  renderMotoRevisoesHistorico();
+}
+
+async function renderMotoRevisoesHistorico() {
+  if (!currentMotoId) return;
+  const { data } = await db.from('manutencoes').select('*').eq('veiculo_id', currentMotoId).order('data', { ascending: false });
+  const m = data || [];
+  document.getElementById('moto-revisoes-tbody').innerHTML = m.length
+    ? m.map(function(x) {
+        return '<tr>' +
+          '<td>' + x.tipo + '</td>' +
+          '<td>' + (x.descricao || '-') + '</td>' +
+          '<td><span class="text-red">' + fmtBRL(x.custo) + '</span></td>' +
+          '<td>' + fmtDate(x.data) + '</td>' +
+          '<td>' + (x.prox_km ? x.prox_km + ' km' : '-') + '</td>' +
+          '<td>' +
+            '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button> ' +
+            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
+          '</td></tr>';
+      }).join('')
+    : '<tr class="empty-row"><td colspan="6">Nenhuma revis&atilde;o registrada</td></tr>';
+}
+
+async function renderMotoManutencoes() {
+  if (!currentMotoId) return;
+  const { data } = await db.from('manutencoes').select('*').eq('veiculo_id', currentMotoId).order('created_at', { ascending: false });
+  const m = data || [];
+  document.getElementById('moto-manutencoes-tbody').innerHTML = m.length
+    ? m.map(function(x) {
+        return '<tr>' +
+          '<td>' + x.tipo + '</td>' +
+          '<td>' + (x.descricao || '-') + '</td>' +
+          '<td><span class="text-red">' + fmtBRL(x.custo) + '</span></td>' +
+          '<td>' + fmtDate(x.data) + '</td>' +
+          '<td>' + (x.prox_km ? x.prox_km + ' km' : '-') + '</td>' +
+          '<td>' + fmtDate(x.prox_data) + '</td>' +
+          '<td>' +
+            '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button> ' +
+            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
+          '</td></tr>';
+      }).join('')
+    : '<tr class="empty-row"><td colspan="7">Nenhuma manuten&ccedil;&atilde;o registrada</td></tr>';
+}
+
+async function renderMotoDespesas() {
+  if (!currentMotoId) return;
+  const { data } = await db.from('despesas').select('*').eq('veiculo_id', currentMotoId).order('created_at', { ascending: false });
+  const d = data || [];
+  document.getElementById('moto-despesas-tbody').innerHTML = d.length
+    ? d.map(function(x) {
+        return '<tr>' +
+          '<td>' + x.tipo + '</td>' +
+          '<td>' + (x.ano || '-') + '</td>' +
+          '<td><span class="text-red">' + fmtBRL(x.valor) + '</span></td>' +
+          '<td>' + fmtDate(x.vencimento) + '</td>' +
+          '<td>' + (x.obs || '-') + '</td>' +
+          '<td>' +
+            '<button class="btn btn-sm btn-secondary" onclick="editDespesa(\'' + x.id + '\')">Editar</button> ' +
+            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
+          '</td></tr>';
+      }).join('')
+    : '<tr class="empty-row"><td colspan="6">Nenhuma despesa registrada</td></tr>';
+}
+
+async function renderMotoResumo() {
+  if (!currentMotoId) return;
+  const [{ data: manut }, { data: desp }, { data: alu }] = await Promise.all([
+    db.from('manutencoes').select('custo').eq('veiculo_id', currentMotoId),
+    db.from('despesas').select('valor').eq('veiculo_id', currentMotoId),
+    db.from('alugueis').select('total,status').eq('veiculo_id', currentMotoId)
+  ]);
+  var totalManut   = (manut||[]).reduce(function(s,x){ return s + Number(x.custo||0); }, 0);
+  var totalDesp    = (desp||[]).reduce(function(s,x){ return s + Number(x.valor||0); }, 0);
+  var totalReceita = (alu||[]).filter(function(x){ return x.status !== 'cancelado'; })
+                              .reduce(function(s,x){ return s + Number(x.total||0); }, 0);
+  var compra       = currentMotoData ? Number(currentMotoData.valor_compra||0) : 0;
+  var lucro        = totalReceita - totalManut - totalDesp - compra;
+  document.getElementById('moto-resumo-content').innerHTML =
+    '<div class="cards-grid" style="margin-top:1rem">' +
+      '<div class="card card-green"><div class="card-icon">&#128176;</div><div class="card-info"><span class="card-label">Receita Total</span><span class="card-value">' + fmtBRL(totalReceita) + '</span></div></div>' +
+      '<div class="card card-red"><div class="card-icon">&#128296;</div><div class="card-info"><span class="card-label">Manutenções</span><span class="card-value">' + fmtBRL(totalManut) + '</span></div></div>' +
+      '<div class="card card-red"><div class="card-icon">&#128203;</div><div class="card-info"><span class="card-label">Despesas</span><span class="card-value">' + fmtBRL(totalDesp) + '</span></div></div>' +
+      '<div class="card ' + (lucro >= 0 ? 'card-green' : 'card-red') + '"><div class="card-icon">&#128200;</div><div class="card-info"><span class="card-label">Lucro líquido</span><span class="card-value" style="color:' + (lucro >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmtBRL(lucro) + '</span></div></div>' +
+    '</div>' +
+    '<p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.75rem">* Lucro = Receita &minus; Manutenções &minus; Despesas &minus; Valor de compra (' + fmtBRL(compra) + ')</p>';
+}
+
+function openNewManutencaoMoto() {
+  document.getElementById('form-manutencao').reset();
+  document.getElementById('manut-id').value = '';
+  document.getElementById('modal-manut-title').textContent = 'Nova Manutenção';
+  populateVeiculoSelects().then(function() {
+    if (currentMotoId) document.getElementById('manut-moto').value = currentMotoId;
+  });
+  openModal('modal-manutencao');
+}
+
+function openNewDespesaMoto() {
+  document.getElementById('form-despesa').reset();
+  document.getElementById('despesa-id').value = '';
+  document.getElementById('modal-despesa-title').textContent = 'Nova Despesa';
+  populateVeiculoSelects().then(function() {
+    if (currentMotoId) document.getElementById('despesa-moto').value = currentMotoId;
+  });
+  openModal('modal-despesa');
+}
+
 // --- MANUTENÇÕES ---
 async function renderManutencoes() {
   showLoading('manutencoes-tbody', 7);
@@ -645,7 +838,10 @@ async function submitManutencao() {
     : await db.from('manutencoes').insert(m);
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-manutencao');
-  renderManutencoes();
+  if (document.getElementById('moto-detalhe').classList.contains('active')) {
+    var activeTab = document.querySelector('.moto-tab.active');
+    if (activeTab) showMotoTab(activeTab.dataset.tab);
+  }
 }
 
 // --- DESPESAS ---
@@ -716,7 +912,10 @@ async function submitDespesa(e) {
   }
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-despesa');
-  renderDespesas();
+  if (document.getElementById('moto-detalhe').classList.contains('active')) {
+    var activeTab = document.querySelector('.moto-tab.active');
+    if (activeTab) showMotoTab(activeTab.dataset.tab);
+  }
 }
 
 // --- RELATÓRIOS ---

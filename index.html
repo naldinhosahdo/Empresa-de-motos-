@@ -41,7 +41,7 @@
     <li><a href="#" class="nav-item" data-section="clientes">Clientes</a></li>
     <li><a href="#" class="nav-item" data-section="motos">Veículos</a></li>
     <li><a href="#" class="nav-item" data-section="alugueis">Aluguéis</a></li>
-    <li><a href="#" class="nav-item" data-section="custos">Custos</a></li>
+
     <li><a href="#" class="nav-item" data-section="relatorios">Relatórios</a></li>
     <li><a href="#" class="nav-item" data-section="checklist">Checklist de Compra</a></li>
   </ul>
@@ -82,7 +82,7 @@
           </div>
         </div>
       </div>
-      <div class="card card-red" onclick="showSection('custos')" style="cursor:pointer">
+      <div class="card card-red" onclick="showSection('motos')" style="cursor:pointer">
         <div class="card-icon">&#128296;</div>
         <div class="card-info">
           <span class="card-label">Custos</span>
@@ -186,44 +186,67 @@
     </div>
   </section>
 
-  <!-- CUSTOS -->
-  <section id="custos" class="section">
-    <h2 class="section-title">Custos</h2>
-
-    <!-- Sub-seção: Manutenções -->
-    <div class="costs-divider"><h3>Manutenções</h3></div>
-    <div class="section-header" style="margin-top:0;margin-bottom:1rem">
-      <span></span>
-      <button class="btn btn-primary" onclick="openNewManutencao()">+ Nova Manutenção</button>
+  <!-- MOTO DETALHE -->
+  <section id="moto-detalhe" class="section">
+    <div class="section-header">
+      <div style="display:flex;align-items:center;gap:1rem">
+        <button class="btn btn-secondary" onclick="showSection('motos')">&#8592; Voltar</button>
+        <h2 class="section-title" id="moto-detalhe-titulo">Detalhes</h2>
+      </div>
     </div>
-    <div class="filter-bar">
-      <label>Moto: <select id="filtro-moto-manut" onchange="renderManutencoes()"><option value="">Todas</option></select></label>
+    <div class="moto-tabs-bar">
+      <button class="moto-tab active" data-tab="revisoes" onclick="showMotoTab('revisoes')">&#128203; Revisões</button>
+      <button class="moto-tab" data-tab="manutencoes" onclick="showMotoTab('manutencoes')">&#128296; Manutenções</button>
+      <button class="moto-tab" data-tab="despesas" onclick="showMotoTab('despesas')">&#128176; Despesas</button>
+      <button class="moto-tab" data-tab="resumo" onclick="showMotoTab('resumo')">&#128200; Resumo</button>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Moto</th><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Próx. Manutenção</th><th>Ações</th></tr>
-        </thead>
-        <tbody id="manutencoes-tbody"></tbody>
-      </table>
+    <!-- Tab: Revisões -->
+    <div id="moto-tab-revisoes" class="moto-tab-content">
+      <div class="section-header">
+        <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;font-weight:500">
+          KM atual:
+          <input type="text" inputmode="numeric" id="moto-km-atual" placeholder="Ex: 15000" style="width:110px" oninput="atualizarKm()">
+        </label>
+        <button class="btn btn-primary" onclick="openNewManutencaoMoto()">+ Registrar Revisão</button>
+      </div>
+      <div id="moto-revisoes-schedule"></div>
+      <h3 style="margin:1.5rem 0 0.75rem;font-size:1rem;font-weight:600">Histórico de Revisões</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Próx. KM</th><th>Ações</th></tr></thead>
+          <tbody id="moto-revisoes-tbody"></tbody>
+        </table>
+      </div>
     </div>
-
-    <!-- Sub-seção: Despesas Fixas -->
-    <div class="costs-divider"><h3>Despesas</h3></div>
-    <div class="section-header" style="margin-top:0;margin-bottom:1rem">
-      <span></span>
-      <button class="btn btn-primary" onclick="openNewDespesa()">+ Nova Despesa</button>
+    <!-- Tab: Manutenções -->
+    <div id="moto-tab-manutencoes" class="moto-tab-content" style="display:none">
+      <div class="section-header">
+        <span></span>
+        <button class="btn btn-primary" onclick="openNewManutencaoMoto()">+ Nova Manutenção</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Próx. KM</th><th>Próx. Data</th><th>Ações</th></tr></thead>
+          <tbody id="moto-manutencoes-tbody"></tbody>
+        </table>
+      </div>
     </div>
-    <div class="filter-bar">
-      <label>Moto: <select id="filtro-moto-despesa" onchange="renderDespesas()"><option value="">Todas</option></select></label>
+    <!-- Tab: Despesas -->
+    <div id="moto-tab-despesas" class="moto-tab-content" style="display:none">
+      <div class="section-header">
+        <span></span>
+        <button class="btn btn-primary" onclick="openNewDespesaMoto()">+ Nova Despesa</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tipo</th><th>Ano Ref.</th><th>Valor</th><th>Vencimento</th><th>Observação</th><th>Ações</th></tr></thead>
+          <tbody id="moto-despesas-tbody"></tbody>
+        </table>
+      </div>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Moto</th><th>Tipo</th><th>Ano Ref.</th><th>Valor</th><th>Vencimento</th><th>Observação</th><th>Ações</th></tr>
-        </thead>
-        <tbody id="despesas-tbody"></tbody>
-      </table>
+    <!-- Tab: Resumo -->
+    <div id="moto-tab-resumo" class="moto-tab-content" style="display:none">
+      <div id="moto-resumo-content"></div>
     </div>
   </section>
 
@@ -610,6 +633,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=42"></script>
+<script src="app.js?v=43"></script>
 </body>
 </html>
