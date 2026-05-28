@@ -190,6 +190,7 @@ function showSection(name, addHistory) {
   if (name === 'motos')      renderVeiculos();
   if (name === 'alugueis')   { populateClienteSelect(); populateVeiculoSelects(); renderAlugueis(); }
   if (name === 'moto-detalhe') { /* handled by openMotoDetalhe */ }
+  if (name === 'custos-geral') { renderManutencoes(); renderDespesas(); }
   if (name === 'relatorios') renderRelatorios();
   if (name === 'checklist')  buildChecklist();
 

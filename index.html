@@ -89,7 +89,7 @@
           </div>
         </div>
       </div>
-      <div class="card card-red" onclick="showSection('motos')" style="cursor:pointer">
+      <div class="card card-red" onclick="showSection('custos-geral')" style="cursor:pointer">
         <div class="card-icon">&#128296;</div>
         <div class="card-info">
           <span class="card-label">Custos</span>
@@ -283,6 +283,33 @@
     <!-- Tab: Resumo -->
     <div id="moto-tab-resumo" class="moto-tab-content" style="display:none">
       <div id="moto-resumo-content"></div>
+    </div>
+  </section>
+
+  <!-- CUSTOS GERAL -->
+  <section id="custos-geral" class="section">
+    <div class="section-header">
+      <h2 class="section-title">Custos</h2>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-primary" onclick="openNewManutencao()">+ Manutenção</button>
+        <button class="btn btn-primary" onclick="openNewDespesa()">+ Despesa</button>
+      </div>
+    </div>
+
+    <h3 style="font-size:1rem;font-weight:600;margin:0 0 0.75rem">Manutenções</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Moto</th><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Próx.</th><th>Ações</th></tr></thead>
+        <tbody id="manutencoes-tbody"></tbody>
+      </table>
+    </div>
+
+    <h3 style="font-size:1rem;font-weight:600;margin:1.5rem 0 0.75rem">Despesas</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Moto</th><th>Tipo</th><th>Ano Ref.</th><th>Valor</th><th>Vencimento</th><th>Observação</th><th>Ações</th></tr></thead>
+        <tbody id="despesas-tbody"></tbody>
+      </table>
     </div>
   </section>
 
@@ -669,6 +696,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=57"></script>
+<script src="app.js?v=58"></script>
 </body>
 </html>
