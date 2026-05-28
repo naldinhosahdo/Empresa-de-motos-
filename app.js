@@ -386,11 +386,17 @@ async function renderClientes() {
   document.getElementById('clientes-count').textContent = c.length;
   document.getElementById('clientes-tbody').innerHTML = c.length
     ? c.map(function(cl) {
+        var cat = cl.cnh_categoria || '';
+        var catBadge = cat
+          ? (cat.indexOf('A') !== -1
+              ? ' <span class="badge badge-green">' + cat + '</span>'
+              : ' <span class="badge badge-red" title="Categoria não permite moto">' + cat + ' ⚠️</span>')
+          : '';
         return '<tr>' +
           '<td><strong>' + cl.nome + '</strong></td>' +
           '<td>' + (cl.cpf || '-') + '</td>' +
           '<td>' + (cl.telefone || '-') + '</td>' +
-          '<td>' + (cl.cnh || '-') + '</td>' +
+          '<td>' + (cl.cnh || '-') + catBadge + '</td>' +
           '<td>' + (cl.endereco || '-') + '</td>' +
           '<td>' +
             '<div class="btn-actions">' +
