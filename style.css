@@ -703,15 +703,48 @@ form { padding: 1.4rem 1.5rem; }
   color: var(--text2);
   background: var(--bg3);
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
+.notif-clear-all {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 0.72rem;
+  cursor: pointer;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  transition: color 0.15s, background 0.15s;
+}
+.notif-clear-all:hover { color: var(--red); background: rgba(239,68,68,0.1); }
 
 .notif-item {
-  padding: 0.75rem 1rem;
+  padding: 0.65rem 0.75rem 0.65rem 1rem;
   border-bottom: 1px solid rgba(99,130,190,0.07);
   font-size: 0.82rem;
   line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
 }
 .notif-item:last-child { border-bottom: none; }
+.notif-item-body { flex: 1; min-width: 0; }
+.notif-dismiss {
+  background: none;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0 0.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.notif-dismiss:hover { color: var(--red); }
 
 .notif-urgente { border-left: 3px solid var(--red); }
 .notif-atencao { border-left: 3px solid var(--yellow); }

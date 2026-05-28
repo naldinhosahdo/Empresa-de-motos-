@@ -31,6 +31,29 @@ function showLoading(tbodyId, cols) {
 }
 
 // --- NOTIFICAÇÕES ---
+function getNotifDismissed() {
+  try { return JSON.parse(localStorage.getItem('notif_dismissed') || '[]'); } catch(e) { return []; }
+}
+function setNotifDismissed(arr) {
+  localStorage.setItem('notif_dismissed', JSON.stringify(arr));
+}
+function dismissNotif(key) {
+  var dismissed = getNotifDismissed();
+  if (!dismissed.includes(key)) dismissed.push(key);
+  setNotifDismissed(dismissed);
+  loadNotificacoes();
+}
+function dismissAllNotif() {
+  var items = document.querySelectorAll('#notif-list [data-key]');
+  var dismissed = getNotifDismissed();
+  items.forEach(function(el) {
+    var k = el.getAttribute('data-key');
+    if (k && !dismissed.includes(k)) dismissed.push(k);
+  });
+  setNotifDismissed(dismissed);
+  loadNotificacoes();
+}
+
 async function loadNotificacoes() {
   var hoje = new Date();
   hoje.setHours(0,0,0,0);
@@ -48,18 +71,21 @@ async function loadNotificacoes() {
   ]);
 
   var alertasDespesas = (despesasData || []).map(function(d) {
-    return { data: d.vencimento, label: d.tipo, veiculo: d.veiculos, valor: fmtBRL(d.valor), tipo: 'despesa' };
+    return { key: 'despesa_' + d.id, data: d.vencimento, label: d.tipo, veiculo: d.veiculos, valor: fmtBRL(d.valor), tipo: 'despesa' };
   });
   var alertasManut = (manutData || []).map(function(m) {
-    return { data: m.prox_data, label: 'Manutenção: ' + (m.descricao || 'sem descrição'), veiculo: m.veiculos, valor: m.prox_km ? m.prox_km + ' km' : '', tipo: 'manut' };
+    return { key: 'manut_' + m.id, data: m.prox_data, label: 'Manutenção: ' + (m.descricao || 'sem descrição'), veiculo: m.veiculos, valor: m.prox_km ? m.prox_km + ' km' : '', tipo: 'manut' };
   });
   var alertasAlug = (alugData || []).map(function(x) {
-    return { data: x.fim, label: 'Contrato vence — ' + (x.cliente || '-'), veiculo: x.veiculos, valor: '', tipo: 'aluguel' };
+    return { key: 'aluguel_' + x.id, data: x.fim, label: 'Contrato vence — ' + (x.cliente || '-'), veiculo: x.veiculos, valor: '', tipo: 'aluguel' };
   });
 
-  var alertas = alertasDespesas.concat(alertasManut).concat(alertasAlug).sort(function(a, b) {
+  var todosAlertas = alertasDespesas.concat(alertasManut).concat(alertasAlug).sort(function(a, b) {
     return a.data < b.data ? -1 : a.data > b.data ? 1 : 0;
   });
+
+  var dismissed = getNotifDismissed();
+  var alertas = todosAlertas.filter(function(a) { return !dismissed.includes(a.key); });
 
   var badge = document.getElementById('notif-badge');
   var list  = document.getElementById('notif-list');
@@ -86,9 +112,13 @@ async function loadNotificacoes() {
         : urgente
           ? '🔴 Vence em ' + diff + ' dia(s)'
           : '🟡 Vence em ' + diff + ' dia(s)';
-    return '<div class="notif-item ' + cls + '">' +
-      '<div class="notif-item-titulo">' + a.label + ' — ' + vei + '</div>' +
-      '<div class="notif-item-desc">' + quando + (a.valor ? ' · ' + a.valor : '') + '</div>' +
+    var safeKey = a.key.replace(/'/g, "\\'");
+    return '<div class="notif-item ' + cls + '" data-key="' + a.key + '">' +
+      '<div class="notif-item-body">' +
+        '<div class="notif-item-titulo">' + a.label + ' — ' + vei + '</div>' +
+        '<div class="notif-item-desc">' + quando + (a.valor ? ' · ' + a.valor : '') + '</div>' +
+      '</div>' +
+      '<button class="notif-dismiss" onclick="dismissNotif(\'' + safeKey + '\')" title="Dispensar">✕</button>' +
     '</div>';
   }).join('');
 }
