@@ -284,9 +284,10 @@
         </div>
         <div class="form-group">
           <label>CPF</label>
-          <div style="display:flex;gap:0.5rem;align-items:center">
-            <input type="text" id="cliente-cpf" placeholder="000.000.000-00" style="flex:1">
-            <button type="button" class="btn btn-secondary" onclick="consultarCPF()" title="Consultar antecedentes">🔍</button>
+          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+            <input type="text" id="cliente-cpf" placeholder="000.000.000-00" style="flex:1;min-width:140px">
+            <button type="button" class="btn btn-secondary" onclick="consultarCPF('pf')" title="Polícia Federal — Antecedentes Criminais">🚔 PF</button>
+            <button type="button" class="btn btn-secondary" onclick="consultarCPF('tjce')" title="TJCE — Processos no Ceará">⚖️ TJCE</button>
           </div>
         </div>
       </div>
@@ -609,6 +610,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=40"></script>
+<script src="app.js?v=41"></script>
 </body>
 </html>

@@ -282,11 +282,16 @@ async function renderClientes() {
     : '<tr class="empty-row"><td colspan="6">Nenhum cliente cadastrado</td></tr>';
 }
 
-function consultarCPF() {
+function consultarCPF(tipo) {
   var cpf = document.getElementById('cliente-cpf').value.replace(/\D/g, '');
   if (!cpf) { alert('Preencha o CPF antes de consultar.'); return; }
   navigator.clipboard.writeText(cpf).catch(function() {});
-  window.open('https://www.jusbrasil.com.br/consulta-processual/?cpf=' + cpf, '_blank');
+  if (tipo === 'tjce') {
+    window.open('https://esaj.tjce.jus.br/cpopg/open.do', '_blank');
+  } else {
+    window.open('https://www.pf.gov.br/servicos-pf/antecedentes-criminais', '_blank');
+  }
+  alert('CPF ' + cpf + ' copiado! Cole no campo de busca do site que abriu.');
 }
 
 function openNewCliente() {
