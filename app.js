@@ -374,9 +374,9 @@ async function renderVeiculos() {
           '<td>' + fmtBRL(vei.valor_compra) + '</td>' +
           '<td>' + statusBadge(vei.status, 'veiculo') + '</td>' +
           '<td>' +
-            '<button class="btn btn-sm btn-info" onclick="openMotoDetalhe(\'' + vei.id + '\')">&#128203; Detalhes</button> ' +
-            '<button class="btn btn-sm btn-secondary" onclick="editVeiculo(\'' + vei.id + '\')">Editar</button> ' +
-            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'veiculo\',\'' + vei.id + '\')">Excluir</button>' +
+            '<button class="btn btn-sm btn-info" style="min-width:70px" onclick="openMotoDetalhe(\'' + vei.id + '\')">Detalhes</button> ' +
+            '<button class="btn btn-sm btn-secondary" style="min-width:70px" onclick="editVeiculo(\'' + vei.id + '\')">Editar</button> ' +
+            '<button class="btn btn-sm btn-danger" style="min-width:70px" onclick="confirmDelete(\'veiculo\',\'' + vei.id + '\')">Excluir</button>' +
           '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="7">Nenhum veículo cadastrado</td></tr>';
