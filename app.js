@@ -37,11 +37,14 @@ async function loadNotificacoes() {
   var em30 = new Date(hoje.getTime() + 30 * 86400000);
   var em30Str = em30.toISOString().split('T')[0];
 
-  var [{ data: despesasData }, { data: manutData }] = await Promise.all([
+  var hoje0Str = hoje.toISOString().split('T')[0];
+  var [{ data: despesasData }, { data: manutData }, { data: alugData }] = await Promise.all([
     db.from('despesas').select('*, veiculos(modelo, placa)')
       .lte('vencimento', em30Str).not('vencimento', 'is', null).order('vencimento'),
     db.from('manutencoes').select('*, veiculos(modelo, placa)')
-      .lte('prox_data', em30Str).not('prox_data', 'is', null).order('prox_data')
+      .lte('prox_data', em30Str).not('prox_data', 'is', null).order('prox_data'),
+    db.from('alugueis').select('*, veiculos(modelo, placa)')
+      .eq('status', 'ativo').lte('fim', em30Str).not('fim', 'is', null).order('fim')
   ]);
 
   var alertasDespesas = (despesasData || []).map(function(d) {
@@ -50,8 +53,11 @@ async function loadNotificacoes() {
   var alertasManut = (manutData || []).map(function(m) {
     return { data: m.prox_data, label: 'Manutenção: ' + (m.descricao || 'sem descrição'), veiculo: m.veiculos, valor: m.prox_km ? m.prox_km + ' km' : '', tipo: 'manut' };
   });
+  var alertasAlug = (alugData || []).map(function(x) {
+    return { data: x.fim, label: 'Contrato vence — ' + (x.cliente || '-'), veiculo: x.veiculos, valor: '', tipo: 'aluguel' };
+  });
 
-  var alertas = alertasDespesas.concat(alertasManut).sort(function(a, b) {
+  var alertas = alertasDespesas.concat(alertasManut).concat(alertasAlug).sort(function(a, b) {
     return a.data < b.data ? -1 : a.data > b.data ? 1 : 0;
   });
 
