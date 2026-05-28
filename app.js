@@ -239,10 +239,17 @@ async function renderDashboard() {
 
   // Operational metrics
   var motosDisponiveis = v.filter(function(x) { return x.status === 'disponivel'; }).length;
-  document.getElementById('dash-disponiveis').textContent = motosDisponiveis + ' / ' + v.length;
-
   var alugueisAtivos = a.filter(function(x) { return x.status === 'ativo'; }).length;
-  document.getElementById('dash-ativos').textContent = alugueisAtivos;
+
+  document.getElementById('dash-frota-total').textContent      = v.length;
+  document.getElementById('dash-frota-alugadas').textContent   = alugueisAtivos;
+  document.getElementById('dash-frota-disponiveis').textContent = motosDisponiveis;
+
+  var hoje7 = new Date(hojeStr);
+  hoje7.setDate(hoje7.getDate() + 7);
+  var hoje7Str = hoje7.toISOString().split('T')[0];
+  var vencer = a.filter(function(x) { return x.status === 'ativo' && x.fim && x.fim >= hojeStr && x.fim <= hoje7Str; }).length;
+  document.getElementById('dash-vencer').textContent = vencer;
 
   var caucaoPendente = aNaoCancelado
     .filter(function(x) { return x.caucao_devolvido !== 'sim'; })
