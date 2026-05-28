@@ -254,7 +254,7 @@ async function renderDashboard() {
     .reduce(function(s, x) { return s + Number(x.caucao || 0); }, 0);
   document.getElementById('dash-caucao').textContent = fmtBRL(caucaoPendente);
 
-  var ocupacao = v.length > 0 ? Math.round((alugueisAtivos / v.length) * 100) : 0;
+  var ocupacao = v.length > 0 ? Math.min(100, Math.round((alugueisAtivos / v.length) * 100)) : 0;
   document.getElementById('dash-ocupacao').textContent = ocupacao + '%';
 
   // Vencimentos próximos (up to 30 days, including overdue)
