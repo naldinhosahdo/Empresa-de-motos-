@@ -131,15 +131,15 @@ body {
 }
 .section-header .section-title { margin-bottom: 0; }
 .section-count {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  background: var(--bg4);
-  color: #fff;
-  border: 1px solid var(--border);
+  background: var(--blue);
+  color: #fff !important;
   border-radius: 999px;
-  padding: 0.1rem 0.6rem;
+  padding: 0.15rem 0.65rem;
   vertical-align: middle;
   margin-left: 0.5rem;
+  display: inline-block;
 }
 
 /* ── DASHBOARD CARDS ── */
