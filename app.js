@@ -347,8 +347,10 @@ async function renderClientes() {
           '<td>' + (cl.cnh || '-') + '</td>' +
           '<td>' + (cl.endereco || '-') + '</td>' +
           '<td>' +
-            '<button class="btn btn-sm btn-secondary" onclick="editCliente(\'' + cl.id + '\')">Editar</button> ' +
-            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'cliente\',\'' + cl.id + '\')">Excluir</button>' +
+            '<div class="btn-actions">' +
+              '<button class="btn btn-sm btn-secondary" onclick="editCliente(\'' + cl.id + '\')">Editar</button>' +
+              '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'cliente\',\'' + cl.id + '\')">Excluir</button>' +
+            '</div>' +
           '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="6">Nenhum cliente cadastrado</td></tr>';
@@ -574,9 +576,11 @@ async function renderAlugueis() {
           '<td>' + (x.caucao ? fmtBRL(x.caucao) + (x.caucao_devolvido === 'sim' ? ' <span class="badge badge-green">Dev.</span>' : ' <span class="badge badge-red">Pend.</span>') : '-') + '</td>' +
           '<td>' + statusBadge(x.status, 'aluguel') + '</td>' +
           '<td>' +
-            '<button class="btn btn-sm btn-info" onclick="gerarContrato(\'' + x.id + '\')">📄 Contrato</button> ' +
-            '<button class="btn btn-sm btn-secondary" onclick="editAluguel(\'' + x.id + '\')">Editar</button> ' +
-            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'aluguel\',\'' + x.id + '\')">Excluir</button>' +
+            '<div class="btn-actions">' +
+              '<button class="btn btn-sm btn-info" onclick="gerarContrato(\'' + x.id + '\')">Contrato</button>' +
+              '<button class="btn btn-sm btn-secondary" onclick="editAluguel(\'' + x.id + '\')">Editar</button>' +
+              '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'aluguel\',\'' + x.id + '\')">Excluir</button>' +
+            '</div>' +
           '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="12">Nenhum aluguel encontrado</td></tr>';
@@ -755,8 +759,10 @@ async function renderMotoRevisoesHistorico() {
           '<td>' + (x.prox_km ? x.prox_km + ' km' : '-') + '</td>' +
           '<td>' + fmtDate(x.prox_data) + '</td>' +
           '<td>' +
-            '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button> ' +
-            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
+            '<div class="btn-actions">' +
+              '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button>' +
+              '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
+            '</div>' +
           '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="7">Nenhuma manuten&ccedil;&atilde;o registrada</td></tr>';
@@ -776,8 +782,10 @@ async function renderMotoManutencoes() {
           '<td>' + (x.prox_km ? x.prox_km + ' km' : '-') + '</td>' +
           '<td>' + fmtDate(x.prox_data) + '</td>' +
           '<td>' +
-            '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button> ' +
-            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
+            '<div class="btn-actions">' +
+              '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button>' +
+              '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
+            '</div>' +
           '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="7">Nenhuma manuten&ccedil;&atilde;o registrada</td></tr>';
@@ -796,8 +804,10 @@ async function renderMotoDespesas() {
           '<td>' + fmtDate(x.vencimento) + '</td>' +
           '<td>' + (x.obs || '-') + '</td>' +
           '<td>' +
-            '<button class="btn btn-sm btn-secondary" onclick="editDespesa(\'' + x.id + '\')">Editar</button> ' +
-            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
+            '<div class="btn-actions">' +
+              '<button class="btn btn-sm btn-secondary" onclick="editDespesa(\'' + x.id + '\')">Editar</button>' +
+              '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
+            '</div>' +
           '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="6">Nenhuma despesa registrada</td></tr>';
@@ -865,8 +875,10 @@ async function renderManutencoes() {
           '<td>' + fmtDate(x.data) + '</td>' +
           '<td>' + (x.prox_data ? fmtDate(x.prox_data) : (x.prox_km ? x.prox_km + ' km' : '-')) + '</td>' +
           '<td>' +
-            '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button> ' +
-            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
+            '<div class="btn-actions">' +
+              '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button>' +
+              '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
+            '</div>' +
           '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="7">Nenhuma manutenção encontrada</td></tr>';
@@ -937,8 +949,10 @@ async function renderDespesas() {
           '<td>' + fmtDate(x.vencimento) + '</td>' +
           '<td>' + (x.obs || '-') + '</td>' +
           '<td>' +
-            '<button class="btn btn-sm btn-secondary" onclick="editDespesa(\'' + x.id + '\')">Editar</button> ' +
-            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
+            '<div class="btn-actions">' +
+              '<button class="btn btn-sm btn-secondary" onclick="editDespesa(\'' + x.id + '\')">Editar</button>' +
+              '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
+            '</div>' +
           '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="7">Nenhuma despesa encontrada</td></tr>';
