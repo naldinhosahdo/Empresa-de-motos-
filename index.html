@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Notesns — Gestão de Aluguel de Veículos</title>
-  <link rel="stylesheet" href="style.css?v=23">
+  <link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
 
@@ -236,56 +236,6 @@
         </thead>
         <tbody id="alugueis-tbody"></tbody>
       </table>
-    </div>
-  </section>
-
-  <!-- MOTO DETALHE -->
-  <section id="moto-detalhe" class="section">
-    <div class="section-header">
-      <div style="display:flex;align-items:center;gap:1rem">
-        <button class="btn btn-secondary" onclick="showSection('motos')">&#8592; Voltar</button>
-        <h2 class="section-title" id="moto-detalhe-titulo">Detalhes</h2>
-      </div>
-    </div>
-    <div class="moto-tabs-bar">
-      <button class="moto-tab active" data-tab="manutencoes" onclick="showMotoTab('manutencoes')">&#128296; Manutenções</button>
-      <button class="moto-tab" data-tab="despesas" onclick="showMotoTab('despesas')">&#128176; Despesas</button>
-      <button class="moto-tab" data-tab="resumo" onclick="showMotoTab('resumo')">&#128200; Resumo</button>
-    </div>
-    <!-- Tab: Manutenções -->
-    <div id="moto-tab-manutencoes" class="moto-tab-content">
-      <div class="section-header">
-        <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;font-weight:500">
-          KM atual:
-          <input type="text" inputmode="numeric" id="moto-km-atual" placeholder="Ex: 15000" style="width:110px" oninput="atualizarKm()">
-        </label>
-        <button class="btn btn-primary" onclick="openNewManutencaoMoto()">+ Nova Manutenção</button>
-      </div>
-      <div id="moto-revisoes-schedule"></div>
-      <h3 style="margin:1.5rem 0 0.75rem;font-size:1rem;font-weight:600">Histórico</h3>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Próx. KM</th><th>Próx. Data</th><th>Ações</th></tr></thead>
-          <tbody id="moto-revisoes-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-    <!-- Tab: Despesas -->
-    <div id="moto-tab-despesas" class="moto-tab-content" style="display:none">
-      <div class="section-header">
-        <span></span>
-        <button class="btn btn-primary" onclick="openNewDespesaMoto()">+ Nova Despesa</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Tipo</th><th>Ano Ref.</th><th>Valor</th><th>Vencimento</th><th>Observação</th><th>Ações</th></tr></thead>
-          <tbody id="moto-despesas-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-    <!-- Tab: Resumo -->
-    <div id="moto-tab-resumo" class="moto-tab-content" style="display:none">
-      <div id="moto-resumo-content"></div>
     </div>
   </section>
 
@@ -699,6 +649,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=63"></script>
+<script src="app.js?v=64"></script>
 </body>
 </html>
