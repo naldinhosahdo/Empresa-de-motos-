@@ -190,6 +190,7 @@ function showSection(name, addHistory) {
   if (name === 'motos')      renderVeiculos();
   if (name === 'alugueis')   { populateClienteSelect(); populateVeiculoSelects(); renderAlugueis(); }
   if (name === 'moto-detalhe') { /* handled by openMotoDetalhe */ }
+  if (name === 'custos-geral') { renderManutencoes(); renderDespesas(); }
   if (name === 'relatorios') renderRelatorios();
   if (name === 'checklist')  buildChecklist();
 
@@ -223,17 +224,6 @@ document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
     if (e.target === overlay) overlay.classList.remove('open');
   });
 });
-
-async function openCustos() {
-  const { data } = await db.from('veiculos').select('*').order('created_at');
-  const v = data || [];
-  if (v.length === 0) return;
-  if (v.length === 1) { openMotoDetalhe(v[0].id); return; }
-  document.getElementById('custos-picker-list').innerHTML = v.map(function(vei) {
-    return '<button class="btn btn-secondary" style="width:100%;text-align:left;margin-bottom:0.5rem" onclick="closeModal(\'modal-custos-picker\');openMotoDetalhe(\'' + vei.id + '\')">' + veiculoLabel(vei) + '</button>';
-  }).join('');
-  openModal('modal-custos-picker');
-}
 
 // --- DASHBOARD ---
 async function renderDashboard() {
@@ -1149,7 +1139,7 @@ function confirmDelete(type, id) {
       cliente:    function() { renderClientes(); populateClienteSelect(); },
       veiculo:    function() { renderVeiculos(); populateVeiculoSelects(); },
       aluguel:    renderAlugueis,
-      manutencao: renderManutencoes,
+      manutencao: function() { renderManutencoes(); var s = document.querySelector('.section.active'); if (s && s.id === 'moto-detalhe') renderMotoRevisoesHistorico(); },
       despesa:    renderDespesas
     };
     await db.from(tableMap[type]).delete().eq('id', id);
