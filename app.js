@@ -235,12 +235,12 @@ async function renderDashboard() {
   lucroTotalEl.textContent = fmtBRL(lucroTotal);
   lucroTotalEl.style.color = lucroTotal >= 0 ? 'var(--green)' : 'var(--red)';
 
-  // Operational metrics
+  // Operational metrics — derived from veiculos status (source of truth)
+  var motosAlugadas    = v.filter(function(x) { return x.status === 'alugada'; }).length;
   var motosDisponiveis = v.filter(function(x) { return x.status === 'disponivel'; }).length;
-  var alugueisAtivos = a.filter(function(x) { return x.status === 'ativo'; }).length;
 
-  document.getElementById('dash-frota-total').textContent      = v.length;
-  document.getElementById('dash-frota-alugadas').textContent   = alugueisAtivos;
+  document.getElementById('dash-frota-total').textContent       = v.length;
+  document.getElementById('dash-frota-alugadas').textContent    = motosAlugadas;
   document.getElementById('dash-frota-disponiveis').textContent = motosDisponiveis;
 
   var hoje7 = new Date(hojeStr);
@@ -254,7 +254,7 @@ async function renderDashboard() {
     .reduce(function(s, x) { return s + Number(x.caucao || 0); }, 0);
   document.getElementById('dash-caucao').textContent = fmtBRL(caucaoPendente);
 
-  var ocupacao = v.length > 0 ? Math.min(100, Math.round((alugueisAtivos / v.length) * 100)) : 0;
+  var ocupacao = v.length > 0 ? Math.round((motosAlugadas / v.length) * 100) : 0;
   document.getElementById('dash-ocupacao').textContent = ocupacao + '%';
 
   // Vencimentos próximos (up to 30 days, including overdue)
