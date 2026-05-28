@@ -282,6 +282,13 @@ async function renderClientes() {
     : '<tr class="empty-row"><td colspan="6">Nenhum cliente cadastrado</td></tr>';
 }
 
+function consultarCPF() {
+  var cpf = document.getElementById('cliente-cpf').value.replace(/\D/g, '');
+  if (!cpf) { alert('Preencha o CPF antes de consultar.'); return; }
+  navigator.clipboard.writeText(cpf).catch(function() {});
+  window.open('https://www.jusbrasil.com.br/consulta-processual/?cpf=' + cpf, '_blank');
+}
+
 function openNewCliente() {
   document.getElementById('form-cliente').reset();
   document.getElementById('cliente-id').value = '';
