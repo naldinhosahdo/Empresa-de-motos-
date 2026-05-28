@@ -225,13 +225,14 @@ document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
 });
 
 async function openCustos() {
-  const { data } = await db.from('veiculos').select('id').order('created_at');
+  const { data } = await db.from('veiculos').select('*').order('created_at');
   const v = data || [];
-  if (v.length === 1) {
-    openMotoDetalhe(v[0].id);
-  } else {
-    showSection('motos');
-  }
+  if (v.length === 0) return;
+  if (v.length === 1) { openMotoDetalhe(v[0].id); return; }
+  document.getElementById('custos-picker-list').innerHTML = v.map(function(vei) {
+    return '<button class="btn btn-secondary" style="width:100%;text-align:left;margin-bottom:0.5rem" onclick="closeModal(\'modal-custos-picker\');openMotoDetalhe(\'' + vei.id + '\')">' + veiculoLabel(vei) + '</button>';
+  }).join('');
+  openModal('modal-custos-picker');
 }
 
 // --- DASHBOARD ---
