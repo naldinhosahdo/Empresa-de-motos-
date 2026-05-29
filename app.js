@@ -754,9 +754,9 @@ async function gerarParcelas(aluguelId, aluguel) {
   num++;
   venc.setDate(venc.getDate() + diasPeriodo);
 
-  // Parcelas seguintes
-  while (!fim || venc <= fim) {
-    var vencStr = venc.toISOString().split('T')[0];
+  // Parcelas seguintes — venc < fim (não <=) para não gerar parcela no último dia do contrato
+  while (!fim || venc < fim) {
+    var vencStr = venc.getFullYear() + '-' + String(venc.getMonth() + 1).padStart(2, '0') + '-' + String(venc.getDate()).padStart(2, '0');
     var desc = 'Parcela ' + num + ' — ' + (aluguel.periodo === 'mes' ? 'Mês' : 'Semana') + ' ' + num;
     parcelas.push({ aluguel_id: aluguelId, numero: num, descricao: desc, valor: aluguel.valor, vencimento: vencStr, pago: false });
     num++;
@@ -780,11 +780,21 @@ async function abrirParcelas(aluguelId) {
   var vei = aluguel.veiculos;
   var totalPago   = (parcelas||[]).filter(function(p){ return p.pago; }).reduce(function(s,p){ return s + Number(p.valor); }, 0);
   var totalPendente = (parcelas||[]).filter(function(p){ return !p.pago; }).reduce(function(s,p){ return s + Number(p.valor); }, 0);
+  var caucao = Number(aluguel.caucao || 0);
+  var aluguelSemCaucao = Number(aluguel.total || 0);
 
   document.getElementById('modal-parcelas-titulo').textContent =
     (vei ? veiculoLabel(vei) + ' — ' : '') + aluguel.cliente;
 
+  var caucaoInfo = caucao > 0
+    ? '<div style="font-size:0.78rem;color:var(--text2);margin-bottom:0.75rem">' +
+        'Aluguel: ' + fmtBRL(aluguelSemCaucao) + ' + Caução: ' + fmtBRL(caucao) + ' = Total a receber: <strong>' + fmtBRL(aluguelSemCaucao + caucao) + '</strong>' +
+        ' &nbsp;<button class="btn btn-sm btn-secondary" onclick="regerarParcelas(\'' + aluguelId + '\')" style="font-size:0.72rem;padding:2px 8px">↺ Regenerar</button>' +
+      '</div>'
+    : '<div style="text-align:right;margin-bottom:0.5rem"><button class="btn btn-sm btn-secondary" onclick="regerarParcelas(\'' + aluguelId + '\')" style="font-size:0.72rem;padding:2px 8px">↺ Regenerar</button></div>';
+
   document.getElementById('modal-parcelas-resumo').innerHTML =
+    caucaoInfo +
     '<div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem">' +
       '<span style="font-size:0.85rem">✅ Pago: <strong style="color:var(--green)">' + fmtBRL(totalPago) + '</strong></span>' +
       '<span style="font-size:0.85rem">⏳ Pendente: <strong style="color:var(--red)">' + fmtBRL(totalPendente) + '</strong></span>' +
@@ -830,6 +840,15 @@ async function gerarParcelasManual(aluguelId) {
   if (!aluguel) { alert('Aluguel não encontrado.'); return; }
   if (!aluguel.inicio) { alert('Este aluguel não tem data de início cadastrada. Edite o aluguel e preencha a data de início.'); return; }
   if (!aluguel.valor) { alert('Este aluguel não tem valor cadastrado. Edite o aluguel e preencha o valor.'); return; }
+  var ok = await gerarParcelas(aluguelId, aluguel);
+  if (ok) abrirParcelas(aluguelId);
+}
+
+async function regerarParcelas(aluguelId) {
+  if (!confirm('Isso vai apagar todas as parcelas atuais e gerar novamente. Continuar?')) return;
+  var { data: aluguel } = await db.from('alugueis').select('*').eq('id', aluguelId).single();
+  if (!aluguel) { alert('Aluguel não encontrado.'); return; }
+  await db.from('parcelas').delete().eq('aluguel_id', aluguelId);
   var ok = await gerarParcelas(aluguelId, aluguel);
   if (ok) abrirParcelas(aluguelId);
 }
