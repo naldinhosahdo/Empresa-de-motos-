@@ -60,6 +60,8 @@ async function loadNotificacoes() {
   hoje.setHours(0,0,0,0);
   var em30 = new Date(hoje.getTime() + 30 * 86400000);
   var em30Str = em30.toISOString().split('T')[0];
+  var em3 = new Date(hoje.getTime() + 3 * 86400000);
+  var em3Str = em3.toISOString().split('T')[0];
 
   var hoje0Str = hoje.toISOString().split('T')[0];
   var [{ data: despesasData }, { data: manutData }, { data: alugData }] = await Promise.all([
@@ -68,7 +70,7 @@ async function loadNotificacoes() {
     db.from('manutencoes').select('*, veiculos(modelo, placa)')
       .lte('prox_data', em30Str).not('prox_data', 'is', null).order('prox_data'),
     db.from('alugueis').select('*, veiculos(modelo, placa)')
-      .eq('status', 'ativo').lte('fim', em30Str).not('fim', 'is', null).order('fim')
+      .eq('status', 'ativo').lte('fim', em3Str).not('fim', 'is', null).order('fim')
   ]);
 
   var alertasDespesas = (despesasData || []).map(function(d) {
@@ -280,14 +282,11 @@ async function renderDashboard() {
   document.getElementById('dash-frota-alugadas').textContent    = motosAlugadas;
   document.getElementById('dash-frota-disponiveis').textContent = motosDisponiveis;
 
-  var avisoPorPeriodo = { dia: 1, semana: 2, mes: 7 };
+  var limite3d = new Date(hojeStr);
+  limite3d.setDate(limite3d.getDate() + 3);
+  var limite3dStr = limite3d.toISOString().split('T')[0];
   var vencer = a.filter(function(x) {
-    if (x.status !== 'ativo' || !x.fim) return false;
-    var aviso = avisoPorPeriodo[x.periodo] || 2;
-    var limite = new Date(hojeStr);
-    limite.setDate(limite.getDate() + aviso);
-    var limiteStr = limite.toISOString().split('T')[0];
-    return x.fim >= hojeStr && x.fim <= limiteStr;
+    return x.status === 'ativo' && x.fim && x.fim >= hojeStr && x.fim <= limite3dStr;
   }).length;
   document.getElementById('dash-vencer').textContent = vencer;
 

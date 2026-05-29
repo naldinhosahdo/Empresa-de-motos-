@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Notesns — Gestão de Aluguel de Veículos</title>
-  <link rel="stylesheet" href="style.css?v=25">
+  <link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
 
@@ -123,7 +123,7 @@
           <span class="card-label">Contratos a Vencer</span>
           <span class="card-value" id="dash-vencer">0</span>
           <div style="margin-top:0.2rem">
-            <span style="font-size:0.7rem;color:var(--text2)">1d antes (dia) · 2d (semana) · 7d (mês)</span>
+            <span style="font-size:0.7rem;color:var(--text2)">nos próximos <strong>3 dias</strong></span>
           </div>
         </div>
       </div>
@@ -472,7 +472,6 @@
         <div class="form-group">
           <label>Período *</label>
           <select id="aluguel-periodo" onchange="calcTotal()">
-            <option value="dia">Por Dia</option>
             <option value="semana" selected>Por Semana</option>
             <option value="mes">Por Mês</option>
           </select>
@@ -649,6 +648,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=65"></script>
+<script src="app.js?v=66"></script>
 </body>
 </html>
