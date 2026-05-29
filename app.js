@@ -247,14 +247,15 @@ document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
 
 // --- DASHBOARD ---
 async function renderDashboard() {
-  const [{ data: veiculos }, { data: alugueis }, { data: manutencoes }, { data: despesas }] = await Promise.all([
+  const [{ data: veiculos }, { data: alugueis }, { data: manutencoes }, { data: despesas }, { data: parcelasPagas }] = await Promise.all([
     db.from('veiculos').select('*'),
     db.from('alugueis').select('*'),
     db.from('manutencoes').select('*'),
-    db.from('despesas').select('*')
+    db.from('despesas').select('*'),
+    db.from('parcelas').select('*, alugueis(veiculo_id)').eq('pago', true)
   ]);
 
-  const v = veiculos || [], a = alugueis || [], m = manutencoes || [], d = despesas || [];
+  const v = veiculos || [], a = alugueis || [], m = manutencoes || [], d = despesas || [], pp = parcelasPagas || [];
 
   var hoje = new Date();
   var hojeStr = hojeLocalStr();
@@ -262,10 +263,10 @@ async function renderDashboard() {
 
   var aNaoCancelado = a.filter(function(x) { return x.status !== 'cancelado'; });
 
-  // Financial metrics
-  var receitaTotal = aNaoCancelado.reduce(function(s, x) { return s + Number(x.total || 0); }, 0);
-  var receitaMes   = aNaoCancelado.filter(function(x) { return x.inicio && x.inicio.startsWith(anoMes); })
-                                  .reduce(function(s, x) { return s + Number(x.total || 0); }, 0);
+  // Receita = apenas parcelas efetivamente pagas
+  var receitaTotal = pp.reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+  var receitaMes   = pp.filter(function(x) { return x.data_pagamento && x.data_pagamento.startsWith(anoMes); })
+                       .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
 
   var custosTotal = m.reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
                   + d.reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
@@ -359,11 +360,11 @@ async function renderDashboard() {
     }).join('');
   }
 
-  // Moto mais rentável
+  // Moto mais rentável (baseado em parcelas pagas)
   var motoReceita = {};
-  aNaoCancelado.forEach(function(x) {
-    if (!x.veiculo_id) return;
-    motoReceita[x.veiculo_id] = (motoReceita[x.veiculo_id] || 0) + Number(x.total || 0);
+  pp.forEach(function(p) {
+    var vid = p.alugueis && p.alugueis.veiculo_id;
+    if (vid) motoReceita[vid] = (motoReceita[vid] || 0) + Number(p.valor || 0);
   });
   var motoIds = Object.keys(motoReceita);
   var rentavelEl = document.getElementById('dash-moto-rentavel');
@@ -1005,27 +1006,36 @@ function resetFiltroMes() {
 
 async function renderRelatorios() {
   var filtroMes = document.getElementById('filtro-mes').value;
-  const [{ data: veiculos }, { data: alugueis }, { data: manutencoes }, { data: despesas }] = await Promise.all([
+  const [{ data: veiculos }, { data: alugueis }, { data: manutencoes }, { data: despesas }, { data: parcelasPagas }] = await Promise.all([
     db.from('veiculos').select('*'),
     db.from('alugueis').select('*').neq('status', 'cancelado'),
     db.from('manutencoes').select('*'),
-    db.from('despesas').select('*')
+    db.from('despesas').select('*'),
+    db.from('parcelas').select('*, alugueis(veiculo_id)').eq('pago', true)
   ]);
 
   var v = veiculos || [];
   var a = alugueis || [], m = manutencoes || [], d = despesas || [];
+  var pp = parcelasPagas || [];
 
   if (filtroMes) {
     a = a.filter(function(x) { return x.inicio && x.inicio.startsWith(filtroMes); });
     m = m.filter(function(x) { return x.data && x.data.startsWith(filtroMes); });
     d = d.filter(function(x) { return x.vencimento && x.vencimento.startsWith(filtroMes); });
+    pp = pp.filter(function(x) { return x.data_pagamento && x.data_pagamento.startsWith(filtroMes); });
   }
+
+  // Mapa: veiculo_id → receita de parcelas pagas
+  var receitaPorVeiculo = {};
+  pp.forEach(function(p) {
+    var vid = p.alugueis && p.alugueis.veiculo_id;
+    if (vid) receitaPorVeiculo[vid] = (receitaPorVeiculo[vid] || 0) + Number(p.valor || 0);
+  });
 
   var totalReceita = 0, totalCustos = 0, totalAlugueis = 0;
 
   var rows = v.map(function(vei) {
-    var receita = a.filter(function(x) { return x.veiculo_id === vei.id; })
-                  .reduce(function(s, x) { return s + Number(x.total || 0); }, 0);
+    var receita = receitaPorVeiculo[vei.id] || 0;
     var custos  = m.filter(function(x) { return x.veiculo_id === vei.id; })
                   .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
                 + d.filter(function(x) { return x.veiculo_id === vei.id; })
