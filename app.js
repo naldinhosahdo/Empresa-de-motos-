@@ -753,7 +753,9 @@ async function gerarParcelas(aluguelId, aluguel) {
     if (!fim && num > 52) break; // segurança: máximo 52 parcelas se não tiver data fim
   }
 
-  await db.from('parcelas').insert(parcelas);
+  var res = await db.from('parcelas').insert(parcelas);
+  if (res.error) { alert('Erro ao gerar parcelas: ' + res.error.message); return false; }
+  return true;
 }
 
 // --- MODAL PARCELAS ---
@@ -817,8 +819,8 @@ async function gerarParcelasManual(aluguelId) {
   if (!aluguel) { alert('Aluguel não encontrado.'); return; }
   if (!aluguel.inicio) { alert('Este aluguel não tem data de início cadastrada. Edite o aluguel e preencha a data de início.'); return; }
   if (!aluguel.valor) { alert('Este aluguel não tem valor cadastrado. Edite o aluguel e preencha o valor.'); return; }
-  await gerarParcelas(aluguelId, aluguel);
-  abrirParcelas(aluguelId);
+  var ok = await gerarParcelas(aluguelId, aluguel);
+  if (ok) abrirParcelas(aluguelId);
 }
 
 // --- MANUTENÇÕES ---
