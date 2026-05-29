@@ -9,6 +9,11 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 function fmtBRL(v) {
   return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
+// Data de hoje no fuso local (YYYY-MM-DD) — evita erro de UTC à noite
+function hojeLocalStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
 function fmtDate(d) {
   if (!d) return '-';
   const [y, m, day] = d.split('-');
@@ -246,7 +251,7 @@ async function renderDashboard() {
   const v = veiculos || [], a = alugueis || [], m = manutencoes || [], d = despesas || [];
 
   var hoje = new Date();
-  var hojeStr = hoje.toISOString().split('T')[0];
+  var hojeStr = hojeLocalStr();
   var anoMes = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
 
   var aNaoCancelado = a.filter(function(x) { return x.status !== 'cancelado'; });
@@ -779,7 +784,7 @@ async function abrirParcelas(aluguelId) {
       '<span style="font-size:0.85rem">⏳ Pendente: <strong style="color:var(--red)">' + fmtBRL(totalPendente) + '</strong></span>' +
     '</div>';
 
-  var hoje = new Date().toISOString().split('T')[0];
+  var hoje = hojeLocalStr();
   document.getElementById('modal-parcelas-lista').innerHTML = (parcelas||[]).length
     ? (parcelas||[]).map(function(p) {
         var atrasado = !p.pago && p.vencimento < hoje;
@@ -806,7 +811,7 @@ async function abrirParcelas(aluguelId) {
 }
 
 async function toggleParcela(parcelaId, pago, aluguelId) {
-  var hoje = new Date().toISOString().split('T')[0];
+  var hoje = hojeLocalStr();
   await db.from('parcelas').update({
     pago: pago,
     data_pagamento: pago ? hoje : null
