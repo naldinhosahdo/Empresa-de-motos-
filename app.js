@@ -68,14 +68,16 @@ async function loadNotificacoes() {
   var em3 = new Date(hoje.getTime() + 3 * 86400000);
   var em3Str = em3.toISOString().split('T')[0];
 
-  var hoje0Str = hoje.toISOString().split('T')[0];
-  var [{ data: despesasData }, { data: manutData }, { data: alugData }] = await Promise.all([
+  var hoje0Str = hojeLocalStr();
+  var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }] = await Promise.all([
     db.from('despesas').select('*, veiculos(modelo, placa)')
       .lte('vencimento', em30Str).not('vencimento', 'is', null).order('vencimento'),
     db.from('manutencoes').select('*, veiculos(modelo, placa)')
       .lte('prox_data', em30Str).not('prox_data', 'is', null).order('prox_data'),
     db.from('alugueis').select('*, veiculos(modelo, placa)')
-      .eq('status', 'ativo').lte('fim', em3Str).not('fim', 'is', null).order('fim')
+      .eq('status', 'ativo').lte('fim', em3Str).not('fim', 'is', null).order('fim'),
+    db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))')
+      .eq('pago', false).lte('vencimento', hoje0Str).order('vencimento')
   ]);
 
   var alertasDespesas = (despesasData || []).map(function(d) {
@@ -87,8 +89,12 @@ async function loadNotificacoes() {
   var alertasAlug = (alugData || []).map(function(x) {
     return { key: 'aluguel_' + x.id, data: x.fim, label: 'Contrato vence — ' + (x.cliente || '-'), veiculo: x.veiculos, valor: '', tipo: 'aluguel' };
   });
+  var alertasParcelas = (parcelasData || []).map(function(p) {
+    var alu = p.alugueis || {};
+    return { key: 'parcela_' + p.id, data: p.vencimento, label: p.descricao + ' — ' + (alu.cliente || '-'), veiculo: alu.veiculos, valor: fmtBRL(p.valor), tipo: 'parcela' };
+  });
 
-  var todosAlertas = alertasDespesas.concat(alertasManut).concat(alertasAlug).sort(function(a, b) {
+  var todosAlertas = alertasDespesas.concat(alertasManut).concat(alertasAlug).concat(alertasParcelas).sort(function(a, b) {
     return a.data < b.data ? -1 : a.data > b.data ? 1 : 0;
   });
 
