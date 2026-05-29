@@ -280,10 +280,15 @@ async function renderDashboard() {
   document.getElementById('dash-frota-alugadas').textContent    = motosAlugadas;
   document.getElementById('dash-frota-disponiveis').textContent = motosDisponiveis;
 
-  var hoje7 = new Date(hojeStr);
-  hoje7.setDate(hoje7.getDate() + 7);
-  var hoje7Str = hoje7.toISOString().split('T')[0];
-  var vencer = a.filter(function(x) { return x.status === 'ativo' && x.fim && x.fim >= hojeStr && x.fim <= hoje7Str; }).length;
+  var avisoPorPeriodo = { dia: 1, semana: 2, mes: 7 };
+  var vencer = a.filter(function(x) {
+    if (x.status !== 'ativo' || !x.fim) return false;
+    var aviso = avisoPorPeriodo[x.periodo] || 2;
+    var limite = new Date(hojeStr);
+    limite.setDate(limite.getDate() + aviso);
+    var limiteStr = limite.toISOString().split('T')[0];
+    return x.fim >= hojeStr && x.fim <= limiteStr;
+  }).length;
   document.getElementById('dash-vencer').textContent = vencer;
 
   var caucaoPendente = aNaoCancelado
