@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Notesns — Gestão de Aluguel de Veículos</title>
-  <link rel="stylesheet" href="style.css?v=27">
+  <link rel="stylesheet" href="style.css?v=28">
 </head>
 <body>
 
@@ -645,9 +645,26 @@
   </div>
 </div>
 
+<!-- MODAL PARCELAS -->
+<div class="modal-overlay" id="modal-parcelas">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-parcelas-titulo">Parcelas</h3>
+      <button class="modal-close" onclick="closeModal('modal-parcelas')">&times;</button>
+    </div>
+    <div style="padding:0 1.5rem 1rem">
+      <div id="modal-parcelas-resumo"></div>
+      <div id="modal-parcelas-lista"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-parcelas')">Fechar</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=67"></script>
+<script src="app.js?v=68"></script>
 </body>
 </html>

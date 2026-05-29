@@ -642,6 +642,7 @@ async function renderAlugueis(ordenarPorVencimento) {
           '<td>' + statusBadge(x.status, 'aluguel') + '</td>' +
           '<td>' +
             '<div class="btn-actions">' +
+              '<button class="btn btn-sm btn-info" onclick="abrirParcelas(\'' + x.id + '\')">💰 Parcelas</button>' +
               '<button class="btn btn-sm btn-info" onclick="gerarContrato(\'' + x.id + '\')">Contrato</button>' +
               '<button class="btn btn-sm btn-secondary" onclick="editAluguel(\'' + x.id + '\')">Editar</button>' +
               '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'aluguel\',\'' + x.id + '\')">Excluir</button>' +
@@ -717,10 +718,105 @@ async function submitAluguel() {
     return;
   }
   var savedId = id || (result.data && result.data[0] ? result.data[0].id : null);
+  if (!id && savedId) await gerarParcelas(savedId, aluguel);
   closeModal('modal-aluguel');
   renderAlugueis();
   if (!id && savedId && contratoWin) gerarContrato(savedId, contratoWin);
   else if (contratoWin) contratoWin.close();
+}
+
+async function gerarParcelas(aluguelId, aluguel) {
+  if (!aluguel.inicio || !aluguel.valor) return;
+  var diasPeriodo = aluguel.periodo === 'mes' ? 30 : 7;
+  var inicio = new Date(aluguel.inicio + 'T00:00:00');
+  var fim = aluguel.fim ? new Date(aluguel.fim + 'T00:00:00') : null;
+  var parcelas = [];
+  var num = 1;
+  var venc = new Date(inicio);
+
+  // Parcela 1: caução + primeira semana/mês
+  var valorP1 = aluguel.valor + (aluguel.caucao || 0);
+  var descP1 = aluguel.caucao
+    ? 'Parcela 1 — ' + (aluguel.periodo === 'mes' ? 'Mês' : 'Semana') + ' 1 + Caução'
+    : 'Parcela 1 — ' + (aluguel.periodo === 'mes' ? 'Mês' : 'Semana') + ' 1';
+  parcelas.push({ aluguel_id: aluguelId, numero: num, descricao: descP1, valor: valorP1, vencimento: aluguel.inicio, pago: false });
+  num++;
+  venc.setDate(venc.getDate() + diasPeriodo);
+
+  // Parcelas seguintes
+  while (!fim || venc <= fim) {
+    var vencStr = venc.toISOString().split('T')[0];
+    var desc = 'Parcela ' + num + ' — ' + (aluguel.periodo === 'mes' ? 'Mês' : 'Semana') + ' ' + num;
+    parcelas.push({ aluguel_id: aluguelId, numero: num, descricao: desc, valor: aluguel.valor, vencimento: vencStr, pago: false });
+    num++;
+    venc.setDate(venc.getDate() + diasPeriodo);
+    if (!fim && num > 52) break; // segurança: máximo 52 parcelas se não tiver data fim
+  }
+
+  await db.from('parcelas').insert(parcelas);
+}
+
+// --- MODAL PARCELAS ---
+async function abrirParcelas(aluguelId) {
+  var { data: aluguel } = await db.from('alugueis')
+    .select('*, veiculos(modelo, placa)').eq('id', aluguelId).single();
+  var { data: parcelas } = await db.from('parcelas')
+    .select('*').eq('aluguel_id', aluguelId).order('numero');
+
+  if (!aluguel) return;
+  var vei = aluguel.veiculos;
+  var totalPago   = (parcelas||[]).filter(function(p){ return p.pago; }).reduce(function(s,p){ return s + Number(p.valor); }, 0);
+  var totalPendente = (parcelas||[]).filter(function(p){ return !p.pago; }).reduce(function(s,p){ return s + Number(p.valor); }, 0);
+
+  document.getElementById('modal-parcelas-titulo').textContent =
+    (vei ? veiculoLabel(vei) + ' — ' : '') + aluguel.cliente;
+
+  document.getElementById('modal-parcelas-resumo').innerHTML =
+    '<div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem">' +
+      '<span style="font-size:0.85rem">✅ Pago: <strong style="color:var(--green)">' + fmtBRL(totalPago) + '</strong></span>' +
+      '<span style="font-size:0.85rem">⏳ Pendente: <strong style="color:var(--red)">' + fmtBRL(totalPendente) + '</strong></span>' +
+    '</div>';
+
+  var hoje = new Date().toISOString().split('T')[0];
+  document.getElementById('modal-parcelas-lista').innerHTML = (parcelas||[]).length
+    ? (parcelas||[]).map(function(p) {
+        var atrasado = !p.pago && p.vencimento < hoje;
+        var cls = p.pago ? 'parcela-paga' : atrasado ? 'parcela-atrasada' : 'parcela-pendente';
+        var badge = p.pago
+          ? '<span class="badge badge-green">✅ Pago' + (p.data_pagamento ? ' ' + fmtDate(p.data_pagamento) : '') + '</span>'
+          : atrasado
+            ? '<span class="badge badge-red">⚠️ Atrasado</span>'
+            : '<span class="badge badge-yellow">⏳ Pendente</span>';
+        var btn = p.pago
+          ? '<button class="btn btn-sm btn-secondary" onclick="toggleParcela(\'' + p.id + '\', false, \'' + aluguelId + '\')">Desfazer</button>'
+          : '<button class="btn btn-sm btn-primary" onclick="toggleParcela(\'' + p.id + '\', true, \'' + aluguelId + '\')">Marcar pago</button>';
+        return '<div class="parcela-item ' + cls + '">' +
+          '<div>' +
+            '<div style="font-weight:600;font-size:0.9rem">' + p.descricao + '</div>' +
+            '<div style="font-size:0.78rem;color:var(--text2)">Vence: ' + fmtDate(p.vencimento) + ' · ' + fmtBRL(p.valor) + '</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:0.5rem">' + badge + btn + '</div>' +
+        '</div>';
+      }).join('')
+    : '<p style="color:var(--text2);padding:1rem 0">Nenhuma parcela encontrada. <button class="btn btn-sm btn-primary" onclick="gerarParcelasManual(\'' + aluguelId + '\')">Gerar parcelas</button></p>';
+
+  openModal('modal-parcelas');
+}
+
+async function toggleParcela(parcelaId, pago, aluguelId) {
+  var hoje = new Date().toISOString().split('T')[0];
+  await db.from('parcelas').update({
+    pago: pago,
+    data_pagamento: pago ? hoje : null
+  }).eq('id', parcelaId);
+  abrirParcelas(aluguelId);
+}
+
+async function gerarParcelasManual(aluguelId) {
+  var { data: aluguel } = await db.from('alugueis').select('*').eq('id', aluguelId).single();
+  if (!aluguel) return;
+  await gerarParcelas(aluguelId, aluguel);
+  abrirParcelas(aluguelId);
 }
 
 // --- MANUTENÇÕES ---
