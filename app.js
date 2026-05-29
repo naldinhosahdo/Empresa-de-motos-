@@ -200,6 +200,14 @@ function showSection(name, addHistory) {
   }
 }
 
+function abrirContratosVencer() {
+  populateClienteSelect();
+  populateVeiculoSelects();
+  document.getElementById('filtro-status-aluguel').value = 'ativo';
+  showSection('alugueis');
+  renderAlugueis(true);
+}
+
 window.addEventListener('popstate', function(e) {
   var section = (e.state && e.state.section) || 'dashboard';
   showSection(section, false);
@@ -604,12 +612,13 @@ function calcTotal() {
   }
 }
 
-async function renderAlugueis() {
+async function renderAlugueis(ordenarPorVencimento) {
   showLoading('alugueis-tbody', 12);
   var fmId = document.getElementById('filtro-moto-aluguel') ? document.getElementById('filtro-moto-aluguel').value : '';
   var fsId = document.getElementById('filtro-status-aluguel') ? document.getElementById('filtro-status-aluguel').value : '';
 
-  var query = db.from('alugueis').select('*, veiculos(modelo, placa, ano, cor)').order('created_at', { ascending: false });
+  var orderCol = ordenarPorVencimento ? 'fim' : 'created_at';
+  var query = db.from('alugueis').select('*, veiculos(modelo, placa, ano, cor)').order(orderCol, { ascending: !!ordenarPorVencimento });
   if (fmId) query = query.eq('veiculo_id', fmId);
   if (fsId) query = query.eq('status', fsId);
 
