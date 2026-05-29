@@ -814,7 +814,9 @@ async function toggleParcela(parcelaId, pago, aluguelId) {
 
 async function gerarParcelasManual(aluguelId) {
   var { data: aluguel } = await db.from('alugueis').select('*').eq('id', aluguelId).single();
-  if (!aluguel) return;
+  if (!aluguel) { alert('Aluguel não encontrado.'); return; }
+  if (!aluguel.inicio) { alert('Este aluguel não tem data de início cadastrada. Edite o aluguel e preencha a data de início.'); return; }
+  if (!aluguel.valor) { alert('Este aluguel não tem valor cadastrado. Edite o aluguel e preencha o valor.'); return; }
   await gerarParcelas(aluguelId, aluguel);
   abrirParcelas(aluguelId);
 }
