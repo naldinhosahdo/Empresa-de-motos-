@@ -1144,6 +1144,7 @@ async function renderRelatorios() {
   });
 
   var totalReceita = 0, totalCustos = 0, totalAlugueis = 0;
+  var todosAlugueis = alugueis || [];
 
   var rows = v.map(function(vei) {
     var receita = receitaPorVeiculo[vei.id] || 0;
@@ -1152,22 +1153,54 @@ async function renderRelatorios() {
                 + d.filter(function(x) { return x.veiculo_id === vei.id; })
                   .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
     var qtd = a.filter(function(x) { return x.veiculo_id === vei.id; }).length;
+    var lucro = receita - custos;
     totalReceita  += receita;
     totalCustos   += custos;
     totalAlugueis += qtd;
-    return { vei: vei, receita: receita, custos: custos, lucro: receita - custos, qtd: qtd };
+
+    // Payback
+    var valorCompra = Number(vei.valor_compra || 0);
+    var paybackTxt = '';
+    if (!valorCompra) {
+      paybackTxt = 'Informe o valor de compra';
+    } else {
+      var lucroMensal = 0;
+      if (filtroMes) {
+        lucroMensal = lucro;
+      } else {
+        var alugsVei = todosAlugueis.filter(function(x) { return x.veiculo_id === vei.id; });
+        var datas = alugsVei.map(function(x) { return x.inicio; }).filter(Boolean).sort();
+        if (datas.length > 0) {
+          var mesesDecorridos = Math.max(1, Math.ceil((new Date(hojeLocalStr()) - new Date(datas[0] + 'T00:00:00')) / (30 * 86400000)));
+          lucroMensal = lucro / mesesDecorridos;
+        }
+      }
+      if (lucroMensal > 0) {
+        var mesesPB = Math.ceil(valorCompra / lucroMensal);
+        paybackTxt = mesesPB <= 12
+          ? mesesPB + ' mês(es)'
+          : Math.floor(mesesPB / 12) + ' ano(s)' + (mesesPB % 12 > 0 ? ' e ' + (mesesPB % 12) + ' mês(es)' : '');
+      } else {
+        paybackTxt = 'Sem lucro positivo';
+      }
+    }
+
+    return { vei: vei, receita: receita, custos: custos, lucro: lucro, qtd: qtd, valorCompra: valorCompra, paybackTxt: paybackTxt };
   });
 
   var grid = document.getElementById('relatorio-motos-grid');
   grid.innerHTML = rows.length
     ? rows.map(function(r) {
         var lc = r.lucro >= 0 ? 'text-green' : 'text-red';
+        var paybackLabel = filtroMes ? 'Payback (neste ritmo)' : 'Payback (média histórica)';
         return '<div class="relatorio-card">' +
           '<h4>' + veiculoLabel(r.vei) + '</h4>' +
           '<div class="rel-row"><span>Receita</span><span class="text-green">' + fmtBRL(r.receita) + '</span></div>' +
           '<div class="rel-row"><span>Custos</span><span class="text-red">' + fmtBRL(r.custos) + '</span></div>' +
           '<div class="rel-row"><span>Aluguéis</span><span>' + r.qtd + '</span></div>' +
           '<div class="rel-row"><span>Lucro/Prejuízo</span><span class="' + lc + '">' + fmtBRL(r.lucro) + '</span></div>' +
+          (r.valorCompra ? '<div class="rel-row"><span>Investimento</span><span>' + fmtBRL(r.valorCompra) + '</span></div>' : '') +
+          '<div class="rel-row"><span>' + paybackLabel + '</span><span style="color:var(--yellow);font-weight:600">' + r.paybackTxt + '</span></div>' +
           '</div>';
       }).join('')
     : '<p style="color:var(--text2)">Nenhum veículo cadastrado.</p>';
