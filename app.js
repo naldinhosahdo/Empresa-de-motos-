@@ -108,8 +108,8 @@ async function loadNotificacoes() {
   hoje.setHours(0,0,0,0);
   var em30 = new Date(hoje.getTime() + 30 * 86400000);
   var em30Str = em30.toISOString().split('T')[0];
-  var em3 = new Date(hoje.getTime() + 3 * 86400000);
-  var em3Str = em3.toISOString().split('T')[0];
+  var em5 = new Date(hoje.getTime() + 5 * 86400000);
+  var em5Str = em5.toISOString().split('T')[0];
 
   var hoje0Str = hojeLocalStr();
   var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }] = await Promise.all([
@@ -118,7 +118,7 @@ async function loadNotificacoes() {
     db.from('manutencoes').select('*, veiculos(modelo, placa)')
       .lte('prox_data', em30Str).not('prox_data', 'is', null).order('prox_data'),
     db.from('alugueis').select('*, veiculos(modelo, placa)')
-      .eq('status', 'ativo').lte('fim', em3Str).not('fim', 'is', null).order('fim'),
+      .eq('status', 'ativo').lte('fim', em5Str).not('fim', 'is', null).order('fim'),
     db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))')
       .eq('pago', false).lte('vencimento', hoje0Str).order('vencimento')
   ]);
@@ -368,11 +368,11 @@ async function renderDashboard() {
   document.getElementById('dash-frota-alugadas').textContent    = motosAlugadas;
   document.getElementById('dash-frota-disponiveis').textContent = motosDisponiveis;
 
-  var limite3d = new Date(hojeStr);
-  limite3d.setDate(limite3d.getDate() + 3);
-  var limite3dStr = limite3d.toISOString().split('T')[0];
+  var limite5d = new Date(hojeStr);
+  limite5d.setDate(limite5d.getDate() + 5);
+  var limite5dStr = limite5d.toISOString().split('T')[0];
   var vencer = a.filter(function(x) {
-    return x.status === 'ativo' && x.fim && x.fim >= hojeStr && x.fim <= limite3dStr;
+    return x.status === 'ativo' && x.fim && x.fim >= hojeStr && x.fim <= limite5dStr;
   }).length;
   document.getElementById('dash-vencer').textContent = vencer;
 
