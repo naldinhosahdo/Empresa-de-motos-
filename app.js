@@ -173,8 +173,13 @@ async function loadNotificacoes() {
     var pagarBtn = a.tipo === 'parcela' && a.parcelaId && a.aluguelId
       ? '<button class="btn btn-sm btn-primary" style="font-size:0.72rem;padding:3px 8px;margin-right:4px" onclick="pagarParcelaNotif(\'' + a.parcelaId + '\',\'' + a.aluguelId + '\',\'' + safeKey + '\')">Pago</button>'
       : '';
+    var bodyClick = a.tipo === 'parcela' && a.aluguelId
+      ? 'onclick="document.getElementById(\'notif-dropdown\').style.display=\'none\';abrirParcelas(\'' + a.aluguelId + '\')" style="cursor:pointer"'
+      : a.tipo === 'aluguel' && a.key
+      ? 'onclick="document.getElementById(\'notif-dropdown\').style.display=\'none\';abrirContratosVencer()" style="cursor:pointer"'
+      : '';
     return '<div class="notif-item ' + cls + '" data-key="' + a.key + '">' +
-      '<div class="notif-item-body">' +
+      '<div class="notif-item-body" ' + bodyClick + '>' +
         '<div class="notif-item-titulo">' + a.label + ' — ' + vei + '</div>' +
         '<div class="notif-item-desc">' + quando + (a.valor ? ' · ' + a.valor : '') + '</div>' +
       '</div>' +
