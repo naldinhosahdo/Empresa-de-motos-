@@ -1336,7 +1336,7 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>4.1</strong> O Locatário se compromete a devolver o veículo nas mesmas condições em que o recebeu, salvo desgaste natural de uso.</div>' +
     '<div class="cl"><strong>4.2</strong> É obrigatório o uso de capacete e demais equipamentos de segurança previstos no Código de Trânsito Brasileiro.</div>' +
     '<div class="cl"><strong>4.3</strong> É vedado ao Locatário sublocar, ceder ou emprestar o veículo a terceiros sem autorização prévia e por escrito do Locador.</div>' +
-    '<div class="cl"><strong>4.4</strong> O Locatário é responsável pelo abastecimento e pelo nível de óleo do veículo durante o período de locação.</div>' +
+    '<div class="cl"><strong>4.4</strong> O Locatário é responsável pelo abastecimento de combustível e por verificar periodicamente o nível de óleo do veículo, completando-o quando necessário. Caso o nível esteja baixo de forma recorrente ou seja constatada a necessidade de troca, o Locatário deverá comunicar o Locador, a quem cabe realizar a troca de óleo e a manutenção do veículo.</div>' +
     '<div class="cl"><strong>4.5</strong> Todas as multas de trânsito, infrações e penalidades ocorridas durante o período de locação são de inteira responsabilidade do Locatário.</div>' +
     '<div class="cl"><strong>4.6</strong> Fica proibida a utilização do veículo para atividades ilícitas, transporte de cargas não autorizadas ou participação em competições de qualquer natureza.</div>' +
     '<div class="cl"><strong>4.7</strong> O Locatário se obriga a comunicar imediatamente o Locador em caso de acidente, roubo, furto ou qualquer ocorrência policial envolvendo o veículo.</div>' +
