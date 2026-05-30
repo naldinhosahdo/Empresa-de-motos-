@@ -60,6 +60,13 @@ function dismissAllNotif() {
   loadNotificacoes();
 }
 
+async function pagarParcelaNotif(parcelaId, aluguelId, key) {
+  var hoje = hojeLocalStr();
+  await db.from('parcelas').update({ pago: true, data_pagamento: hoje }).eq('id', parcelaId);
+  dismissNotif(key);
+  renderDashboard();
+}
+
 async function loadNotificacoes() {
   var hoje = new Date();
   hoje.setHours(0,0,0,0);
@@ -91,7 +98,7 @@ async function loadNotificacoes() {
   });
   var alertasParcelas = (parcelasData || []).map(function(p) {
     var alu = p.alugueis || {};
-    return { key: 'parcela_' + p.id, data: p.vencimento, label: p.descricao + ' — ' + (alu.cliente || '-'), veiculo: alu.veiculos, valor: fmtBRL(p.valor), tipo: 'parcela' };
+    return { key: 'parcela_' + p.id, data: p.vencimento, label: p.descricao + ' — ' + (alu.cliente || '-'), veiculo: alu.veiculos, valor: fmtBRL(p.valor), tipo: 'parcela', parcelaId: p.id, aluguelId: p.aluguel_id };
   });
 
   var todosAlertas = alertasDespesas.concat(alertasManut).concat(alertasAlug).concat(alertasParcelas).sort(function(a, b) {
@@ -127,12 +134,18 @@ async function loadNotificacoes() {
           ? '🔴 Vence em ' + diff + ' dia(s)'
           : '🟡 Vence em ' + diff + ' dia(s)';
     var safeKey = a.key.replace(/'/g, "\\'");
+    var pagarBtn = a.tipo === 'parcela' && a.parcelaId && a.aluguelId
+      ? '<button class="btn btn-sm btn-primary" style="font-size:0.72rem;padding:3px 8px;margin-right:4px" onclick="pagarParcelaNotif(\'' + a.parcelaId + '\',\'' + a.aluguelId + '\',\'' + safeKey + '\')">Pago</button>'
+      : '';
     return '<div class="notif-item ' + cls + '" data-key="' + a.key + '">' +
       '<div class="notif-item-body">' +
         '<div class="notif-item-titulo">' + a.label + ' — ' + vei + '</div>' +
         '<div class="notif-item-desc">' + quando + (a.valor ? ' · ' + a.valor : '') + '</div>' +
       '</div>' +
-      '<button class="notif-dismiss" onclick="dismissNotif(\'' + safeKey + '\')" title="Dispensar">✕</button>' +
+      '<div style="display:flex;align-items:center;gap:2px">' +
+        pagarBtn +
+        '<button class="notif-dismiss" onclick="dismissNotif(\'' + safeKey + '\')" title="Dispensar">✕</button>' +
+      '</div>' +
     '</div>';
   }).join('');
 }
@@ -247,15 +260,16 @@ document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
 
 // --- DASHBOARD ---
 async function renderDashboard() {
-  const [{ data: veiculos }, { data: alugueis }, { data: manutencoes }, { data: despesas }, { data: parcelasPagas }] = await Promise.all([
+  const [{ data: veiculos }, { data: alugueis }, { data: manutencoes }, { data: despesas }, { data: parcelasPagas }, { data: parcelasAbertas }] = await Promise.all([
     db.from('veiculos').select('*'),
     db.from('alugueis').select('*'),
     db.from('manutencoes').select('*'),
     db.from('despesas').select('*'),
-    db.from('parcelas').select('*, alugueis(veiculo_id)').eq('pago', true)
+    db.from('parcelas').select('*, alugueis(veiculo_id)').eq('pago', true),
+    db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))').eq('pago', false).order('vencimento')
   ]);
 
-  const v = veiculos || [], a = alugueis || [], m = manutencoes || [], d = despesas || [], pp = parcelasPagas || [];
+  const v = veiculos || [], a = alugueis || [], m = manutencoes || [], d = despesas || [], pp = parcelasPagas || [], pa = parcelasAbertas || [];
 
   var hoje = new Date();
   var hojeStr = hojeLocalStr();
@@ -381,7 +395,13 @@ async function renderDashboard() {
     '</div>';
   }
 
-  // Recent tables
+  // Card "A Receber Hoje" — parcelas vencidas (atrasadas + hoje)
+  var parcelasVencidas = pa.filter(function(p) { return p.vencimento <= hojeStr; });
+  var totalReceber = parcelasVencidas.reduce(function(s, p) { return s + Number(p.valor || 0); }, 0);
+  document.getElementById('dash-receber-valor').textContent = fmtBRL(totalReceber);
+  document.getElementById('dash-receber-qtd').textContent   = parcelasVencidas.length;
+
+  // Recent alugueis table
   var tbody1 = document.getElementById('dash-alugueis-tbody');
   var lastA   = a.slice().reverse().slice(0, 5);
   tbody1.innerHTML = lastA.length
@@ -391,14 +411,35 @@ async function renderDashboard() {
       }).join('')
     : '<tr class="empty-row"><td colspan="4">Nenhum aluguel registrado</td></tr>';
 
-  var tbody2 = document.getElementById('dash-manut-tbody');
-  var lastM   = m.slice().reverse().slice(0, 5);
-  tbody2.innerHTML = lastM.length
-    ? lastM.map(function(x) {
-        var vei = v.find(function(vv) { return vv.id === x.veiculo_id; });
-        return '<tr><td>' + (vei ? veiculoLabel(vei) : '-') + '</td><td>' + x.tipo + '</td><td>' + fmtBRL(x.custo) + '</td><td>' + fmtDate(x.data) + '</td></tr>';
-      }).join('')
-    : '<tr class="empty-row"><td colspan="4">Nenhum custo registrado</td></tr>';
+  // Próximas parcelas em aberto (primeiras 5)
+  var proximasParcelas = pa.slice(0, 5);
+  var parcelasEl = document.getElementById('dash-parcelas-list');
+  if (proximasParcelas.length === 0) {
+    parcelasEl.innerHTML = '<span style="color:var(--text2);font-size:0.85rem">Nenhuma parcela em aberto</span>';
+  } else {
+    parcelasEl.innerHTML = proximasParcelas.map(function(p) {
+      var alu = p.alugueis || {};
+      var vei = alu.veiculos;
+      var atrasada = p.vencimento < hojeStr;
+      var hoje0    = p.vencimento === hojeStr;
+      var cor = atrasada ? 'var(--red)' : hoje0 ? 'var(--yellow)' : 'var(--text2)';
+      var status = atrasada ? '⚠️ Atrasada' : hoje0 ? '🔴 Vence hoje' : '📅 ' + fmtDate(p.vencimento);
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.55rem 0;border-bottom:1px solid var(--border)">' +
+        '<div style="min-width:0">' +
+          '<div style="font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (alu.cliente || '-') + (vei ? ' · ' + vei.modelo : '') + '</div>' +
+          '<div style="font-size:0.75rem;color:' + cor + '">' + status + ' · ' + fmtBRL(p.valor) + '</div>' +
+        '</div>' +
+        '<button class="btn btn-sm btn-primary" style="font-size:0.72rem;white-space:nowrap;margin-left:0.5rem" onclick="pagarParcelaDash(\'' + p.id + '\', \'' + (p.aluguel_id) + '\')">Marcar pago</button>' +
+      '</div>';
+    }).join('');
+  }
+}
+
+async function pagarParcelaDash(parcelaId, aluguelId) {
+  var hoje = hojeLocalStr();
+  await db.from('parcelas').update({ pago: true, data_pagamento: hoje }).eq('id', parcelaId);
+  renderDashboard();
+  loadNotificacoes();
 }
 
 // --- CLIENTES ---
@@ -624,6 +665,16 @@ function calcTotal() {
   }
 }
 
+function preencherFim(qtd, unidade) {
+  var inicio = document.getElementById('aluguel-inicio').value;
+  if (!inicio) { alert('Preencha a data de início primeiro.'); return; }
+  var d = new Date(inicio + 'T00:00:00');
+  d.setDate(d.getDate() + (unidade === 'mes' ? qtd * 30 : qtd * 7));
+  var fim = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  document.getElementById('aluguel-fim').value = fim;
+  calcTotal();
+}
+
 async function renderAlugueis(ordenarPorVencimento) {
   showLoading('alugueis-tbody', 12);
   var fmId = document.getElementById('filtro-moto-aluguel') ? document.getElementById('filtro-moto-aluguel').value : '';
@@ -636,17 +687,19 @@ async function renderAlugueis(ordenarPorVencimento) {
 
   const { data } = await query;
   const a = data || [];
+  var hojeA = hojeLocalStr();
   document.getElementById('alugueis-count').textContent = a.length;
   document.getElementById('alugueis-tbody').innerHTML = a.length
     ? a.map(function(x) {
         var vei = x.veiculos;
-        return '<tr>' +
+        var vencido = x.status === 'ativo' && x.fim && x.fim < hojeA;
+        return '<tr' + (vencido ? ' class="row-vencido"' : '') + '>' +
           '<td>' + (vei ? veiculoLabel(vei) : '-') + '</td>' +
           '<td>' + x.cliente + '</td>' +
           '<td>' + (x.cpf || '-') + '</td>' +
           '<td>' + (x.telefone || '-') + '</td>' +
           '<td>' + fmtDate(x.inicio) + '</td>' +
-          '<td>' + fmtDate(x.fim) + '</td>' +
+          '<td>' + fmtDate(x.fim) + (vencido ? ' <span class="badge badge-red">Vencido</span>' : '') + '</td>' +
           '<td>' + (periodoLabel[x.periodo] || '-') + '</td>' +
           '<td>' + fmtBRL(x.valor) + '</td>' +
           '<td><strong>' + fmtBRL(x.total) + '</strong></td>' +
@@ -700,6 +753,12 @@ async function editAluguel(id) {
 }
 
 async function submitAluguel() {
+  var inicio = document.getElementById('aluguel-inicio').value;
+  var fim    = document.getElementById('aluguel-fim').value;
+  if (fim && fim <= inicio) {
+    alert('A data de fim deve ser depois da data de início.');
+    return;
+  }
   var contratoWin = window.open('', '_blank');
   const id  = document.getElementById('aluguel-id').value;
   const sel = document.getElementById('aluguel-cliente-select');

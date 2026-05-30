@@ -6,8 +6,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Notesns — Gestão de Aluguel de Veículos</title>
-  <link rel="stylesheet" href="style.css?v=28">
+  <title>GereMoto — Gestão de Aluguel de Veículos</title>
+  <link rel="stylesheet" href="style.css?v=29">
 </head>
 <body>
 
@@ -128,6 +128,16 @@
           </div>
         </div>
       </div>
+      <div class="card card-red" onclick="showSection('alugueis')" style="cursor:pointer">
+        <div class="card-icon">&#9201;</div>
+        <div class="card-info">
+          <span class="card-label">A Receber Hoje</span>
+          <span class="card-value" id="dash-receber-valor">R$ 0,00</span>
+          <div style="margin-top:0.2rem">
+            <span style="font-size:0.7rem;color:var(--text2)"><strong id="dash-receber-qtd">0</strong> parcela(s) vencida(s)</span>
+          </div>
+        </div>
+      </div>
       <div class="card card-yellow">
         <div class="card-icon">&#128176;</div>
         <div class="card-info">
@@ -155,13 +165,8 @@
         </div>
       </div>
       <div class="dash-block">
-        <h3>Últimas Manutenções</h3>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Moto</th><th>Tipo</th><th>Custo</th><th>Data</th></tr></thead>
-            <tbody id="dash-manut-tbody"></tbody>
-          </table>
-        </div>
+        <h3>Próximas Parcelas</h3>
+        <div id="dash-parcelas-list"></div>
       </div>
     </div>
 
@@ -467,6 +472,12 @@
         <div class="form-group">
           <label>Data de Fim <span id="aluguel-dias-label" style="font-size:0.78rem;color:var(--accent);font-weight:600;margin-left:6px"></span></label>
           <input type="date" id="aluguel-fim" onchange="calcTotal()">
+          <div class="prazo-rapido">
+            <button type="button" class="btn-prazo" onclick="preencherFim(1,'semana')">+1 sem</button>
+            <button type="button" class="btn-prazo" onclick="preencherFim(2,'semana')">+2 sem</button>
+            <button type="button" class="btn-prazo" onclick="preencherFim(1,'mes')">+1 mês</button>
+            <button type="button" class="btn-prazo" onclick="preencherFim(2,'mes')">+2 meses</button>
+          </div>
         </div>
       </div>
       <div class="form-row">
@@ -666,6 +677,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=79"></script>
+<script src="app.js?v=80"></script>
 </body>
 </html>
