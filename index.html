@@ -41,12 +41,11 @@
   <div class="nav-brand">&#127949; Notesns</div>
   <ul class="nav-links" id="navLinks">
     <li><a href="#" class="nav-item active" data-section="dashboard">Dashboard</a></li>
-    <li><a href="#" class="nav-item" data-section="clientes">Clientes</a></li>
     <li><a href="#" class="nav-item" data-section="motos">Veículos</a></li>
     <li><a href="#" class="nav-item" data-section="alugueis">Aluguéis</a></li>
-
-    <li><a href="#" class="nav-item" data-section="relatorios">Relatórios</a></li>
-    <li><a href="#" class="nav-item" data-section="checklist">Checklist de Compra</a></li>
+    <li><a href="#" class="nav-item" data-section="custos-geral">Custos</a></li>
+    <li><a href="#" class="nav-item" data-section="relatorios">Lucro</a></li>
+    <li><a href="#" class="nav-item" onclick="abrirContratosVencer();document.getElementById('navLinks').classList.remove('open')">Contratos a Vencer</a></li>
   </ul>
   <button class="hamburger" id="hamburger">&#9776;</button>
   <div class="notif-wrapper">
@@ -665,6 +664,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=77"></script>
+<script src="app.js?v=78"></script>
 </body>
 </html>
