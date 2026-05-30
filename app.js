@@ -5,6 +5,42 @@ const SUPABASE_URL = 'https://ohukqqyktkrvqedhozgk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9odWtxcXlrdGtydnFlZGhvemdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2ODkzMTQsImV4cCI6MjA5NTI2NTMxNH0.yKCkjINcQNcxiIqkfRUA507KlFymzTsInHTa6ObZzTM';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// --- CONFIGURAÇÕES DO LOCADOR ---
+var CONFIG_KEY = 'geremoto_config';
+function getConfig() {
+  try {
+    var c = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+    return {
+      nome:     c.nome     || 'Arisnaldo Sahdo Freire',
+      cpf:      c.cpf      || '071.235.863-36',
+      endereco: c.endereco || 'Rua Alameda das Borboletas, nº 69, Fortaleza - CE',
+      cidade:   c.cidade   || 'Fortaleza/CE'
+    };
+  } catch(e) {
+    return { nome: 'Arisnaldo Sahdo Freire', cpf: '071.235.863-36', endereco: 'Rua Alameda das Borboletas, nº 69, Fortaleza - CE', cidade: 'Fortaleza/CE' };
+  }
+}
+function abrirConfig() {
+  var c = getConfig();
+  document.getElementById('config-nome').value     = c.nome;
+  document.getElementById('config-cpf').value      = c.cpf;
+  document.getElementById('config-endereco').value = c.endereco;
+  document.getElementById('config-cidade').value   = c.cidade;
+  openModal('modal-config');
+}
+function salvarConfig() {
+  var c = {
+    nome:     document.getElementById('config-nome').value.trim(),
+    cpf:      document.getElementById('config-cpf').value.trim(),
+    endereco: document.getElementById('config-endereco').value.trim(),
+    cidade:   document.getElementById('config-cidade').value.trim()
+  };
+  if (!c.nome || !c.cpf) { alert('Nome e CPF são obrigatórios.'); return; }
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(c));
+  closeModal('modal-config');
+  alert('Configurações salvas com sucesso!');
+}
+
 // --- FORMATTERS ---
 function fmtBRL(v) {
   return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -1336,6 +1372,7 @@ async function gerarContrato(id, win) {
   var periodoTexto = { dia: 'Diária', semana: 'Semanal', quinzena: 'Quinzenal', mes: 'Mensal' };
   var hoje = new Date().toLocaleDateString('pt-BR');
   var contratoNum = 'CTR-' + id.substring(0,8).toUpperCase();
+  var cfg = getConfig();
 
   var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
     '<title>Contrato — ' + nomeCliente + '</title><style>' +
@@ -1359,13 +1396,13 @@ async function gerarContrato(id, win) {
     '<button class="pbtn" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>' +
     '<h1>Contrato de Locação de Motocicleta</h1>' +
     '<div class="sub">Instrumento Particular de Locação celebrado entre as partes abaixo qualificadas.</div>' +
-    '<div class="ref">Nº ' + contratoNum + ' &nbsp;|&nbsp; Fortaleza/CE, ' + hoje + '</div>' +
+    '<div class="ref">Nº ' + contratoNum + ' &nbsp;|&nbsp; ' + cfg.cidade + ', ' + hoje + '</div>' +
 
     '<div class="sec">1. Das Partes</div>' +
     '<table>' +
-      '<tr><td class="lb">Locador (Proprietário)</td><td>Arisnaldo Sahdo Freire</td></tr>' +
-      '<tr><td class="lb">CPF do Locador</td><td>071.235.863-36</td></tr>' +
-      '<tr><td class="lb">Endereço do Locador</td><td>Rua Alameda das Borboletas, nº 69, Fortaleza - CE</td></tr>' +
+      '<tr><td class="lb">Locador (Proprietário)</td><td>' + cfg.nome + '</td></tr>' +
+      '<tr><td class="lb">CPF do Locador</td><td>' + cfg.cpf + '</td></tr>' +
+      '<tr><td class="lb">Endereço do Locador</td><td>' + cfg.endereco + '</td></tr>' +
       '<tr><td class="lb">Locatário</td><td>' + nomeCliente + '</td></tr>' +
       '<tr><td class="lb">CPF do Locatário</td><td>' + fmtCPF(cpfCliente) + '</td></tr>' +
       '<tr><td class="lb">CNH do Locatário</td><td>' + cnhCliente + '</td></tr>' +
@@ -1413,10 +1450,10 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>7.1</strong> As partes elegem o foro da Comarca de Fortaleza, Estado do Ceará, para dirimir quaisquer controvérsias oriundas deste contrato, com renúncia a qualquer outro, por mais privilegiado que seja.</div>' +
 
     '<div class="cl" style="margin-top:16px;text-align:justify">E, por estarem assim justas e contratadas, as partes assinam o presente instrumento em 2 (duas) vias de igual teor e forma.</div>' +
-    '<div class="cl" style="text-align:center;margin-top:8px"><strong>Fortaleza - CE, ' + hoje + '</strong></div>' +
+    '<div class="cl" style="text-align:center;margin-top:8px"><strong>' + cfg.cidade + ', ' + hoje + '</strong></div>' +
 
     '<div class="asrow">' +
-      '<div class="asbox"><div class="asline"></div><div class="asname"><strong>Arisnaldo Sahdo Freire</strong><br>Locador — CPF 071.235.863-36</div></div>' +
+      '<div class="asbox"><div class="asline"></div><div class="asname"><strong>' + cfg.nome + '</strong><br>Locador — CPF ' + cfg.cpf + '</div></div>' +
       '<div class="asbox"><div class="asline"></div><div class="asname"><strong>' + nomeCliente + '</strong><br>Locatário — CPF ' + fmtCPF(cpfCliente) + '</div></div>' +
     '</div>' +
     '<div class="asrow" style="margin-top:32px">' +
