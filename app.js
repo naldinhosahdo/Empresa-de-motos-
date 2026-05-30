@@ -278,6 +278,17 @@ window.addEventListener('popstate', function(e) {
   showSection(section, false);
 });
 
+// Todos os campos de texto em maiúsculo automaticamente
+document.addEventListener('input', function(e) {
+  var el = e.target;
+  var skip = ['date', 'number', 'password', 'email', 'checkbox', 'radio'];
+  if (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && skip.indexOf(el.type) === -1 && el.inputMode !== 'decimal' && el.inputMode !== 'numeric')) {
+    var pos = el.selectionStart;
+    el.value = el.value.toUpperCase();
+    el.setSelectionRange(pos, pos);
+  }
+});
+
 document.querySelectorAll('.nav-item').forEach(function(a) {
   a.addEventListener('click', function(e) {
     e.preventDefault();
