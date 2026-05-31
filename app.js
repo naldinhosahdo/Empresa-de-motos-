@@ -388,6 +388,18 @@ async function doLogin(e) {
   }
 }
 
+async function esqueceuSenha(e) {
+  e.preventDefault();
+  var email = document.getElementById('login-email').value.trim().toLowerCase();
+  if (!email) { alert('Digite seu e-mail antes de clicar em "Esqueci minha senha".'); return; }
+  var { error } = await db.auth.resetPasswordForEmail(email);
+  if (error) {
+    alert('Erro ao enviar: ' + error.message);
+  } else {
+    alert('Link de redefinição enviado para ' + email + '. Verifique sua caixa de entrada.');
+  }
+}
+
 async function doLogout() {
   await db.auth.signOut();
   showLogin();
