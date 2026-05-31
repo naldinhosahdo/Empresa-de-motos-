@@ -613,16 +613,6 @@ async function renderDashboard() {
     '</div>';
   }
 
-  // Recent alugueis table
-  var tbody1 = document.getElementById('dash-alugueis-tbody');
-  var lastA   = a.slice().reverse();
-  tbody1.innerHTML = lastA.length
-    ? lastA.map(function(x) {
-        var vei = v.find(function(vv) { return vv.id === x.veiculo_id; });
-        return '<tr><td>' + (vei ? veiculoLabel(vei) : '-') + '</td><td>' + x.cliente + '</td><td>' + fmtBRL(x.total) + '</td><td>' + statusBadge(x.status, 'aluguel') + '</td></tr>';
-      }).join('')
-    : '<tr class="empty-row"><td colspan="4">Nenhum aluguel registrado</td></tr>';
-
   // Próximas parcelas em aberto (todas)
   var proximasParcelas = pa;
   var parcelasEl = document.getElementById('dash-parcelas-list');
