@@ -760,10 +760,12 @@ async function populateVeiculoSelects() {
     if (el) el.innerHTML = v.length ? opts : noOpt;
   });
   var filterOpts = '<option value="">Todos</option>' + opts;
-  ['filtro-moto-aluguel', 'filtro-moto-manut', 'filtro-moto-despesa', 'filtro-moto-prog'].forEach(function(id) {
+  ['filtro-moto-aluguel', 'filtro-moto-manut', 'filtro-moto-despesa'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.innerHTML = filterOpts;
   });
+  var elProg = document.getElementById('filtro-moto-prog');
+  if (elProg) elProg.innerHTML = opts;
 }
 
 var periodoLabel = { dia: 'Dia', semana: 'Semana', mes: 'Mês' };
@@ -795,7 +797,7 @@ async function renderManutProgramada() {
   var p = progs || [];
   if (!tbody) return;
   if (!p.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhuma manutenção programada' + (fmId ? ' para esta moto' : '') + '. Clique em "+ Programada" para adicionar.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Nenhuma manutenção programada para esta moto. Clique em "+ Programada" para adicionar.</td></tr>';
     return;
   }
   tbody.innerHTML = p.map(function(x) {
@@ -816,11 +818,7 @@ async function renderManutProgramada() {
       situacao = '<span class="badge badge-gray">—</span>';
     }
     var safeItem = (x.item || '').replace(/'/g, "\\'");
-    var veiCell = vei
-      ? '<div style="font-weight:600;font-size:0.88rem">' + (vei.modelo || '-') + '</div><div style="font-size:0.75rem;color:var(--text2)">' + (vei.placa || '') + '</div>'
-      : '-';
     return '<tr>' +
-      '<td>' + veiCell + '</td>' +
       '<td><strong>' + (x.item || '-') + '</strong></td>' +
       '<td>A cada ' + Number(x.intervalo_km).toLocaleString('pt-BR') + ' km</td>' +
       '<td>' + (x.ultima_km ? Number(x.ultima_km).toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
