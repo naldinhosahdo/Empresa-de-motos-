@@ -434,6 +434,8 @@ function showSection(name, addHistory) {
 function abrirContratosVencer() {
   populateClienteSelect();
   populateVeiculoSelects();
+  var fmEl = document.getElementById('filtro-moto-aluguel');
+  if (fmEl) fmEl.value = '';
   document.getElementById('filtro-status-aluguel').value = 'ativo';
   showSection('alugueis');
   renderAlugueis(true);
