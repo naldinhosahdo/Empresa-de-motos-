@@ -795,7 +795,7 @@ async function renderManutProgramada() {
   var p = progs || [];
   if (!tbody) return;
   if (!p.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhuma manutenção programada' + (fmId ? ' para esta moto' : '') + '. Clique em "+ Programada" para adicionar.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhuma manutenção programada' + (fmId ? ' para esta moto' : '') + '. Clique em "+ Programada" para adicionar.</td></tr>';
     return;
   }
   tbody.innerHTML = p.map(function(x) {
@@ -825,7 +825,6 @@ async function renderManutProgramada() {
       '<td>A cada ' + Number(x.intervalo_km).toLocaleString('pt-BR') + ' km</td>' +
       '<td>' + (x.ultima_km ? Number(x.ultima_km).toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
       '<td>' + (kmAtual ? kmAtual.toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
-      '<td>' + (proximaKm ? proximaKm.toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
       '<td>' + situacao + '</td>' +
       '<td><div class="btn-actions">' +
         '<button class="btn btn-sm btn-primary" onclick="abrirRegistrarTroca(\'' + x.id + '\',\'' + x.veiculo_id + '\',\'' + safeItem + '\')">✓ Registrar</button>' +
