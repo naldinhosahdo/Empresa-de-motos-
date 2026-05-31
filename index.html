@@ -263,6 +263,13 @@
     </div>
 
     <div id="tab-programada" class="custos-tab-content" style="display:none">
+      <div class="filter-bar" style="margin-bottom:0.75rem">
+        <label>Moto:
+          <select id="filtro-moto-prog" onchange="renderManutProgramada()">
+            <option value="">Todas</option>
+          </select>
+        </label>
+      </div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Item</th><th>Intervalo</th><th>Última troca</th><th>Próxima</th><th>Situação</th><th>Ações</th></tr></thead>
@@ -801,6 +808,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=93"></script>
+<script src="app.js?v=94"></script>
 </body>
 </html>
