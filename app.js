@@ -4,6 +4,7 @@
 const SUPABASE_URL = 'https://ohukqqyktkrvqedhozgk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9odWtxcXlrdGtydnFlZGhvemdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2ODkzMTQsImV4cCI6MjA5NTI2NTMxNH0.yKCkjINcQNcxiIqkfRUA507KlFymzTsInHTa6ObZzTM';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+var _pendingNotifKey = null;
 
 // --- CONFIGURAÇÕES DO LOCADOR ---
 var CONFIG_KEY = 'geremoto_config';
@@ -152,7 +153,7 @@ async function loadNotificacoes() {
       var numParc = mesHoje - 1; // fev=1, mar=2, abr=3, mai=4, jun=5
       var dIPVA = anoHoje + '-' + p2(mesHoje) + '-10';
       alertasRecorrentes.push({ key: 'ipva_' + vei.id + '_' + anoHoje + '_' + mesHoje, data: dIPVA,
-        label: 'IPVA parcela ' + numParc + '/5 — ' + (vei.modelo || '-'),
+        label: 'IPVA parcela ' + numParc + '/5',
         veiculo: vl, valor: '', tipo: 'recorrente', veiculoId: vei.id, tipoLabel: 'IPVA' });
     }
     // Licenciamento — dia 10, mês = (último dígito da placa) + 2, avisa com 30 dias
@@ -167,7 +168,7 @@ async function loadNotificacoes() {
         if (dLic < hoje0Str) dLic = (anoLic + 1) + '-' + p2(mesLic) + '-10';
         if (dLic >= hoje0Str && dLic <= em30Str) {
           alertasRecorrentes.push({ key: 'lic_' + vei.id + '_' + dLic, data: dLic,
-            label: 'Licenciamento vence — ' + (vei.modelo || '-'),
+            label: 'Licenciamento vence',
             veiculo: vl, valor: '', tipo: 'recorrente', veiculoId: vei.id, tipoLabel: 'Licenciamento' });
         }
       }
@@ -179,7 +180,7 @@ async function loadNotificacoes() {
       var dSegStr = dSeg.getFullYear() + '-' + p2(dSeg.getMonth() + 1) + '-10';
       if (dSegStr >= hoje0Str && dSegStr <= em7Str) {
         alertasRecorrentes.push({ key: 'seguro_' + vei.id + '_' + dSegStr, data: dSegStr,
-          label: 'Seguro + Rastreador — ' + (vei.modelo || '-'),
+          label: 'Seguro + Rastreador',
           veiculo: vl, valor: fmtBRL(vei.seguro_rastreador_mensal), tipo: 'recorrente', veiculoId: vei.id, tipoLabel: 'Seguro' });
       }
     }
@@ -197,7 +198,7 @@ async function loadNotificacoes() {
     alertasRecorrentes.push({
       key: 'prog_' + p.id + '_' + Math.floor(Number(vei.km_atual) / Number(p.intervalo_km)),
       data: hoje0Str,
-      label: (p.item || 'Manutenção') + ' — ' + (vei.modelo || '-'),
+      label: (p.item || 'Manutenção'),
       veiculo: { modelo: vei.modelo, placa: vei.placa },
       valor: kmTexto,
       tipo: 'recorrente'
@@ -253,7 +254,7 @@ async function loadNotificacoes() {
     } else if (a.tipo === 'recorrente' && a.key.indexOf('prog_') === 0) {
       bodyClick = 'onclick="' + _c + 'showSection(\'custos-geral\');showCustosTab(\'programada\')" style="cursor:pointer"';
     } else if (a.tipo === 'recorrente' && a.veiculoId && a.tipoLabel) {
-      bodyClick = 'onclick="' + _c + 'abrirDespesaNotif(\'' + a.veiculoId + '\',\'' + a.tipoLabel + '\',\'' + a.data + '\')" style="cursor:pointer"';
+      bodyClick = 'onclick="' + _c + 'abrirDespesaNotif(\'' + a.veiculoId + '\',\'' + a.tipoLabel + '\',\'' + a.data + '\',\'' + safeKey + '\')" style="cursor:pointer"';
     } else if (a.tipo === 'recorrente') {
       bodyClick = 'onclick="' + _c + 'showSection(\'custos-geral\');showCustosTab(\'despesas\')" style="cursor:pointer"';
     } else {
@@ -1283,7 +1284,8 @@ async function renderDespesas() {
     : '<tr class="empty-row"><td colspan="7">Nenhuma despesa encontrada</td></tr>';
 }
 
-async function abrirDespesaNotif(veiculoId, tipo, vencimento) {
+async function abrirDespesaNotif(veiculoId, tipo, vencimento, notifKey) {
+  _pendingNotifKey = notifKey || null;
   document.getElementById('notif-dropdown').style.display = 'none';
   showSection('custos-geral');
   showCustosTab('despesas');
@@ -1340,6 +1342,7 @@ async function submitDespesa(e) {
   }
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-despesa');
+  if (_pendingNotifKey) { dismissNotif(_pendingNotifKey); _pendingNotifKey = null; }
   if (document.getElementById('custos-geral').classList.contains('active')) renderDespesas();
 }
 
