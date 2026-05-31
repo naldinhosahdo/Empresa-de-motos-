@@ -1389,15 +1389,15 @@ async function abrirDespesaNotif(veiculoId, tipo, vencimento, notifKey) {
   document.getElementById('notif-dropdown').style.display = 'none';
   showSection('custos-geral');
   showCustosTab('despesas');
-  await populateVeiculoSelects();
   document.getElementById('form-despesa').reset();
   document.getElementById('despesa-id').value = '';
   document.getElementById('modal-despesa-title').textContent = 'Nova Despesa Fixa';
-  document.getElementById('despesa-moto').value = veiculoId;
   document.getElementById('despesa-tipo').value = tipo;
   document.getElementById('despesa-ano').value = new Date().getFullYear();
   document.getElementById('despesa-vencimento').value = vencimento;
   openModal('modal-despesa');
+  await populateVeiculoSelects();
+  document.getElementById('despesa-moto').value = veiculoId;
 }
 
 function openNewDespesa() {
