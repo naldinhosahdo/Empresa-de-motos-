@@ -22,7 +22,7 @@
     <form id="form-login" onsubmit="doLogin(event)">
       <div class="form-group">
         <label>E-mail</label>
-        <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" required oninput="this.value=this.value.toLowerCase()">
+        <input type="text" id="login-email" placeholder="seu@email.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" required oninput="this.value=this.value.toLowerCase()" style="text-transform:lowercase">
       </div>
       <div class="form-group">
         <label>Senha</label>
@@ -836,6 +836,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=105"></script>
+<script src="app.js?v=106"></script>
 </body>
 </html>
