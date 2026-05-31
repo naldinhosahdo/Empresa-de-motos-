@@ -494,12 +494,6 @@ async function renderDashboard() {
     '</div>';
   }
 
-  // Card "A Receber Hoje" — parcelas vencidas (atrasadas + hoje)
-  var parcelasVencidas = pa.filter(function(p) { return p.vencimento <= hojeStr; });
-  var totalReceber = parcelasVencidas.reduce(function(s, p) { return s + Number(p.valor || 0); }, 0);
-  document.getElementById('dash-receber-valor').textContent = fmtBRL(totalReceber);
-  document.getElementById('dash-receber-qtd').textContent   = parcelasVencidas.length;
-
   // Recent alugueis table
   var tbody1 = document.getElementById('dash-alugueis-tbody');
   var lastA   = a.slice().reverse().slice(0, 5);
