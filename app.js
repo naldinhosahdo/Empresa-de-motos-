@@ -107,8 +107,8 @@ function calcularValorParcela(valorOriginal, vencimento, dataPagamento) {
   } else if (diffDias === 0) {
     return { valor: valorOriginal, descricao: 'Pago no vencimento — sem ajuste', tipo: 'normal' };
   } else {
-    var multa = valorOriginal * 0.05 * diffDias;
-    return { valor: valorOriginal + multa, descricao: 'Multa: ' + diffDias + ' dia(s) × 5% = +' + fmtBRL(multa), tipo: 'multa' };
+    var multa = valorOriginal * 0.03 * diffDias;
+    return { valor: valorOriginal + multa, descricao: 'Multa: ' + diffDias + ' dia(s) × 3% = +' + fmtBRL(multa), tipo: 'multa' };
   }
 }
 
@@ -1814,7 +1814,7 @@ async function gerarContrato(id, win) {
     '<div class="sec">4. Do Pagamento</div>' +
     '<div class="cl"><strong>4.1</strong> O pagamento efetuado antes da data de vencimento garantirá ao Locatário desconto de <strong>5% (cinco por cento)</strong> sobre o valor da parcela.</div>' +
     '<div class="cl"><strong>4.2</strong> O pagamento realizado na data do vencimento será pelo valor integral acordado, sem acréscimos ou descontos.</div>' +
-    '<div class="cl"><strong>4.3</strong> O atraso no pagamento implicará multa moratória de <strong>5% (cinco por cento) do valor da parcela por dia de atraso</strong>, calculada de forma simples (não composta), incidindo a partir do primeiro dia após o vencimento. Exemplo: parcela de ' + fmtValor(a.valor) + ' atrasada 3 dias = ' + fmtValor(a.valor) + ' + ' + fmtValor((a.valor||0) * 0.05 * 3) + ' = ' + fmtValor((a.valor||0) * 1.15) + '.</div>' +
+    '<div class="cl"><strong>4.3</strong> O atraso no pagamento implicará multa moratória de <strong>3% (três por cento) do valor da parcela por dia de atraso</strong>, calculada de forma simples (não composta), incidindo a partir do primeiro dia após o vencimento. Exemplo: parcela de ' + fmtValor(a.valor) + ' atrasada 3 dias = ' + fmtValor(a.valor) + ' + ' + fmtValor((a.valor||0) * 0.03 * 3) + ' = ' + fmtValor((a.valor||0) * 1.09) + '.</div>' +
     '<div class="cl"><strong>4.4</strong> O atraso no pagamento autoriza o Locador a acionar o <strong>bloqueio remoto do veículo</strong> via dispositivo rastreador, independentemente de notificação prévia, permanecendo o veículo bloqueado até a quitação integral do débito acrescido das multas moratórias devidas.</div>' +
 
     '<div class="sec">5. Das Obrigações do Locatário</div>' +
