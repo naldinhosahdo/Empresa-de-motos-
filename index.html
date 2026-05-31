@@ -771,6 +771,33 @@
   </div>
 </div>
 
+<!-- MODAL CONFIRMAR PAGAMENTO -->
+<div class="modal-overlay" id="modal-pagar-parcela">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3>Confirmar Pagamento</h3>
+      <button class="modal-close" onclick="closeModal('modal-pagar-parcela')">&times;</button>
+    </div>
+    <div style="padding:0 1.5rem 1rem">
+      <div id="pagar-parcela-info" style="margin-bottom:1rem;font-size:0.88rem;color:var(--text2);line-height:1.5"></div>
+      <div class="form-group">
+        <label>Data do pagamento</label>
+        <input type="date" id="pagar-parcela-data" oninput="atualizarCalcParcela()">
+      </div>
+      <div id="pagar-parcela-calc" style="margin:1rem 0;padding:0.75rem;border-radius:8px;background:var(--bg2)"></div>
+      <input type="hidden" id="pagar-parcela-id">
+      <input type="hidden" id="pagar-parcela-aluguel-id">
+      <input type="hidden" id="pagar-parcela-notif-key">
+      <input type="hidden" id="pagar-parcela-valor-original">
+      <input type="hidden" id="pagar-parcela-vencimento">
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('modal-pagar-parcela')">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="submitPagarParcela()">Confirmar pagamento</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL CONFIGURAÇÕES -->
 <div class="modal-overlay" id="modal-config">
   <div class="modal" style="max-width:480px">
@@ -807,6 +834,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=101"></script>
+<script src="app.js?v=102"></script>
 </body>
 </html>

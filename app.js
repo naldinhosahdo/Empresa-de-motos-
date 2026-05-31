@@ -97,6 +97,66 @@ function dismissAllNotif() {
   loadNotificacoes();
 }
 
+function calcularValorParcela(valorOriginal, vencimento, dataPagamento) {
+  var venc = new Date(vencimento + 'T00:00:00');
+  var pag  = new Date(dataPagamento + 'T00:00:00');
+  var diffDias = Math.round((pag - venc) / 86400000);
+  if (diffDias < 0) {
+    var desc = valorOriginal * 0.05;
+    return { valor: valorOriginal - desc, descricao: 'Desconto 5%: −' + fmtBRL(desc), tipo: 'desconto' };
+  } else if (diffDias === 0) {
+    return { valor: valorOriginal, descricao: 'Pago no vencimento — sem ajuste', tipo: 'normal' };
+  } else {
+    var multa = valorOriginal * 0.05 * diffDias;
+    return { valor: valorOriginal + multa, descricao: 'Multa: ' + diffDias + ' dia(s) × 5% = +' + fmtBRL(multa), tipo: 'multa' };
+  }
+}
+
+function abrirPagarParcela(parcelaId, aluguelId, valorOriginal, vencimento, descricao, notifKey) {
+  document.getElementById('pagar-parcela-id').value = parcelaId;
+  document.getElementById('pagar-parcela-aluguel-id').value = aluguelId || '';
+  document.getElementById('pagar-parcela-notif-key').value = notifKey || '';
+  document.getElementById('pagar-parcela-valor-original').value = valorOriginal;
+  document.getElementById('pagar-parcela-vencimento').value = vencimento;
+  document.getElementById('pagar-parcela-data').value = hojeLocalStr();
+  document.getElementById('pagar-parcela-info').innerHTML =
+    '<strong>' + descricao + '</strong><br>Vencimento: ' + fmtDate(vencimento) + ' · Valor original: ' + fmtBRL(valorOriginal);
+  atualizarCalcParcela();
+  openModal('modal-pagar-parcela');
+}
+
+function atualizarCalcParcela() {
+  var valorOriginal = Number(document.getElementById('pagar-parcela-valor-original').value);
+  var vencimento    = document.getElementById('pagar-parcela-vencimento').value;
+  var dataPag       = document.getElementById('pagar-parcela-data').value;
+  if (!dataPag || !vencimento) return;
+  var calc = calcularValorParcela(valorOriginal, vencimento, dataPag);
+  var cor = calc.tipo === 'desconto' ? 'var(--green)' : calc.tipo === 'multa' ? 'var(--red)' : 'var(--text)';
+  document.getElementById('pagar-parcela-calc').innerHTML =
+    '<div style="font-size:0.8rem;color:var(--text2);margin-bottom:0.25rem">' + calc.descricao + '</div>' +
+    '<div style="font-size:1.1rem;font-weight:700;color:' + cor + '">Total a receber: ' + fmtBRL(calc.valor) + '</div>';
+}
+
+async function submitPagarParcela() {
+  var parcelaId  = document.getElementById('pagar-parcela-id').value;
+  var aluguelId  = document.getElementById('pagar-parcela-aluguel-id').value;
+  var notifKey   = document.getElementById('pagar-parcela-notif-key').value;
+  var valorOrig  = Number(document.getElementById('pagar-parcela-valor-original').value);
+  var vencimento = document.getElementById('pagar-parcela-vencimento').value;
+  var dataPag    = document.getElementById('pagar-parcela-data').value;
+  if (!dataPag) { alert('Informe a data do pagamento.'); return; }
+  var calc = calcularValorParcela(valorOrig, vencimento, dataPag);
+  var valorPago = Math.round(calc.valor * 100) / 100;
+  await db.from('parcelas').update({ pago: true, data_pagamento: dataPag, valor_pago: valorPago }).eq('id', parcelaId);
+  closeModal('modal-pagar-parcela');
+  if (notifKey) dismissNotif(notifKey);
+  renderDashboard();
+  loadNotificacoes();
+  if (aluguelId && document.getElementById('modal-parcelas').classList.contains('open')) {
+    abrirParcelas(aluguelId);
+  }
+}
+
 async function pagarParcelaNotif(parcelaId, aluguelId, key) {
   var hoje = hojeLocalStr();
   await db.from('parcelas').update({ pago: true, data_pagamento: hoje }).eq('id', parcelaId);
@@ -111,6 +171,7 @@ async function loadNotificacoes() {
   var em30Str = em30.toISOString().split('T')[0];
   var em5 = new Date(hoje.getTime() + 5 * 86400000);
   var em5Str = em5.toISOString().split('T')[0];
+  var em2Str = new Date(hoje.getTime() + 2 * 86400000).toISOString().split('T')[0];
 
   var hoje0Str = hojeLocalStr();
   var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }, { data: veiculosData }, { data: progsData }] = await Promise.all([
@@ -121,7 +182,7 @@ async function loadNotificacoes() {
     db.from('alugueis').select('*, veiculos(modelo, placa)')
       .eq('status', 'ativo').lte('fim', em5Str).not('fim', 'is', null).order('fim'),
     db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))')
-      .eq('pago', false).lte('vencimento', hoje0Str).order('vencimento'),
+      .eq('pago', false).lte('vencimento', em2Str).order('vencimento'),
     db.from('veiculos').select('id, modelo, placa, km_atual, seguro_rastreador_mensal'),
     db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)')
   ]);
@@ -137,7 +198,7 @@ async function loadNotificacoes() {
   });
   var alertasParcelas = (parcelasData || []).map(function(p) {
     var alu = p.alugueis || {};
-    return { key: 'parcela_' + p.id, data: p.vencimento, label: p.descricao + ' — ' + (alu.cliente || '-'), veiculo: alu.veiculos, valor: fmtBRL(p.valor), tipo: 'parcela', parcelaId: p.id, aluguelId: p.aluguel_id };
+    return { key: 'parcela_' + p.id, data: p.vencimento, label: p.descricao + ' — ' + (alu.cliente || '-'), veiculo: alu.veiculos, valor: fmtBRL(p.valor), tipo: 'parcela', parcelaId: p.id, aluguelId: p.aluguel_id, valorNum: p.valor, vencimentoStr: p.vencimento };
   });
 
   function p2(n) { return n < 10 ? '0' + n : '' + n; }
@@ -238,8 +299,9 @@ async function loadNotificacoes() {
           ? '🔴 Vence em ' + diff + ' dia(s)'
           : '🟡 Vence em ' + diff + ' dia(s)';
     var safeKey = a.key.replace(/'/g, "\\'");
+    var safeLabel = (a.label || '').replace(/'/g, "\\'");
     var pagarBtn = a.tipo === 'parcela' && a.parcelaId && a.aluguelId
-      ? '<button class="btn btn-sm btn-primary" style="font-size:0.72rem;padding:3px 8px;margin-right:4px" onclick="pagarParcelaNotif(\'' + a.parcelaId + '\',\'' + a.aluguelId + '\',\'' + safeKey + '\')">Pago</button>'
+      ? '<button class="btn btn-sm btn-primary" style="font-size:0.72rem;padding:3px 8px;margin-right:4px" onclick="abrirPagarParcela(\'' + a.parcelaId + '\',\'' + a.aluguelId + '\',' + a.valorNum + ',\'' + a.vencimentoStr + '\',\'' + safeLabel + '\',\'' + safeKey + '\')">Pago</button>'
       : '';
     var _c = "document.getElementById('notif-dropdown').style.display='none';";
     var bodyClick;
@@ -412,9 +474,9 @@ async function renderDashboard() {
   var aNaoCancelado = a.filter(function(x) { return x.status !== 'cancelado'; });
 
   // Receita = apenas parcelas efetivamente pagas
-  var receitaTotal = pp.reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+  var receitaTotal = pp.reduce(function(s, x) { return s + Number(x.valor_pago || x.valor || 0); }, 0);
   var receitaMes   = pp.filter(function(x) { return x.data_pagamento && x.data_pagamento.startsWith(anoMes); })
-                       .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+                       .reduce(function(s, x) { return s + Number(x.valor_pago || x.valor || 0); }, 0);
 
   var custosTotal = m.reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
                   + d.reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
@@ -557,7 +619,7 @@ async function renderDashboard() {
           '<div style="font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (alu.cliente || '-') + (vei ? ' · ' + vei.modelo : '') + '</div>' +
           '<div style="font-size:0.75rem;color:' + cor + '">' + status + ' · ' + fmtBRL(p.valor) + '</div>' +
         '</div>' +
-        '<button class="btn btn-sm btn-primary" style="font-size:0.72rem;white-space:nowrap;margin-left:0.5rem" onclick="pagarParcelaDash(\'' + p.id + '\', \'' + (p.aluguel_id) + '\')">Marcar pago</button>' +
+        '<button class="btn btn-sm btn-primary" style="font-size:0.72rem;white-space:nowrap;margin-left:0.5rem" onclick="abrirPagarParcela(\'' + p.id + '\',\'' + p.aluguel_id + '\',' + p.valor + ',\'' + p.vencimento + '\',\'' + (alu.cliente||'').replace(/\'/g,\"\\\\'\") + '\',\'\')">Marcar pago</button>' +
       '</div>';
     }).join('');
   }
@@ -1110,7 +1172,7 @@ async function abrirParcelas(aluguelId) {
 
   if (!aluguel) return;
   var vei = aluguel.veiculos;
-  var totalPago   = (parcelas||[]).filter(function(p){ return p.pago; }).reduce(function(s,p){ return s + Number(p.valor); }, 0);
+  var totalPago   = (parcelas||[]).filter(function(p){ return p.pago; }).reduce(function(s,p){ return s + Number(p.valor_pago || p.valor); }, 0);
   var totalPendente = (parcelas||[]).filter(function(p){ return !p.pago; }).reduce(function(s,p){ return s + Number(p.valor); }, 0);
   var caucao = Number(aluguel.caucao || 0);
   var aluguelSemCaucao = Number(aluguel.total || 0);
@@ -1142,13 +1204,17 @@ async function abrirParcelas(aluguelId) {
           : atrasado
             ? '<span class="badge badge-red">⚠️ Atrasado</span>'
             : '<span class="badge badge-yellow">⏳ Pendente</span>';
+        var safeDesc = (p.descricao || '').replace(/'/g, "\\'");
         var btn = p.pago
           ? '<button class="btn btn-sm btn-secondary" onclick="toggleParcela(\'' + p.id + '\', false, \'' + aluguelId + '\')">Desfazer</button>'
-          : '<button class="btn btn-sm btn-primary" onclick="toggleParcela(\'' + p.id + '\', true, \'' + aluguelId + '\')">Marcar pago</button>';
+          : '<button class="btn btn-sm btn-primary" onclick="abrirPagarParcela(\'' + p.id + '\',\'' + aluguelId + '\',' + p.valor + ',\'' + p.vencimento + '\',\'' + safeDesc + '\',\'\')">Marcar pago</button>';
+        var valorExibido = p.pago && p.valor_pago && Number(p.valor_pago) !== Number(p.valor)
+          ? fmtBRL(p.valor) + ' → <strong>' + fmtBRL(p.valor_pago) + '</strong>'
+          : fmtBRL(p.valor);
         return '<div class="parcela-item ' + cls + '">' +
           '<div>' +
             '<div style="font-weight:600;font-size:0.9rem">' + p.descricao + '</div>' +
-            '<div style="font-size:0.78rem;color:var(--text2)">Vence: ' + fmtDate(p.vencimento) + ' · ' + fmtBRL(p.valor) + '</div>' +
+            '<div style="font-size:0.78rem;color:var(--text2)">Vence: ' + fmtDate(p.vencimento) + ' · ' + valorExibido + '</div>' +
           '</div>' +
           '<div style="display:flex;align-items:center;gap:0.5rem">' + badge + btn + '</div>' +
         '</div>';
