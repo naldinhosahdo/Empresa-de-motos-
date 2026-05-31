@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>GereMoto — Gestão de Aluguel de Veículos</title>
-  <link rel="stylesheet" href="style.css?v=30">
+  <link rel="stylesheet" href="style.css?v=31">
 </head>
 <body>
 
@@ -241,25 +241,43 @@
     <div class="section-header">
       <h2 class="section-title">Custos</h2>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="openNewManutencao()">+ Nova Manutenção</button>
-        <button class="btn btn-primary" onclick="openNewDespesa()">+ Nova Despesa</button>
+        <button id="btn-nova-avulsa"  class="btn btn-primary" onclick="openNewManutencao()">+ Avulsa</button>
+        <button id="btn-nova-prog"    class="btn btn-primary" onclick="openNewManutProg()" style="display:none">+ Programada</button>
+        <button id="btn-nova-despesa" class="btn btn-primary" onclick="openNewDespesa()"   style="display:none">+ Despesa</button>
       </div>
     </div>
 
-    <h3 style="font-size:1rem;font-weight:600;margin:0 0 0.75rem">Manutenções</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Moto</th><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Próx.</th><th>Ações</th></tr></thead>
-        <tbody id="manutencoes-tbody"></tbody>
-      </table>
+    <div class="custos-tabs">
+      <button class="custos-tab active" onclick="showCustosTab('avulsa')">Avulsa</button>
+      <button class="custos-tab"        onclick="showCustosTab('programada')">Programada</button>
+      <button class="custos-tab"        onclick="showCustosTab('despesas')">Despesas</button>
     </div>
 
-    <h3 style="font-size:1rem;font-weight:600;margin:1.5rem 0 0.75rem">Despesas</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Moto</th><th>Tipo</th><th>Ano Ref.</th><th>Valor</th><th>Vencimento</th><th>Observação</th><th>Ações</th></tr></thead>
-        <tbody id="despesas-tbody"></tbody>
-      </table>
+    <div id="tab-avulsa" class="custos-tab-content">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Moto</th><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Próx.</th><th>Ações</th></tr></thead>
+          <tbody id="manutencoes-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-programada" class="custos-tab-content" style="display:none">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Moto</th><th>Item</th><th>Intervalo</th><th>Última troca</th><th>Próxima</th><th>Situação</th><th>Ações</th></tr></thead>
+          <tbody id="programada-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-despesas" class="custos-tab-content" style="display:none">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Moto</th><th>Tipo</th><th>Ano Ref.</th><th>Valor</th><th>Vencimento</th><th>Observação</th><th>Ações</th></tr></thead>
+          <tbody id="despesas-tbody"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -387,6 +405,12 @@
           <input type="number" id="moto-valor-compra" step="0.01" min="0" placeholder="8000.00">
         </div>
         <div class="form-group">
+          <label>KM Atual</label>
+          <input type="number" id="moto-km-atual" min="0" placeholder="40000">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
           <label>Status</label>
           <select id="moto-status">
             <option value="disponivel">Disponível</option>
@@ -394,6 +418,7 @@
             <option value="manutencao">Em Manutenção</option>
           </select>
         </div>
+        <div class="form-group"></div>
       </div>
       <div style="margin:0.75rem 0 0.25rem;font-size:0.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-top:1px solid var(--border);padding-top:0.6rem">Custos Recorrentes</div>
       <div class="form-row">
@@ -586,6 +611,74 @@
   </div>
 </div>
 
+<!-- MODAL MANUTENÇÃO PROGRAMADA -->
+<div class="modal-overlay" id="modal-manut-prog">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="modal-prog-title">Nova Manutenção Programada</h3>
+      <button class="modal-close" onclick="closeModal('modal-manut-prog')">&times;</button>
+    </div>
+    <input type="hidden" id="prog-id">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Moto *</label>
+        <select id="prog-moto"></select>
+      </div>
+      <div class="form-group">
+        <label>Item *</label>
+        <input type="text" id="prog-item" list="prog-item-list" placeholder="Ex: TROCA DE ÓLEO">
+        <datalist id="prog-item-list">
+          <option value="TROCA DE ÓLEO">
+          <option value="VELA DE IGNIÇÃO">
+          <option value="FILTRO DE AR">
+          <option value="KIT RELAÇÃO">
+          <option value="KIT EMBREAGEM">
+          <option value="PASTILHA DE FREIO">
+          <option value="REVISÃO GERAL">
+        </datalist>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Intervalo (km) *</label>
+        <input type="number" id="prog-intervalo" placeholder="1000">
+      </div>
+      <div class="form-group">
+        <label>Última troca em (km)</label>
+        <input type="number" id="prog-ultima-km" placeholder="40000">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('modal-manut-prog')">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="submitManutProg()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REGISTRAR TROCA -->
+<div class="modal-overlay" id="modal-registrar-troca">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="modal-troca-title">Registrar Troca</h3>
+      <button class="modal-close" onclick="closeModal('modal-registrar-troca')">&times;</button>
+    </div>
+    <input type="hidden" id="troca-prog-id">
+    <input type="hidden" id="troca-veiculo-id">
+    <div class="form-group">
+      <label>KM no momento da troca *</label>
+      <input type="number" id="troca-km" placeholder="40000">
+    </div>
+    <div class="form-group">
+      <label>Custo (R$) — opcional</label>
+      <input type="number" id="troca-custo" step="0.01" placeholder="50.00">
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('modal-registrar-troca')">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="submitRegistrarTroca()">Registrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL CONFIRMAR EXCLUSÃO -->
 <div class="modal-overlay" id="modal-confirm">
   <div class="modal modal-sm">
@@ -708,6 +801,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=90"></script>
+<script src="app.js?v=91"></script>
 </body>
 </html>

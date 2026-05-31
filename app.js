@@ -112,7 +112,7 @@ async function loadNotificacoes() {
   var em5Str = em5.toISOString().split('T')[0];
 
   var hoje0Str = hojeLocalStr();
-  var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }, { data: veiculosData }] = await Promise.all([
+  var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }, { data: veiculosData }, { data: progsData }] = await Promise.all([
     db.from('despesas').select('*, veiculos(modelo, placa)')
       .lte('vencimento', em30Str).not('vencimento', 'is', null).order('vencimento'),
     db.from('manutencoes').select('*, veiculos(modelo, placa)')
@@ -121,7 +121,8 @@ async function loadNotificacoes() {
       .eq('status', 'ativo').lte('fim', em5Str).not('fim', 'is', null).order('fim'),
     db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))')
       .eq('pago', false).lte('vencimento', hoje0Str).order('vencimento'),
-    db.from('veiculos').select('id, modelo, placa, ipva_valor, licenciamento_valor, seguro_rastreador_mensal')
+    db.from('veiculos').select('id, modelo, placa, km_atual, seguro_rastreador_mensal'),
+    db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)')
   ]);
 
   var alertasDespesas = (despesasData || []).map(function(d) {
@@ -182,6 +183,25 @@ async function loadNotificacoes() {
           veiculo: vl, valor: fmtBRL(vei.seguro_rastreador_mensal), tipo: 'recorrente' });
       }
     }
+  });
+
+  // Manutenção programada — alerta quando km_atual >= proxima_km - 500
+  (progsData || []).forEach(function(p) {
+    var vei = p.veiculos;
+    if (!p.ultima_km || !vei || !vei.km_atual) return;
+    var proximaKm = Number(p.ultima_km) + Number(p.intervalo_km);
+    var restante = proximaKm - Number(vei.km_atual);
+    if (restante > 500) return;
+    var vencido = restante <= 0;
+    var kmTexto = vencido ? '⚠️ Vencido (' + Math.abs(restante).toLocaleString('pt-BR') + ' km atrás)' : '🔴 Faltam ' + restante.toLocaleString('pt-BR') + ' km';
+    alertasRecorrentes.push({
+      key: 'prog_' + p.id + '_' + Math.floor(Number(vei.km_atual) / Number(p.intervalo_km)),
+      data: hoje0Str,
+      label: (p.item || 'Manutenção') + ' — ' + (vei.modelo || '-'),
+      veiculo: { modelo: vei.modelo, placa: vei.placa },
+      valor: kmTexto,
+      tipo: 'recorrente'
+    });
   });
 
   var todosAlertas = alertasDespesas.concat(alertasManut).concat(alertasAlug).concat(alertasParcelas).concat(alertasRecorrentes).sort(function(a, b) {
@@ -303,7 +323,7 @@ function showSection(name, addHistory) {
   if (name === 'clientes')   renderClientes();
   if (name === 'motos')      renderVeiculos();
   if (name === 'alugueis')   { populateClienteSelect(); populateVeiculoSelects(); renderAlugueis(); }
-  if (name === 'custos-geral') { renderManutencoes(); renderDespesas(); }
+  if (name === 'custos-geral') { showCustosTab('avulsa'); }
   if (name === 'relatorios') renderRelatorios();
   if (name === 'checklist')  buildChecklist();
 
@@ -684,6 +704,7 @@ async function editVeiculo(id) {
   document.getElementById('moto-cor').value        = v.cor || '';
   document.getElementById('moto-valor-compra').value = v.valor_compra || '';
   document.getElementById('moto-status').value           = v.status || 'disponivel';
+  document.getElementById('moto-km-atual').value         = v.km_atual || '';
   document.getElementById('moto-seguro-mensal').value    = v.seguro_rastreador_mensal || '';
   document.getElementById('moto-obs').value              = v.obs || '';
   document.getElementById('modal-moto-title').textContent = 'Editar Veículo';
@@ -699,6 +720,7 @@ async function submitMoto(e) {
     ano:           document.getElementById('moto-ano').value || null,
     cor:           document.getElementById('moto-cor').value.trim(),
     valor_compra:             document.getElementById('moto-valor-compra').value || null,
+    km_atual:                 parseInt(document.getElementById('moto-km-atual').value) || null,
     status:                   document.getElementById('moto-status').value,
     seguro_rastreador_mensal: document.getElementById('moto-seguro-mensal').value || null,
     obs:                      document.getElementById('moto-obs').value.trim()
@@ -721,7 +743,7 @@ async function populateVeiculoSelects() {
   const v = data || [];
   const opts  = v.map(function(vei) { return '<option value="' + vei.id + '">' + veiculoLabel(vei) + '</option>'; }).join('');
   const noOpt = '<option value="">Nenhum veículo cadastrado</option>';
-  ['aluguel-moto', 'manut-moto', 'despesa-moto'].forEach(function(id) {
+  ['aluguel-moto', 'manut-moto', 'despesa-moto', 'prog-moto'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.innerHTML = v.length ? opts : noOpt;
   });
@@ -733,6 +755,141 @@ async function populateVeiculoSelects() {
 }
 
 var periodoLabel = { dia: 'Dia', semana: 'Semana', mes: 'Mês' };
+
+// --- CUSTOS TABS ---
+function showCustosTab(tab) {
+  document.querySelectorAll('.custos-tab').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.custos-tab-content').forEach(function(d) { d.style.display = 'none'; });
+  var btn = document.querySelector('.custos-tab[onclick*="\'' + tab + '\'"]');
+  if (btn) btn.classList.add('active');
+  var content = document.getElementById('tab-' + tab);
+  if (content) content.style.display = 'block';
+  document.getElementById('btn-nova-avulsa').style.display  = tab === 'avulsa'      ? '' : 'none';
+  document.getElementById('btn-nova-prog').style.display    = tab === 'programada'  ? '' : 'none';
+  document.getElementById('btn-nova-despesa').style.display = tab === 'despesas'    ? '' : 'none';
+  if (tab === 'avulsa')     renderManutencoes();
+  if (tab === 'programada') renderManutProgramada();
+  if (tab === 'despesas')   renderDespesas();
+}
+
+// --- MANUTENÇÃO PROGRAMADA ---
+async function renderManutProgramada() {
+  var tbody = document.getElementById('programada-tbody');
+  if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Carregando...</td></tr>';
+  var [{ data: progs }, { data: veics }] = await Promise.all([
+    db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)').order('created_at'),
+    db.from('veiculos').select('id, km_atual')
+  ]);
+  var p = progs || [];
+  if (!tbody) return;
+  tbody.innerHTML = p.length
+    ? p.map(function(x) {
+        var vei = x.veiculos;
+        var kmAtual = vei ? (Number(vei.km_atual) || 0) : 0;
+        var proximaKm = x.ultima_km ? (Number(x.ultima_km) + Number(x.intervalo_km)) : null;
+        var restante = proximaKm ? proximaKm - kmAtual : null;
+        var situacao;
+        if (!x.ultima_km) {
+          situacao = '<span class="badge badge-gray">Não configurado</span>';
+        } else if (restante <= 0) {
+          situacao = '<span class="badge badge-red">⚠️ Vencido</span>';
+        } else if (restante <= 500) {
+          situacao = '<span class="badge badge-yellow">🔴 Em ' + restante.toLocaleString('pt-BR') + ' km</span>';
+        } else {
+          situacao = '<span class="badge badge-green">Em ' + restante.toLocaleString('pt-BR') + ' km</span>';
+        }
+        var safeItem = (x.item || '').replace(/'/g, "\\'");
+        return '<tr>' +
+          '<td>' + (vei ? veiculoLabel(vei) : '-') + '</td>' +
+          '<td><strong>' + (x.item || '-') + '</strong></td>' +
+          '<td>A cada ' + Number(x.intervalo_km).toLocaleString('pt-BR') + ' km</td>' +
+          '<td>' + (x.ultima_km ? Number(x.ultima_km).toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
+          '<td>' + (proximaKm ? proximaKm.toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
+          '<td>' + situacao + '</td>' +
+          '<td><div class="btn-actions">' +
+            '<button class="btn btn-sm btn-primary" onclick="abrirRegistrarTroca(\'' + x.id + '\',\'' + x.veiculo_id + '\',\'' + safeItem + '\')">✓ Registrar</button>' +
+            '<button class="btn btn-sm btn-secondary" onclick="editManutProg(\'' + x.id + '\')">Editar</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manut_prog\',\'' + x.id + '\')">Excluir</button>' +
+          '</div></td></tr>';
+      }).join('')
+    : '<tr class="empty-row"><td colspan="7">Nenhuma manutenção programada. Clique em "+ Programada" para adicionar.</td></tr>';
+}
+
+function openNewManutProg() {
+  document.getElementById('prog-id').value         = '';
+  document.getElementById('prog-item').value       = '';
+  document.getElementById('prog-intervalo').value  = '';
+  document.getElementById('prog-ultima-km').value  = '';
+  document.getElementById('modal-prog-title').textContent = 'Nova Manutenção Programada';
+  populateVeiculoSelects();
+  openModal('modal-manut-prog');
+}
+
+async function editManutProg(id) {
+  var { data: p } = await db.from('manut_programada').select('*').eq('id', id).single();
+  if (!p) return;
+  await populateVeiculoSelects();
+  document.getElementById('prog-id').value         = p.id;
+  document.getElementById('prog-moto').value       = p.veiculo_id || '';
+  document.getElementById('prog-item').value       = p.item || '';
+  document.getElementById('prog-intervalo').value  = p.intervalo_km || '';
+  document.getElementById('prog-ultima-km').value  = p.ultima_km || '';
+  document.getElementById('modal-prog-title').textContent = 'Editar Manutenção Programada';
+  openModal('modal-manut-prog');
+}
+
+async function submitManutProg() {
+  var id = document.getElementById('prog-id').value;
+  var p = {
+    veiculo_id:   document.getElementById('prog-moto').value || null,
+    item:         document.getElementById('prog-item').value.trim(),
+    intervalo_km: parseInt(document.getElementById('prog-intervalo').value) || null,
+    ultima_km:    parseInt(document.getElementById('prog-ultima-km').value) || null
+  };
+  if (!p.item || !p.intervalo_km) { alert('Item e intervalo são obrigatórios.'); return; }
+  var result = id
+    ? await db.from('manut_programada').update(p).eq('id', id)
+    : await db.from('manut_programada').insert(p);
+  if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
+  closeModal('modal-manut-prog');
+  renderManutProgramada();
+}
+
+function abrirRegistrarTroca(progId, veiculoId, item) {
+  document.getElementById('troca-prog-id').value    = progId;
+  document.getElementById('troca-veiculo-id').value = veiculoId;
+  document.getElementById('troca-km').value         = '';
+  document.getElementById('troca-custo').value      = '';
+  document.getElementById('modal-troca-title').textContent = 'Registrar: ' + item;
+  openModal('modal-registrar-troca');
+}
+
+async function submitRegistrarTroca() {
+  var progId     = document.getElementById('troca-prog-id').value;
+  var veiculoId  = document.getElementById('troca-veiculo-id').value;
+  var km         = parseInt(document.getElementById('troca-km').value);
+  var custo      = parseFloat(document.getElementById('troca-custo').value) || null;
+  if (!km) { alert('Informe o KM da troca.'); return; }
+  var { data: prog } = await db.from('manut_programada').select('*').eq('id', progId).single();
+  if (!prog) return;
+  await db.from('manut_programada').update({ ultima_km: km }).eq('id', progId);
+  var { data: vei } = await db.from('veiculos').select('km_atual').eq('id', veiculoId).single();
+  if (vei && (!vei.km_atual || km > vei.km_atual)) {
+    await db.from('veiculos').update({ km_atual: km }).eq('id', veiculoId);
+  }
+  if (custo) {
+    await db.from('manutencoes').insert({
+      veiculo_id: veiculoId,
+      tipo: prog.item,
+      descricao: prog.item,
+      custo: custo,
+      data: hojeLocalStr()
+    });
+  }
+  closeModal('modal-registrar-troca');
+  renderManutProgramada();
+  loadNotificacoes();
+}
 
 // --- ALUGUÉIS ---
 function toggleCaucaoData() {
@@ -1274,13 +1431,14 @@ async function renderRelatorios() {
 function confirmDelete(type, id) {
   var btn = document.getElementById('confirm-delete-btn');
   btn.onclick = async function() {
-    var tableMap  = { cliente: 'clientes', veiculo: 'veiculos', aluguel: 'alugueis', manutencao: 'manutencoes', despesa: 'despesas' };
+    var tableMap  = { cliente: 'clientes', veiculo: 'veiculos', aluguel: 'alugueis', manutencao: 'manutencoes', despesa: 'despesas', manut_prog: 'manut_programada' };
     var renderMap = {
       cliente:    function() { renderClientes(); populateClienteSelect(); },
       veiculo:    function() { renderVeiculos(); populateVeiculoSelects(); },
       aluguel:    renderAlugueis,
       manutencao: renderManutencoes,
-      despesa:    renderDespesas
+      despesa:    renderDespesas,
+      manut_prog: renderManutProgramada
     };
     await db.from(tableMap[type]).delete().eq('id', id);
     closeModal('modal-confirm');
