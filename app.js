@@ -623,8 +623,8 @@ async function renderDashboard() {
       }).join('')
     : '<tr class="empty-row"><td colspan="4">Nenhum aluguel registrado</td></tr>';
 
-  // Próximas parcelas em aberto (primeiras 5)
-  var proximasParcelas = pa.slice(0, 5);
+  // Próximas parcelas em aberto (todas)
+  var proximasParcelas = pa;
   var parcelasEl = document.getElementById('dash-parcelas-list');
   if (proximasParcelas.length === 0) {
     parcelasEl.innerHTML = '<span style="color:var(--text2);font-size:0.85rem">Nenhuma parcela em aberto</span>';
