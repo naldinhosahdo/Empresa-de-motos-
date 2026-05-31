@@ -151,7 +151,7 @@
     <div class="dash-tables">
       <div class="dash-block">
         <h3>Últimos Aluguéis</h3>
-        <div class="table-wrap">
+        <div class="table-wrap" style="max-height:320px;overflow-y:auto">
           <table>
             <thead><tr><th>Moto</th><th>Cliente</th><th>Valor</th><th>Status</th></tr></thead>
             <tbody id="dash-alugueis-tbody"></tbody>
@@ -167,13 +167,13 @@
     <div class="dash-tables" style="margin-top:1.5rem">
       <div class="dash-block">
         <h3>Vencimentos Próximos <span style="font-size:0.75rem;color:var(--text2)">(30 dias)</span></h3>
-        <div id="dash-vencimentos-list" class="venc-list">
+        <div id="dash-vencimentos-list" class="venc-list" style="max-height:320px;overflow-y:auto">
           <span style="color:var(--text2);font-size:0.85rem">Carregando...</span>
         </div>
       </div>
       <div class="dash-block">
         <h3>Moto Mais Rentável</h3>
-        <div id="dash-moto-rentavel">
+        <div id="dash-moto-rentavel" style="max-height:320px;overflow-y:auto">
           <span style="color:var(--text2);font-size:0.85rem">Carregando...</span>
         </div>
       </div>
@@ -836,6 +836,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=109"></script>
+<script src="app.js?v=110"></script>
 </body>
 </html>
