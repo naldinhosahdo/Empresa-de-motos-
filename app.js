@@ -363,18 +363,28 @@ function showLogin() {
 
 async function doLogin(e) {
   e.preventDefault();
-  var btn = document.getElementById('login-btn');
+  var btn  = document.getElementById('login-btn');
+  var erro = document.getElementById('login-erro');
   btn.textContent = 'Entrando...';
   btn.disabled = true;
-  var email = document.getElementById('login-email').value.trim();
+  erro.style.display = 'none';
+  var email = document.getElementById('login-email').value.trim().toLowerCase();
   var pass  = document.getElementById('login-pass').value;
-  var { error } = await db.auth.signInWithPassword({ email: email, password: pass });
-  if (error) {
-    document.getElementById('login-erro').style.display = 'block';
+  try {
+    var { error } = await db.auth.signInWithPassword({ email: email, password: pass });
+    if (error) {
+      erro.textContent = 'E-mail ou senha incorretos.';
+      erro.style.display = 'block';
+      btn.textContent = 'Entrar';
+      btn.disabled = false;
+    } else {
+      showApp();
+    }
+  } catch(ex) {
+    erro.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
+    erro.style.display = 'block';
     btn.textContent = 'Entrar';
     btn.disabled = false;
-  } else {
-    showApp();
   }
 }
 
