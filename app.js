@@ -1438,11 +1438,15 @@ async function submitDespesa(e) {
   if (id) {
     result = await db.from('despesas').update(d).eq('id', id);
   } else {
-    result = await db.from('despesas').insert(d);
+    result = await db.from('despesas').insert(d).select('id').single();
   }
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-despesa');
-  if (_pendingNotifKey) { dismissNotif(_pendingNotifKey); _pendingNotifKey = null; }
+  if (_pendingNotifKey) {
+    dismissNotif(_pendingNotifKey);
+    if (!id && result.data && result.data.id) dismissNotif('despesa_' + result.data.id);
+    _pendingNotifKey = null;
+  }
   if (document.getElementById('custos-geral').classList.contains('active')) renderDespesas();
 }
 
