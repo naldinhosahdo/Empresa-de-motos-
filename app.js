@@ -112,7 +112,7 @@ async function loadNotificacoes() {
   var em5Str = em5.toISOString().split('T')[0];
 
   var hoje0Str = hojeLocalStr();
-  var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }] = await Promise.all([
+  var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }, { data: veiculosData }] = await Promise.all([
     db.from('despesas').select('*, veiculos(modelo, placa)')
       .lte('vencimento', em30Str).not('vencimento', 'is', null).order('vencimento'),
     db.from('manutencoes').select('*, veiculos(modelo, placa)')
@@ -120,7 +120,8 @@ async function loadNotificacoes() {
     db.from('alugueis').select('*, veiculos(modelo, placa)')
       .eq('status', 'ativo').lte('fim', em5Str).not('fim', 'is', null).order('fim'),
     db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))')
-      .eq('pago', false).lte('vencimento', hoje0Str).order('vencimento')
+      .eq('pago', false).lte('vencimento', hoje0Str).order('vencimento'),
+    db.from('veiculos').select('id, modelo, placa, ipva_valor, licenciamento_valor, seguro_rastreador_mensal')
   ]);
 
   var alertasDespesas = (despesasData || []).map(function(d) {
@@ -137,7 +138,56 @@ async function loadNotificacoes() {
     return { key: 'parcela_' + p.id, data: p.vencimento, label: p.descricao + ' — ' + (alu.cliente || '-'), veiculo: alu.veiculos, valor: fmtBRL(p.valor), tipo: 'parcela', parcelaId: p.id, aluguelId: p.aluguel_id };
   });
 
-  var todosAlertas = alertasDespesas.concat(alertasManut).concat(alertasAlug).concat(alertasParcelas).sort(function(a, b) {
+  function p2(n) { return n < 10 ? '0' + n : '' + n; }
+  var anoHoje = hoje.getFullYear();
+  var em7Str  = new Date(hoje.getTime() + 7 * 86400000).toISOString().split('T')[0];
+  var alertasRecorrentes = [];
+  (veiculosData || []).forEach(function(vei) {
+    var vl = { modelo: vei.modelo, placa: vei.placa };
+    // IPVA — 5 parcelas: 10/fev, 10/mar, 10/abr, 10/mai, 10/jun
+    if (vei.ipva_valor) {
+      var parc = vei.ipva_valor / 5;
+      [2, 3, 4, 5, 6].forEach(function(mes, i) {
+        var d = anoHoje + '-' + p2(mes) + '-10';
+        if (d < hoje0Str) d = (anoHoje + 1) + '-' + p2(mes) + '-10';
+        if (d <= em30Str) {
+          alertasRecorrentes.push({ key: 'ipva_' + vei.id + '_' + d, data: d,
+            label: 'IPVA parcela ' + (i + 1) + '/5 — ' + (vei.modelo || '-'),
+            veiculo: vl, valor: fmtBRL(parc), tipo: 'recorrente' });
+        }
+      });
+    }
+    // Licenciamento — dia 10, mês = (último dígito da placa) + 2
+    if (vei.licenciamento_valor && vei.placa) {
+      var digitos = vei.placa.replace(/\D/g, '');
+      var ult = digitos.length ? parseInt(digitos.slice(-1)) : null;
+      if (ult !== null) {
+        var mesLic = (ult === 0 ? 10 : ult) + 2;
+        var anoLic = anoHoje;
+        if (mesLic > 12) { mesLic -= 12; anoLic++; }
+        var dLic = anoLic + '-' + p2(mesLic) + '-10';
+        if (dLic < hoje0Str) dLic = (anoLic + 1) + '-' + p2(mesLic) + '-10';
+        if (dLic <= em30Str) {
+          alertasRecorrentes.push({ key: 'lic_' + vei.id + '_' + dLic, data: dLic,
+            label: 'Licenciamento — ' + (vei.modelo || '-'),
+            veiculo: vl, valor: fmtBRL(vei.licenciamento_valor), tipo: 'recorrente' });
+        }
+      }
+    }
+    // Seguro + Rastreador — mensal, dia 10, avisa com 7 dias
+    if (vei.seguro_rastreador_mensal) {
+      var dSeg = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
+      if (dSeg < hoje) dSeg = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
+      var dSegStr = dSeg.getFullYear() + '-' + p2(dSeg.getMonth() + 1) + '-10';
+      if (dSegStr <= em7Str) {
+        alertasRecorrentes.push({ key: 'seguro_' + vei.id + '_' + dSegStr, data: dSegStr,
+          label: 'Seguro + Rastreador — ' + (vei.modelo || '-'),
+          veiculo: vl, valor: fmtBRL(vei.seguro_rastreador_mensal), tipo: 'recorrente' });
+      }
+    }
+  });
+
+  var todosAlertas = alertasDespesas.concat(alertasManut).concat(alertasAlug).concat(alertasParcelas).concat(alertasRecorrentes).sort(function(a, b) {
     return a.data < b.data ? -1 : a.data > b.data ? 1 : 0;
   });
 
@@ -642,8 +692,11 @@ async function editVeiculo(id) {
   document.getElementById('moto-ano').value        = v.ano || '';
   document.getElementById('moto-cor').value        = v.cor || '';
   document.getElementById('moto-valor-compra').value = v.valor_compra || '';
-  document.getElementById('moto-status').value     = v.status || 'disponivel';
-  document.getElementById('moto-obs').value        = v.obs || '';
+  document.getElementById('moto-status').value               = v.status || 'disponivel';
+  document.getElementById('moto-ipva-valor').value           = v.ipva_valor || '';
+  document.getElementById('moto-licenciamento-valor').value  = v.licenciamento_valor || '';
+  document.getElementById('moto-seguro-mensal').value        = v.seguro_rastreador_mensal || '';
+  document.getElementById('moto-obs').value                  = v.obs || '';
   document.getElementById('modal-moto-title').textContent = 'Editar Veículo';
   openModal('modal-moto');
 }
@@ -656,9 +709,12 @@ async function submitMoto(e) {
     placa:         document.getElementById('moto-placa').value.trim(),
     ano:           document.getElementById('moto-ano').value || null,
     cor:           document.getElementById('moto-cor').value.trim(),
-    valor_compra:  document.getElementById('moto-valor-compra').value || null,
-    status:        document.getElementById('moto-status').value,
-    obs:           document.getElementById('moto-obs').value.trim()
+    valor_compra:            document.getElementById('moto-valor-compra').value || null,
+    status:                  document.getElementById('moto-status').value,
+    ipva_valor:              document.getElementById('moto-ipva-valor').value || null,
+    licenciamento_valor:     document.getElementById('moto-licenciamento-valor').value || null,
+    seguro_rastreador_mensal: document.getElementById('moto-seguro-mensal').value || null,
+    obs:                     document.getElementById('moto-obs').value.trim()
   };
   var result;
   if (id) {

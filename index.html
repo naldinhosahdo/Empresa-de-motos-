@@ -405,6 +405,24 @@
           </select>
         </div>
       </div>
+      <div style="margin:0.75rem 0 0.25rem;font-size:0.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-top:1px solid var(--border);padding-top:0.6rem">Custos Recorrentes</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>IPVA (total anual R$)</label>
+          <input type="number" id="moto-ipva-valor" step="0.01" min="0" placeholder="496.00">
+        </div>
+        <div class="form-group">
+          <label>Licenciamento (R$)</label>
+          <input type="number" id="moto-licenciamento-valor" step="0.01" min="0" placeholder="200.00">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Seguro + Rastreador (mensal R$)</label>
+          <input type="number" id="moto-seguro-mensal" step="0.01" min="0" placeholder="150.00">
+        </div>
+        <div class="form-group"></div>
+      </div>
       <div class="form-group">
         <label>Observações</label>
         <textarea id="moto-obs" rows="2" placeholder="Observações..."></textarea>
@@ -710,6 +728,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=87"></script>
+<script src="app.js?v=88"></script>
 </body>
 </html>
