@@ -641,7 +641,7 @@ async function renderDashboard() {
           '<div style="font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (alu.cliente || '-') + (vei ? ' · ' + vei.modelo : '') + '</div>' +
           '<div style="font-size:0.75rem;color:' + cor + '">' + status + ' · ' + fmtBRL(p.valor) + '</div>' +
         '</div>' +
-        '<button class="btn btn-sm btn-primary" style="font-size:0.72rem;white-space:nowrap;margin-left:0.5rem" onclick="abrirPagarParcela(\'' + p.id + '\',\'' + p.aluguel_id + '\',' + p.valor + ',\'' + p.vencimento + '\',\'' + (alu.cliente||'').replace(/\'/g,\"\\\\'\") + '\',\'\')">Marcar pago</button>' +
+        '<button class="btn btn-sm btn-primary" style="font-size:0.72rem;white-space:nowrap;margin-left:0.5rem" onclick="abrirPagarParcela(\'' + p.id + '\',\'' + p.aluguel_id + '\',' + p.valor + ',\'' + p.vencimento + '\',\'' + (alu.cliente||'').replace(/'/g, "\\'") + '\',\'\')">Marcar pago</button>' +
       '</div>';
     }).join('');
   }
