@@ -780,7 +780,7 @@ function showCustosTab(tab) {
   document.getElementById('btn-nova-prog').style.display    = tab === 'programada'  ? '' : 'none';
   document.getElementById('btn-nova-despesa').style.display = tab === 'despesas'    ? '' : 'none';
   if (tab === 'avulsa')     renderManutencoes();
-  if (tab === 'programada') renderManutProgramada();
+  if (tab === 'programada') { populateVeiculoSelects(); renderManutProgramada(); }
   if (tab === 'despesas')   renderDespesas();
 }
 
