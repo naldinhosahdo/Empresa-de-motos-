@@ -153,7 +153,7 @@ async function loadNotificacoes() {
       var dIPVA = anoHoje + '-' + p2(mesHoje) + '-10';
       alertasRecorrentes.push({ key: 'ipva_' + vei.id + '_' + anoHoje + '_' + mesHoje, data: dIPVA,
         label: 'IPVA parcela ' + numParc + '/5 — ' + (vei.modelo || '-'),
-        veiculo: vl, valor: '', tipo: 'recorrente' });
+        veiculo: vl, valor: '', tipo: 'recorrente', veiculoId: vei.id, tipoLabel: 'IPVA' });
     }
     // Licenciamento — dia 10, mês = (último dígito da placa) + 2, avisa com 30 dias
     if (vei.placa) {
@@ -168,7 +168,7 @@ async function loadNotificacoes() {
         if (dLic >= hoje0Str && dLic <= em30Str) {
           alertasRecorrentes.push({ key: 'lic_' + vei.id + '_' + dLic, data: dLic,
             label: 'Licenciamento vence — ' + (vei.modelo || '-'),
-            veiculo: vl, valor: '', tipo: 'recorrente' });
+            veiculo: vl, valor: '', tipo: 'recorrente', veiculoId: vei.id, tipoLabel: 'Licenciamento' });
         }
       }
     }
@@ -180,7 +180,7 @@ async function loadNotificacoes() {
       if (dSegStr >= hoje0Str && dSegStr <= em7Str) {
         alertasRecorrentes.push({ key: 'seguro_' + vei.id + '_' + dSegStr, data: dSegStr,
           label: 'Seguro + Rastreador — ' + (vei.modelo || '-'),
-          veiculo: vl, valor: fmtBRL(vei.seguro_rastreador_mensal), tipo: 'recorrente' });
+          veiculo: vl, valor: fmtBRL(vei.seguro_rastreador_mensal), tipo: 'recorrente', veiculoId: vei.id, tipoLabel: 'Seguro' });
       }
     }
   });
@@ -252,6 +252,8 @@ async function loadNotificacoes() {
       bodyClick = 'onclick="' + _c + 'showSection(\'custos-geral\');showCustosTab(\'despesas\')" style="cursor:pointer"';
     } else if (a.tipo === 'recorrente' && a.key.indexOf('prog_') === 0) {
       bodyClick = 'onclick="' + _c + 'showSection(\'custos-geral\');showCustosTab(\'programada\')" style="cursor:pointer"';
+    } else if (a.tipo === 'recorrente' && a.veiculoId && a.tipoLabel) {
+      bodyClick = 'onclick="' + _c + 'abrirDespesaNotif(\'' + a.veiculoId + '\',\'' + a.tipoLabel + '\',\'' + a.data + '\')" style="cursor:pointer"';
     } else if (a.tipo === 'recorrente') {
       bodyClick = 'onclick="' + _c + 'showSection(\'custos-geral\');showCustosTab(\'despesas\')" style="cursor:pointer"';
     } else {
@@ -1279,6 +1281,21 @@ async function renderDespesas() {
           '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="7">Nenhuma despesa encontrada</td></tr>';
+}
+
+async function abrirDespesaNotif(veiculoId, tipo, vencimento) {
+  document.getElementById('notif-dropdown').style.display = 'none';
+  showSection('custos-geral');
+  showCustosTab('despesas');
+  await populateVeiculoSelects();
+  document.getElementById('form-despesa').reset();
+  document.getElementById('despesa-id').value = '';
+  document.getElementById('modal-despesa-title').textContent = 'Nova Despesa Fixa';
+  document.getElementById('despesa-moto').value = veiculoId;
+  document.getElementById('despesa-tipo').value = tipo;
+  document.getElementById('despesa-ano').value = new Date().getFullYear();
+  document.getElementById('despesa-vencimento').value = vencimento;
+  openModal('modal-despesa');
 }
 
 function openNewDespesa() {
