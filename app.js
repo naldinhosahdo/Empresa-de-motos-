@@ -775,44 +775,58 @@ function showCustosTab(tab) {
 // --- MANUTENÇÃO PROGRAMADA ---
 async function renderManutProgramada() {
   var tbody = document.getElementById('programada-tbody');
-  if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Carregando...</td></tr>';
-  var [{ data: progs }, { data: veics }] = await Promise.all([
-    db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)').order('created_at'),
-    db.from('veiculos').select('id, km_atual')
-  ]);
+  if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Carregando...</td></tr>';
+  var { data: progs } = await db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)').order('veiculo_id').order('created_at');
   var p = progs || [];
   if (!tbody) return;
-  tbody.innerHTML = p.length
-    ? p.map(function(x) {
-        var vei = x.veiculos;
-        var kmAtual = vei ? (Number(vei.km_atual) || 0) : 0;
-        var proximaKm = x.ultima_km ? (Number(x.ultima_km) + Number(x.intervalo_km)) : null;
-        var restante = proximaKm ? proximaKm - kmAtual : null;
-        var situacao;
-        if (!x.ultima_km) {
-          situacao = '<span class="badge badge-gray">Não configurado</span>';
-        } else if (restante <= 0) {
-          situacao = '<span class="badge badge-red">⚠️ Vencido</span>';
-        } else if (restante <= 500) {
-          situacao = '<span class="badge badge-yellow">🔴 Em ' + restante.toLocaleString('pt-BR') + ' km</span>';
-        } else {
-          situacao = '<span class="badge badge-green">Em ' + restante.toLocaleString('pt-BR') + ' km</span>';
-        }
-        var safeItem = (x.item || '').replace(/'/g, "\\'");
-        return '<tr>' +
-          '<td>' + (vei ? veiculoLabel(vei) : '-') + '</td>' +
-          '<td><strong>' + (x.item || '-') + '</strong></td>' +
-          '<td>A cada ' + Number(x.intervalo_km).toLocaleString('pt-BR') + ' km</td>' +
-          '<td>' + (x.ultima_km ? Number(x.ultima_km).toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
-          '<td>' + (proximaKm ? proximaKm.toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
-          '<td>' + situacao + '</td>' +
-          '<td><div class="btn-actions">' +
-            '<button class="btn btn-sm btn-primary" onclick="abrirRegistrarTroca(\'' + x.id + '\',\'' + x.veiculo_id + '\',\'' + safeItem + '\')">✓ Registrar</button>' +
-            '<button class="btn btn-sm btn-secondary" onclick="editManutProg(\'' + x.id + '\')">Editar</button>' +
-            '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manut_prog\',\'' + x.id + '\')">Excluir</button>' +
-          '</div></td></tr>';
-      }).join('')
-    : '<tr class="empty-row"><td colspan="7">Nenhuma manutenção programada. Clique em "+ Programada" para adicionar.</td></tr>';
+  if (!p.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Nenhuma manutenção programada. Clique em "+ Programada" para adicionar.</td></tr>';
+    return;
+  }
+  // Agrupa por veículo
+  var grupos = {};
+  var ordem = [];
+  p.forEach(function(x) {
+    var vid = x.veiculo_id || '__sem_moto__';
+    if (!grupos[vid]) { grupos[vid] = { vei: x.veiculos, itens: [] }; ordem.push(vid); }
+    grupos[vid].itens.push(x);
+  });
+  var rows = '';
+  ordem.forEach(function(vid) {
+    var g = grupos[vid];
+    var veiNome = g.vei ? veiculoLabel(g.vei) : 'Sem moto';
+    var kmAtual = g.vei ? (Number(g.vei.km_atual) || 0) : 0;
+    rows += '<tr><td colspan="6" style="background:var(--bg2);font-weight:700;font-size:0.85rem;padding:0.4rem 0.75rem;color:var(--text2)">🏍️ ' + veiNome + (kmAtual ? ' &nbsp;·&nbsp; KM atual: ' + kmAtual.toLocaleString('pt-BR') : '') + '</td></tr>';
+    g.itens.forEach(function(x) {
+      var proximaKm = x.ultima_km ? (Number(x.ultima_km) + Number(x.intervalo_km)) : null;
+      var restante  = (proximaKm && kmAtual) ? proximaKm - kmAtual : null;
+      var situacao;
+      if (!x.ultima_km) {
+        situacao = '<span class="badge badge-gray">Não configurado</span>';
+      } else if (restante !== null && restante <= 0) {
+        situacao = '<span class="badge badge-red">⚠️ Vencido</span>';
+      } else if (restante !== null && restante <= 500) {
+        situacao = '<span class="badge badge-yellow">🔴 Em ' + restante.toLocaleString('pt-BR') + ' km</span>';
+      } else if (restante !== null) {
+        situacao = '<span class="badge badge-green">Em ' + restante.toLocaleString('pt-BR') + ' km</span>';
+      } else {
+        situacao = '<span class="badge badge-gray">—</span>';
+      }
+      var safeItem = (x.item || '').replace(/'/g, "\\'");
+      rows += '<tr>' +
+        '<td><strong>' + (x.item || '-') + '</strong></td>' +
+        '<td>A cada ' + Number(x.intervalo_km).toLocaleString('pt-BR') + ' km</td>' +
+        '<td>' + (x.ultima_km ? Number(x.ultima_km).toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
+        '<td>' + (proximaKm ? proximaKm.toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
+        '<td>' + situacao + '</td>' +
+        '<td><div class="btn-actions">' +
+          '<button class="btn btn-sm btn-primary" onclick="abrirRegistrarTroca(\'' + x.id + '\',\'' + x.veiculo_id + '\',\'' + safeItem + '\')">✓ Registrar</button>' +
+          '<button class="btn btn-sm btn-secondary" onclick="editManutProg(\'' + x.id + '\')">Editar</button>' +
+          '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manut_prog\',\'' + x.id + '\')">Excluir</button>' +
+        '</div></td></tr>';
+    });
+  });
+  tbody.innerHTML = rows;
 }
 
 function openNewManutProg() {
