@@ -139,26 +139,23 @@ async function loadNotificacoes() {
   });
 
   function p2(n) { return n < 10 ? '0' + n : '' + n; }
-  var anoHoje = hoje.getFullYear();
-  var em7Str  = new Date(hoje.getTime() + 7 * 86400000).toISOString().split('T')[0];
+  var anoHoje  = hoje.getFullYear();
+  var mesHoje  = hoje.getMonth() + 1;
+  var diaHoje  = hoje.getDate();
+  var em7Str   = new Date(hoje.getTime() + 7 * 86400000).toISOString().split('T')[0];
   var alertasRecorrentes = [];
   (veiculosData || []).forEach(function(vei) {
     var vl = { modelo: vei.modelo, placa: vei.placa };
-    // IPVA — 5 parcelas: 10/fev, 10/mar, 10/abr, 10/mai, 10/jun
-    if (vei.ipva_valor) {
-      var parc = vei.ipva_valor / 5;
-      [2, 3, 4, 5, 6].forEach(function(mes, i) {
-        var d = anoHoje + '-' + p2(mes) + '-10';
-        if (d < hoje0Str) d = (anoHoje + 1) + '-' + p2(mes) + '-10';
-        if (d <= em30Str) {
-          alertasRecorrentes.push({ key: 'ipva_' + vei.id + '_' + d, data: d,
-            label: 'IPVA parcela ' + (i + 1) + '/5 — ' + (vei.modelo || '-'),
-            veiculo: vl, valor: fmtBRL(parc), tipo: 'recorrente' });
-        }
-      });
+    // IPVA — notifica do dia 1 ao dia 9 de fev/mar/abr/mai/jun (9 dias antes do vencimento dia 10)
+    if ([2, 3, 4, 5, 6].indexOf(mesHoje) !== -1 && diaHoje >= 1 && diaHoje < 10) {
+      var numParc = mesHoje - 1; // fev=1, mar=2, abr=3, mai=4, jun=5
+      var dIPVA = anoHoje + '-' + p2(mesHoje) + '-10';
+      alertasRecorrentes.push({ key: 'ipva_' + vei.id + '_' + anoHoje + '_' + mesHoje, data: dIPVA,
+        label: 'IPVA parcela ' + numParc + '/5 — ' + (vei.modelo || '-'),
+        veiculo: vl, valor: '', tipo: 'recorrente' });
     }
-    // Licenciamento — dia 10, mês = (último dígito da placa) + 2
-    if (vei.licenciamento_valor && vei.placa) {
+    // Licenciamento — dia 10, mês = (último dígito da placa) + 2, avisa com 30 dias
+    if (vei.placa) {
       var digitos = vei.placa.replace(/\D/g, '');
       var ult = digitos.length ? parseInt(digitos.slice(-1)) : null;
       if (ult !== null) {
@@ -167,10 +164,10 @@ async function loadNotificacoes() {
         if (mesLic > 12) { mesLic -= 12; anoLic++; }
         var dLic = anoLic + '-' + p2(mesLic) + '-10';
         if (dLic < hoje0Str) dLic = (anoLic + 1) + '-' + p2(mesLic) + '-10';
-        if (dLic <= em30Str) {
+        if (dLic >= hoje0Str && dLic <= em30Str) {
           alertasRecorrentes.push({ key: 'lic_' + vei.id + '_' + dLic, data: dLic,
-            label: 'Licenciamento — ' + (vei.modelo || '-'),
-            veiculo: vl, valor: fmtBRL(vei.licenciamento_valor), tipo: 'recorrente' });
+            label: 'Licenciamento vence — ' + (vei.modelo || '-'),
+            veiculo: vl, valor: '', tipo: 'recorrente' });
         }
       }
     }
@@ -179,7 +176,7 @@ async function loadNotificacoes() {
       var dSeg = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
       if (dSeg < hoje) dSeg = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
       var dSegStr = dSeg.getFullYear() + '-' + p2(dSeg.getMonth() + 1) + '-10';
-      if (dSegStr <= em7Str) {
+      if (dSegStr >= hoje0Str && dSegStr <= em7Str) {
         alertasRecorrentes.push({ key: 'seguro_' + vei.id + '_' + dSegStr, data: dSegStr,
           label: 'Seguro + Rastreador — ' + (vei.modelo || '-'),
           veiculo: vl, valor: fmtBRL(vei.seguro_rastreador_mensal), tipo: 'recorrente' });
@@ -692,11 +689,9 @@ async function editVeiculo(id) {
   document.getElementById('moto-ano').value        = v.ano || '';
   document.getElementById('moto-cor').value        = v.cor || '';
   document.getElementById('moto-valor-compra').value = v.valor_compra || '';
-  document.getElementById('moto-status').value               = v.status || 'disponivel';
-  document.getElementById('moto-ipva-valor').value           = v.ipva_valor || '';
-  document.getElementById('moto-licenciamento-valor').value  = v.licenciamento_valor || '';
-  document.getElementById('moto-seguro-mensal').value        = v.seguro_rastreador_mensal || '';
-  document.getElementById('moto-obs').value                  = v.obs || '';
+  document.getElementById('moto-status').value           = v.status || 'disponivel';
+  document.getElementById('moto-seguro-mensal').value    = v.seguro_rastreador_mensal || '';
+  document.getElementById('moto-obs').value              = v.obs || '';
   document.getElementById('modal-moto-title').textContent = 'Editar Veículo';
   openModal('modal-moto');
 }
@@ -709,12 +704,10 @@ async function submitMoto(e) {
     placa:         document.getElementById('moto-placa').value.trim(),
     ano:           document.getElementById('moto-ano').value || null,
     cor:           document.getElementById('moto-cor').value.trim(),
-    valor_compra:            document.getElementById('moto-valor-compra').value || null,
-    status:                  document.getElementById('moto-status').value,
-    ipva_valor:              document.getElementById('moto-ipva-valor').value || null,
-    licenciamento_valor:     document.getElementById('moto-licenciamento-valor').value || null,
+    valor_compra:             document.getElementById('moto-valor-compra').value || null,
+    status:                   document.getElementById('moto-status').value,
     seguro_rastreador_mensal: document.getElementById('moto-seguro-mensal').value || null,
-    obs:                     document.getElementById('moto-obs').value.trim()
+    obs:                      document.getElementById('moto-obs').value.trim()
   };
   var result;
   if (id) {
