@@ -1009,6 +1009,18 @@ function preencherFim(qtd, unidade) {
   calcTotal();
 }
 
+function ajustarFim(delta) {
+  var inicio = document.getElementById('aluguel-inicio').value;
+  var fim    = document.getElementById('aluguel-fim').value;
+  var base   = fim || inicio;
+  if (!base) { alert('Preencha a data de início primeiro.'); return; }
+  var d = new Date(base + 'T00:00:00');
+  d.setDate(d.getDate() + delta * 7);
+  if (inicio && d <= new Date(inicio + 'T00:00:00')) return;
+  document.getElementById('aluguel-fim').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  calcTotal();
+}
+
 async function renderAlugueis(ordenarPorVencimento) {
   showLoading('alugueis-tbody', 12);
   var fmId = document.getElementById('filtro-moto-aluguel') ? document.getElementById('filtro-moto-aluguel').value : '';

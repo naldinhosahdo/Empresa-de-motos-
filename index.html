@@ -502,10 +502,9 @@
           <label>Data de Fim <span id="aluguel-dias-label" style="font-size:0.78rem;color:var(--accent);font-weight:600;margin-left:6px"></span></label>
           <input type="date" id="aluguel-fim" onchange="calcTotal()">
           <div class="prazo-rapido">
-            <button type="button" class="btn-prazo" onclick="preencherFim(1,'semana')">+1 sem</button>
-            <button type="button" class="btn-prazo" onclick="preencherFim(2,'semana')">+2 sem</button>
-            <button type="button" class="btn-prazo" onclick="preencherFim(1,'mes')">+1 mês</button>
-            <button type="button" class="btn-prazo" onclick="preencherFim(2,'mes')">+2 meses</button>
+            <button type="button" class="btn-prazo" onclick="ajustarFim(-1)">−</button>
+            <span style="font-size:0.85rem;font-weight:600;color:var(--text2);padding:0 0.25rem">Semana</span>
+            <button type="button" class="btn-prazo" onclick="ajustarFim(1)">+</button>
           </div>
         </div>
       </div>
@@ -834,6 +833,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=102"></script>
+<script src="app.js?v=103"></script>
 </body>
 </html>
