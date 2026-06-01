@@ -860,9 +860,9 @@ function showCustosTab(tab) {
   document.getElementById('btn-nova-avulsa').style.display  = tab === 'avulsa'      ? '' : 'none';
   document.getElementById('btn-nova-prog').style.display    = tab === 'programada'  ? '' : 'none';
   document.getElementById('btn-nova-despesa').style.display = tab === 'despesas'    ? '' : 'none';
-  if (tab === 'avulsa')     renderManutencoes();
+  if (tab === 'avulsa')     { populateVeiculoSelects(); renderManutencoes(); }
   if (tab === 'programada') { populateVeiculoSelects(); renderManutProgramada(); }
-  if (tab === 'despesas')   renderDespesas();
+  if (tab === 'despesas')   { populateVeiculoSelects(); renderDespesas(); }
 }
 
 // --- MANUTENÇÃO PROGRAMADA ---
