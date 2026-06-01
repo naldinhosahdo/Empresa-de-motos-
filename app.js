@@ -1383,7 +1383,7 @@ async function abrirDespesaNotif(veiculoId, tipo, vencimento, notifKey) {
   showCustosTab('despesas');
   document.getElementById('form-despesa').reset();
   document.getElementById('despesa-id').value = '';
-  document.getElementById('modal-despesa-title').textContent = 'Nova Despesa Fixa';
+  document.getElementById('modal-despesa-title').textContent = 'Nova Despesa';
   document.getElementById('despesa-tipo').value = tipo;
   document.getElementById('despesa-ano').value = new Date().getFullYear();
   document.getElementById('despesa-vencimento').value = vencimento;
@@ -1395,7 +1395,7 @@ async function abrirDespesaNotif(veiculoId, tipo, vencimento, notifKey) {
 function openNewDespesa() {
   document.getElementById('form-despesa').reset();
   document.getElementById('despesa-id').value = '';
-  document.getElementById('modal-despesa-title').textContent = 'Nova Despesa Fixa';
+  document.getElementById('modal-despesa-title').textContent = 'Nova Despesa';
   populateVeiculoSelects();
   openModal('modal-despesa');
 }
@@ -1411,7 +1411,7 @@ async function editDespesa(id) {
   document.getElementById('despesa-valor').value      = d.valor || '';
   document.getElementById('despesa-vencimento').value = d.vencimento || '';
   document.getElementById('despesa-obs').value        = d.obs || '';
-  document.getElementById('modal-despesa-title').textContent = 'Editar Despesa Fixa';
+  document.getElementById('modal-despesa-title').textContent = 'Editar Despesa';
   openModal('modal-despesa');
 }
 
