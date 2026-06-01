@@ -625,16 +625,16 @@
       </div>
       <div class="form-group">
         <label>Item *</label>
-        <input type="text" id="prog-item" list="prog-item-list" placeholder="Ex: TROCA DE ÓLEO">
-        <datalist id="prog-item-list">
-          <option value="TROCA DE ÓLEO">
-          <option value="VELA DE IGNIÇÃO">
-          <option value="FILTRO DE AR">
-          <option value="KIT RELAÇÃO">
-          <option value="KIT EMBREAGEM">
-          <option value="PASTILHA DE FREIO">
-          <option value="REVISÃO GERAL">
-        </datalist>
+        <select id="prog-item" required>
+          <option value="">Selecione...</option>
+          <option value="TROCA DE ÓLEO">Troca de Óleo</option>
+          <option value="VELA DE IGNIÇÃO">Vela de Ignição</option>
+          <option value="FILTRO DE AR">Filtro de Ar</option>
+          <option value="KIT RELAÇÃO">Kit Relação</option>
+          <option value="KIT EMBREAGEM">Kit Embreagem</option>
+          <option value="PASTILHA DE FREIO">Pastilha de Freio</option>
+          <option value="REVISÃO GERAL">Revisão Geral</option>
+        </select>
       </div>
     </div>
     <div class="form-row">
@@ -827,6 +827,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=114"></script>
+<script src="app.js?v=115"></script>
 </body>
 </html>
