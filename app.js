@@ -858,7 +858,7 @@ function showCustosTab(tab) {
   document.getElementById('btn-nova-manut').style.display   = tab === 'manutencoes' ? '' : 'none';
   document.getElementById('btn-nova-despesa').style.display = tab === 'despesas'    ? '' : 'none';
   if (tab === 'manutencoes') { populateVeiculoSelects(); renderManutProgramada(); renderManutencoes(); }
-  if (tab === 'despesas')    { populateVeiculoSelects(); renderDespesasProgramadas(); renderDespesas(); }
+  if (tab === 'despesas')    { renderDespesasTab(); }
 }
 
 // --- MANUTENÇÃO PROGRAMADA ---
@@ -1372,108 +1372,138 @@ async function submitManutencao() {
   if (document.getElementById('custos-geral').classList.contains('active')) renderManutencoes();
 }
 
-// --- DESPESAS PROGRAMADAS (recorrentes) ---
-async function renderDespesasProgramadas() {
-  var tbody = document.getElementById('despesas-prog-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Carregando...</td></tr>';
-  var fmId = document.getElementById('filtro-moto-despesa') ? document.getElementById('filtro-moto-despesa').value : '';
-  var query = db.from('veiculos').select('id, modelo, placa, seguro_rastreador_mensal').order('modelo');
-  if (fmId) query = query.eq('id', fmId);
-  var { data: veiculos } = await query;
-  var v = veiculos || [];
+// --- DESPESAS (accordion por moto) ---
+function _getProgRecorrentes(vei, hoje) {
+  var p2 = function(n) { return String(n).padStart(2, '0'); };
+  var entries = [];
+  var ipvaMeses = [2, 3, 4, 5, 6];
+  var encontrou = false;
+  for (var y = hoje.getFullYear(); y <= hoje.getFullYear() + 1 && !encontrou; y++) {
+    for (var i = 0; i < ipvaMeses.length && !encontrou; i++) {
+      var d = new Date(y, ipvaMeses[i] - 1, 10);
+      if (d >= hoje) {
+        entries.push({ tipo: 'IPVA (parcela ' + (ipvaMeses[i] - 1) + '/5)', data: d, valor: '—', diff: Math.round((d - hoje) / 86400000) });
+        encontrou = true;
+      }
+    }
+  }
+  if (vei.placa) {
+    var digitos = vei.placa.replace(/\D/g, '');
+    var ult = digitos.length ? parseInt(digitos.slice(-1)) : null;
+    if (ult !== null) {
+      var mesLic = (ult === 0 ? 10 : ult) + 2;
+      var anoLic = hoje.getFullYear();
+      if (mesLic > 12) { mesLic -= 12; anoLic++; }
+      var dLic = new Date(anoLic, mesLic - 1, 10);
+      if (dLic < hoje) dLic = new Date(anoLic + 1, mesLic - 1, 10);
+      entries.push({ tipo: 'Licenciamento', data: dLic, valor: '—', diff: Math.round((dLic - hoje) / 86400000) });
+    }
+  }
+  if (vei.seguro_rastreador_mensal) {
+    var dSeg = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
+    if (dSeg < hoje) dSeg = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
+    entries.push({ tipo: 'Seguro + Rastreador', data: dSeg, valor: fmtBRL(vei.seguro_rastreador_mensal), diff: Math.round((dSeg - hoje) / 86400000) });
+  }
+  return entries;
+}
+
+function _sitBadge(diff) {
+  if (diff < 0)  return '<span class="badge badge-red">⚠️ Vencido há ' + Math.abs(diff) + ' dia(s)</span>';
+  if (diff === 0) return '<span class="badge badge-red">⚠️ Vence hoje</span>';
+  if (diff <= 30) return '<span class="badge badge-yellow">🟡 Em ' + diff + ' dia(s)</span>';
+  return '<span class="badge badge-green">✅ Em dia</span>';
+}
+
+function _buildDespesaMotoBody(vei, motoDesp) {
   var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  var progs = _getProgRecorrentes(vei, hoje);
   var p2 = function(n) { return String(n).padStart(2, '0'); };
   var fmtD = function(d) { return p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear(); };
-  var entries = [];
-  v.forEach(function(vei) {
-    var vl = veiculoLabel(vei);
-    // IPVA — próxima parcela (Feb-Jun, dia 10)
-    var ipvaMeses = [2, 3, 4, 5, 6];
-    var encontrou = false;
-    for (var y = hoje.getFullYear(); y <= hoje.getFullYear() + 1 && !encontrou; y++) {
-      for (var i = 0; i < ipvaMeses.length && !encontrou; i++) {
-        var d = new Date(y, ipvaMeses[i] - 1, 10);
-        if (d >= hoje) {
-          var parc = ipvaMeses[i] - 1;
-          entries.push({ veiculo: vl, tipo: 'IPVA (parcela ' + parc + '/5)', data: d, valor: '—', diff: Math.round((d - hoje) / 86400000) });
-          encontrou = true;
-        }
-      }
-    }
-    // Licenciamento — dia 10 do mês calculado pelo último dígito da placa
-    if (vei.placa) {
-      var digitos = vei.placa.replace(/\D/g, '');
-      var ult = digitos.length ? parseInt(digitos.slice(-1)) : null;
-      if (ult !== null) {
-        var mesLic = (ult === 0 ? 10 : ult) + 2;
-        var anoLic = hoje.getFullYear();
-        if (mesLic > 12) { mesLic -= 12; anoLic++; }
-        var dLic = new Date(anoLic, mesLic - 1, 10);
-        if (dLic < hoje) dLic = new Date(anoLic + 1, mesLic - 1, 10);
-        entries.push({ veiculo: vl, tipo: 'Licenciamento', data: dLic, valor: '—', diff: Math.round((dLic - hoje) / 86400000) });
-      }
-    }
-    // Seguro + Rastreador — mensal, dia 10
-    if (vei.seguro_rastreador_mensal) {
-      var dSeg = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
-      if (dSeg < hoje) dSeg = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
-      entries.push({ veiculo: vl, tipo: 'Seguro + Rastreador', data: dSeg, valor: fmtBRL(vei.seguro_rastreador_mensal), diff: Math.round((dSeg - hoje) / 86400000) });
-    }
-  });
-  entries.sort(function(a, b) { return a.diff - b.diff; });
-  if (!entries.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Nenhuma despesa recorrente encontrada.</td></tr>';
+  var subHdr = function(txt) { return '<div style="font-weight:600;font-size:0.82rem;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;margin:0.75rem 0 0.4rem">' + txt + '</div>'; };
+  var progRows = progs.map(function(e) {
+    return '<tr><td>' + e.tipo + '</td><td>' + fmtD(e.data) + '</td><td>' + e.valor + '</td><td>' + _sitBadge(e.diff) + '</td></tr>';
+  }).join('') || '<tr class="empty-row"><td colspan="4">Nenhuma despesa recorrente configurada.</td></tr>';
+  var avulsaRows = motoDesp.length ? motoDesp.map(function(x) {
+    var venc = x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—';
+    return '<tr>' +
+      '<td>' + (x.tipo || '—') + '</td>' +
+      '<td>' + (x.ano || '—') + '</td>' +
+      '<td><span class="text-red">' + fmtBRL(x.valor) + '</span></td>' +
+      '<td>' + venc + '</td>' +
+      '<td>' + (x.obs || '—') + '</td>' +
+      '<td><div class="btn-actions">' +
+        '<button class="btn btn-sm btn-secondary" onclick="editDespesa(\'' + x.id + '\')">Editar</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
+      '</div></td></tr>';
+  }).join('') : '<tr class="empty-row"><td colspan="6">Nenhuma despesa avulsa registrada.</td></tr>';
+  return subHdr('📅 Programadas (Recorrentes)') +
+    '<div class="table-wrap" style="margin-bottom:0.5rem"><table>' +
+      '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th></tr></thead>' +
+      '<tbody>' + progRows + '</tbody></table></div>' +
+    subHdr('🧾 Despesas Avulsas') +
+    '<div class="table-wrap"><table>' +
+      '<thead><tr><th>Tipo</th><th>Ano Ref.</th><th>Valor</th><th>Vencimento</th><th>Observação</th><th>Ações</th></tr></thead>' +
+      '<tbody>' + avulsaRows + '</tbody></table></div>';
+}
+
+var _despesasCache = null;
+
+async function renderDespesasTab() {
+  var container = document.getElementById('despesas-motos-list');
+  if (!container) return;
+  container.innerHTML = '<p style="color:#94a3b8;padding:1rem 0">Carregando...</p>';
+  var [veiculosRes, despesasRes] = await Promise.all([
+    db.from('veiculos').select('id, modelo, placa, seguro_rastreador_mensal').order('modelo'),
+    db.from('despesas').select('id, tipo, ano, valor, vencimento, obs, veiculo_id').order('created_at', { ascending: false })
+  ]);
+  var veiculos = veiculosRes.data || [];
+  var allDespesas = despesasRes.data || [];
+  _despesasCache = { veiculos: veiculos, allDespesas: allDespesas };
+  if (!veiculos.length) {
+    container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:2rem">Nenhuma moto cadastrada.</p>';
     return;
   }
-  tbody.innerHTML = entries.map(function(e) {
-    var situacao;
-    if (e.diff < 0) {
-      situacao = '<span class="badge badge-red">⚠️ Vencido há ' + Math.abs(e.diff) + ' dia(s)</span>';
-    } else if (e.diff === 0) {
-      situacao = '<span class="badge badge-red">⚠️ Vence hoje</span>';
-    } else if (e.diff <= 30) {
-      situacao = '<span class="badge badge-yellow">🟡 Em ' + e.diff + ' dia(s)</span>';
-    } else {
-      situacao = '<span class="badge badge-green">✅ Em dia</span>';
-    }
-    return '<tr>' +
-      '<td><strong>' + e.veiculo + '</strong></td>' +
-      '<td>' + e.tipo + '</td>' +
-      '<td>' + fmtD(e.data) + '</td>' +
-      '<td>' + e.valor + '</td>' +
-      '<td>' + situacao + '</td>' +
-    '</tr>';
+  var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  container.innerHTML = veiculos.map(function(vei) {
+    var progs = _getProgRecorrentes(vei, hoje);
+    var motoDesp = allDespesas.filter(function(d) { return d.veiculo_id === vei.id; });
+    var vencidas = progs.filter(function(e) { return e.diff < 0; }).length;
+    var proximas = progs.filter(function(e) { return e.diff >= 0 && e.diff <= 30; }).length;
+    var badges = vencidas ? '<span class="badge badge-red" style="margin-left:0.5rem">⚠️ ' + vencidas + ' vencida(s)</span>' : '';
+    badges += proximas ? '<span class="badge badge-yellow" style="margin-left:0.5rem">🟡 ' + proximas + ' próxima(s)</span>' : '';
+    if (!vencidas && !proximas) badges += '<span class="badge badge-green" style="margin-left:0.5rem">✅ Em dia</span>';
+    var desp = motoDesp.length ? '<span style="margin-left:auto;font-size:0.82rem;color:#94a3b8">' + motoDesp.length + ' avulsa(s)</span>' : '';
+    return '<div style="border:1px solid #334155;border-radius:0.5rem;margin-bottom:0.6rem;overflow:hidden">' +
+      '<div onclick="toggleDespesaMoto(\'' + vei.id + '\')" style="display:flex;align-items:center;gap:0.5rem;padding:0.8rem 1rem;cursor:pointer;background:#1e293b;user-select:none">' +
+        '<span id="acc-desp-arrow-' + vei.id + '" style="font-size:0.7rem;color:#94a3b8;transition:transform 0.2s">▶</span>' +
+        '<span style="font-weight:600">' + veiculoLabel(vei) + '</span>' +
+        badges + desp +
+      '</div>' +
+      '<div id="acc-desp-body-' + vei.id + '" style="display:none;padding:0.5rem 1rem 1rem"></div>' +
+    '</div>';
   }).join('');
 }
 
-// --- DESPESAS ---
-async function renderDespesas() {
-  showLoading('despesas-tbody', 7);
-  var fmId = document.getElementById('filtro-moto-despesa') ? document.getElementById('filtro-moto-despesa').value : '';
-  var query = db.from('despesas').select('*, veiculos(modelo, placa)').order('created_at', { ascending: false });
-  if (fmId) query = query.eq('veiculo_id', fmId);
-  const { data } = await query;
-  const d = data || [];
-  document.getElementById('despesas-tbody').innerHTML = d.length
-    ? d.map(function(x) {
-        var vei = x.veiculos;
-        return '<tr>' +
-          '<td>' + (vei ? veiculoLabel(vei) : '-') + '</td>' +
-          '<td>' + x.tipo + '</td>' +
-          '<td>' + (x.ano || '-') + '</td>' +
-          '<td><span class="text-red">' + fmtBRL(x.valor) + '</span></td>' +
-          '<td>' + fmtDate(x.vencimento) + '</td>' +
-          '<td>' + (x.obs || '-') + '</td>' +
-          '<td>' +
-            '<div class="btn-actions">' +
-              '<button class="btn btn-sm btn-secondary" onclick="editDespesa(\'' + x.id + '\')">Editar</button>' +
-              '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
-            '</div>' +
-          '</td></tr>';
-      }).join('')
-    : '<tr class="empty-row"><td colspan="7">Nenhuma despesa encontrada</td></tr>';
+function toggleDespesaMoto(veiculoId) {
+  var body  = document.getElementById('acc-desp-body-' + veiculoId);
+  var arrow = document.getElementById('acc-desp-arrow-' + veiculoId);
+  if (!body) return;
+  var open = body.style.display !== 'none';
+  if (open) {
+    body.style.display = 'none';
+    if (arrow) arrow.textContent = '▶';
+  } else {
+    if (!body.innerHTML.trim() && _despesasCache) {
+      var vei      = _despesasCache.veiculos.find(function(v) { return v.id === veiculoId; });
+      var motoDesp = _despesasCache.allDespesas.filter(function(d) { return d.veiculo_id === veiculoId; });
+      if (vei) body.innerHTML = _buildDespesaMotoBody(vei, motoDesp);
+    }
+    body.style.display = 'block';
+    if (arrow) arrow.textContent = '▼';
+  }
 }
+
+function renderDespesas() { renderDespesasTab(); }
 
 async function abrirDespesaNotif(veiculoId, tipo, vencimento, notifKey) {
   _pendingNotifKey = notifKey || null;
@@ -1538,7 +1568,7 @@ async function submitDespesa(e) {
     if (!id && result.data && result.data.id) dismissNotif('despesa_' + result.data.id);
     _pendingNotifKey = null;
   }
-  if (document.getElementById('custos-geral').classList.contains('active')) renderDespesas();
+  if (document.getElementById('custos-geral').classList.contains('active')) renderDespesasTab();
 }
 
 // --- RELATÓRIOS ---
