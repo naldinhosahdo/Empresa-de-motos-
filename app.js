@@ -310,11 +310,11 @@ async function loadNotificacoes() {
     } else if (a.tipo === 'aluguel') {
       bodyClick = 'onclick="' + _c + 'abrirContratosVencer()" style="cursor:pointer"';
     } else if (a.tipo === 'manut') {
-      bodyClick = 'onclick="' + _c + 'showSection(\'custos-geral\');showCustosTab(\'avulsa\')" style="cursor:pointer"';
+      bodyClick = 'onclick="' + _c + 'showSection(\'custos-geral\');showCustosTab(\'manutencoes\')" style="cursor:pointer"';
     } else if (a.tipo === 'despesa') {
       bodyClick = 'onclick="' + _c + 'showSection(\'custos-geral\');showCustosTab(\'despesas\')" style="cursor:pointer"';
     } else if (a.tipo === 'recorrente' && a.key.indexOf('prog_') === 0) {
-      bodyClick = 'onclick="' + _c + 'showSection(\'custos-geral\');showCustosTab(\'programada\')" style="cursor:pointer"';
+      bodyClick = 'onclick="' + _c + 'showSection(\'custos-geral\');showCustosTab(\'manutencoes\')" style="cursor:pointer"';
     } else if (a.tipo === 'recorrente' && a.veiculoId && a.tipoLabel) {
       bodyClick = 'onclick="' + _c + 'abrirDespesaNotif(\'' + a.veiculoId + '\',\'' + a.tipoLabel + '\',\'' + a.data + '\',\'' + safeKey + '\')" style="cursor:pointer"';
     } else if (a.tipo === 'recorrente') {
@@ -422,7 +422,7 @@ function showSection(name, addHistory) {
   if (name === 'clientes')   renderClientes();
   if (name === 'motos')      renderVeiculos();
   if (name === 'alugueis')   { populateClienteSelect(); populateVeiculoSelects(); renderAlugueis(); }
-  if (name === 'custos-geral') { showCustosTab('avulsa'); }
+  if (name === 'custos-geral') { showCustosTab('manutencoes'); }
   if (name === 'relatorios') renderRelatorios();
   if (name === 'checklist')  buildChecklist();
 
@@ -843,8 +843,6 @@ async function populateVeiculoSelects() {
     var el = document.getElementById(id);
     if (el) el.innerHTML = filterOpts;
   });
-  var elProg = document.getElementById('filtro-moto-prog');
-  if (elProg) elProg.innerHTML = filterOpts;
 }
 
 var periodoLabel = { dia: 'Dia', semana: 'Semana', mes: 'Mês' };
@@ -857,20 +855,18 @@ function showCustosTab(tab) {
   if (btn) btn.classList.add('active');
   var content = document.getElementById('tab-' + tab);
   if (content) content.style.display = 'block';
-  document.getElementById('btn-nova-avulsa').style.display  = tab === 'avulsa'      ? '' : 'none';
-  document.getElementById('btn-nova-prog').style.display    = tab === 'programada'  ? '' : 'none';
+  document.getElementById('btn-nova-manut').style.display   = tab === 'manutencoes' ? '' : 'none';
   document.getElementById('btn-nova-despesa').style.display = tab === 'despesas'    ? '' : 'none';
-  if (tab === 'avulsa')     { populateVeiculoSelects(); renderManutencoes(); }
-  if (tab === 'programada') { populateVeiculoSelects(); renderManutProgramada(); }
-  if (tab === 'despesas')   { populateVeiculoSelects(); renderDespesas(); }
+  if (tab === 'manutencoes') { populateVeiculoSelects(); renderManutProgramada(); renderManutencoes(); }
+  if (tab === 'despesas')    { populateVeiculoSelects(); renderDespesas(); }
 }
 
 // --- MANUTENÇÃO PROGRAMADA ---
 async function renderManutProgramada() {
   var tbody = document.getElementById('programada-tbody');
-  var thead = document.querySelector('#tab-programada thead tr');
-  if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Carregando...</td></tr>';
-  var fmId = document.getElementById('filtro-moto-prog') ? document.getElementById('filtro-moto-prog').value : '';
+  var thead = document.querySelector('#programada-table thead tr');
+  if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Carregando...</td></tr>';
+  var fmId = document.getElementById('filtro-moto-manut') ? document.getElementById('filtro-moto-manut').value : '';
   var showAll = !fmId;
   var colCount = showAll ? 7 : 6;
   var query = db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)').order('created_at');
@@ -933,6 +929,10 @@ async function renderManutProgramada() {
         '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manut_prog\',\'' + x.id + '\')">Excluir</button>' +
       '</div></td></tr>';
   }).join('');
+}
+
+function openNewManutChoice() {
+  openModal('modal-tipo-manut');
 }
 
 function openNewManutProg() {

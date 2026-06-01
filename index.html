@@ -235,44 +235,37 @@
     <div class="section-header">
       <h2 class="section-title">Custos</h2>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-        <button id="btn-nova-avulsa"  class="btn btn-primary" onclick="openNewManutencao()">+ Avulsa</button>
-        <button id="btn-nova-prog"    class="btn btn-primary" onclick="openNewManutProg()" style="display:none">+ Programada</button>
-        <button id="btn-nova-despesa" class="btn btn-primary" onclick="openNewDespesa()"   style="display:none">+ Despesa</button>
+        <button id="btn-nova-manut"   class="btn btn-primary" onclick="openNewManutChoice()">+ Manutenção</button>
+        <button id="btn-nova-despesa" class="btn btn-primary" onclick="openNewDespesa()" style="display:none">+ Despesa</button>
       </div>
     </div>
 
     <div class="custos-tabs">
-      <button class="custos-tab active" onclick="showCustosTab('avulsa')">Avulsa</button>
-      <button class="custos-tab"        onclick="showCustosTab('programada')">Programada</button>
+      <button class="custos-tab active" onclick="showCustosTab('manutencoes')">Manutenções</button>
       <button class="custos-tab"        onclick="showCustosTab('despesas')">Despesas</button>
     </div>
 
-    <div id="tab-avulsa" class="custos-tab-content">
+    <div id="tab-manutencoes" class="custos-tab-content">
       <div class="filter-bar" style="margin-bottom:0.75rem">
         <label>Moto:
-          <select id="filtro-moto-manut" onchange="renderManutencoes()">
+          <select id="filtro-moto-manut" onchange="renderManutProgramada(); renderManutencoes()">
           </select>
         </label>
       </div>
+
+      <div style="margin:0.25rem 0 0.5rem;font-weight:600;font-size:0.82rem;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase">📅 Programadas</div>
+      <div class="table-wrap">
+        <table id="programada-table">
+          <thead><tr><th>Moto</th><th>Item</th><th>Intervalo</th><th>Última troca</th><th>KM Atual</th><th>Situação</th><th>Ações</th></tr></thead>
+          <tbody id="programada-tbody"></tbody>
+        </table>
+      </div>
+
+      <div style="margin:1.25rem 0 0.5rem;font-weight:600;font-size:0.82rem;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase">🔧 Histórico (Avulsas)</div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Moto</th><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Próx.</th><th>Ações</th></tr></thead>
           <tbody id="manutencoes-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="tab-programada" class="custos-tab-content" style="display:none">
-      <div class="filter-bar" style="margin-bottom:0.75rem">
-        <label>Moto:
-          <select id="filtro-moto-prog" onchange="renderManutProgramada()">
-          </select>
-        </label>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Item</th><th>Intervalo</th><th>Última troca</th><th>KM Atual</th><th>Situação</th><th>Ações</th></tr></thead>
-          <tbody id="programada-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -560,6 +553,21 @@
   </div>
 </div>
 
+<!-- MODAL TIPO DE MANUTENÇÃO -->
+<div class="modal-overlay" id="modal-tipo-manut">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Nova Manutenção</h3>
+      <button class="modal-close" onclick="closeModal('modal-tipo-manut')">&times;</button>
+    </div>
+    <p style="color:#94a3b8;margin-bottom:1.25rem;font-size:0.9rem">Qual tipo de manutenção deseja registrar?</p>
+    <div style="display:flex;flex-direction:column;gap:0.75rem">
+      <button class="btn btn-primary" onclick="closeModal('modal-tipo-manut');openNewManutProg()">📅 Programada — configurar alerta por km</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-tipo-manut');openNewManutencao()">🔧 Avulsa — registrar serviço já realizado</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL MANUTENÇÃO -->
 <div class="modal-overlay" id="modal-manutencao">
   <div class="modal">
@@ -839,6 +847,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=119"></script>
+<script src="app.js?v=120"></script>
 </body>
 </html>
