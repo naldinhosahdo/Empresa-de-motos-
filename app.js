@@ -1467,7 +1467,7 @@ function _buildDespesaMotoBody(vei, motoDesp) {
     '<div class="table-wrap" style="margin-bottom:0.5rem"><table>' +
       '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th></tr></thead>' +
       '<tbody>' + progRows + '</tbody></table></div>' +
-    subHdr('🧾 Despesas Registradas') +
+    subHdr('🧾 Despesas Avulsas') +
     '<div class="table-wrap"><table>' +
       '<thead><tr><th>Tipo</th><th>Ano Ref.</th><th>Valor</th><th>Vencimento</th><th>Observação</th><th>Ações</th></tr></thead>' +
       '<tbody>' + avulsaRows + '</tbody></table></div>';
