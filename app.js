@@ -839,7 +839,7 @@ async function populateVeiculoSelects() {
     if (el) el.innerHTML = v.length ? opts : noOpt;
   });
   var filterOpts = '<option value="">Todos</option>' + opts;
-  ['filtro-moto-aluguel', 'filtro-moto-manut', 'filtro-moto-despesa'].forEach(function(id) {
+  ['filtro-moto-aluguel', 'filtro-moto-despesa'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.innerHTML = filterOpts;
   });
@@ -857,51 +857,19 @@ function showCustosTab(tab) {
   if (content) content.style.display = 'block';
   document.getElementById('btn-nova-manut').style.display   = tab === 'manutencoes' ? '' : 'none';
   document.getElementById('btn-nova-despesa').style.display = tab === 'despesas'    ? '' : 'none';
-  if (tab === 'manutencoes') { populateVeiculoSelects(); renderManutProgramada(); renderManutencoes(); }
+  if (tab === 'manutencoes') { renderManutencoesTab(); }
   if (tab === 'despesas')    { renderDespesasTab(); }
 }
 
-// --- MANUTENÇÃO PROGRAMADA ---
-async function renderManutProgramada() {
-  var tbody = document.getElementById('programada-tbody');
-  var thead = document.querySelector('#programada-table thead tr');
-  if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Carregando...</td></tr>';
-  var fmId = document.getElementById('filtro-moto-manut') ? document.getElementById('filtro-moto-manut').value : '';
-  var showAll = !fmId;
-  var colCount = showAll ? 7 : 6;
-  var query = db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)').order('created_at');
-  if (fmId) query = query.eq('veiculo_id', fmId);
-  var { data: progs } = await query;
-  var p = progs || [];
-  if (thead) {
-    thead.innerHTML = (showAll ? '<th>Moto</th>' : '') +
-      '<th>Item</th><th>Intervalo</th><th>Última troca</th><th>KM Atual</th><th>Situação</th><th>Ações</th>';
-  }
-  if (!tbody) return;
-  if (!p.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="' + colCount + '">Nenhuma manutenção programada' + (showAll ? '' : ' para esta moto') + '. Clique em "+ Programada" para adicionar.</td></tr>';
-    return;
-  }
-  p = p.map(function(x) {
-    var vei = x.veiculos;
-    var kmAtual = vei ? (Number(vei.km_atual) || 0) : 0;
+// --- MANUTENÇÕES (accordion por moto) ---
+var _manutencoesCache = null;
+
+function _buildManutMotoBody(vei, motoProg, motoAvul) {
+  var kmAtual = Number(vei.km_atual) || 0;
+  var subHdr  = function(txt) { return '<div style="font-weight:600;font-size:0.82rem;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;margin:0.75rem 0 0.4rem">' + txt + '</div>'; };
+  var progRows = motoProg.map(function(x) {
     var proximaKm = x.ultima_km ? (Number(x.ultima_km) + Number(x.intervalo_km)) : null;
     var restante  = (proximaKm && kmAtual) ? proximaKm - kmAtual : null;
-    var prioridade = (!x.ultima_km || restante === null) ? 3 : restante <= 0 ? 0 : restante <= 500 ? 1 : 2;
-    return Object.assign({}, x, { _kmAtual: kmAtual, _restante: restante, _prioridade: prioridade });
-  });
-  if (showAll) {
-    p.sort(function(a, b) {
-      if (a._prioridade !== b._prioridade) return a._prioridade - b._prioridade;
-      var ra = a._restante !== null ? a._restante : Infinity;
-      var rb = b._restante !== null ? b._restante : Infinity;
-      return ra - rb;
-    });
-  }
-  tbody.innerHTML = p.map(function(x) {
-    var vei = x.veiculos;
-    var restante = x._restante;
-    var kmAtual  = x._kmAtual;
     var situacao;
     if (!x.ultima_km) {
       situacao = '<span class="badge badge-gray">Não configurado</span>';
@@ -915,10 +883,8 @@ async function renderManutProgramada() {
       situacao = '<span class="badge badge-gray">—</span>';
     }
     var safeItem = (x.item || '').replace(/'/g, "\\'");
-    var motoCol = showAll ? '<td><strong>' + (vei ? veiculoLabel(vei) : '—') + '</strong></td>' : '';
     return '<tr>' +
-      motoCol +
-      '<td><strong>' + (x.item || '-') + '</strong></td>' +
+      '<td><strong>' + (x.item || '—') + '</strong></td>' +
       '<td>A cada ' + Number(x.intervalo_km).toLocaleString('pt-BR') + ' km</td>' +
       '<td>' + (x.ultima_km ? Number(x.ultima_km).toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
       '<td>' + (kmAtual ? kmAtual.toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
@@ -928,8 +894,94 @@ async function renderManutProgramada() {
         '<button class="btn btn-sm btn-secondary" onclick="editManutProg(\'' + x.id + '\')">Editar</button>' +
         '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manut_prog\',\'' + x.id + '\')">Excluir</button>' +
       '</div></td></tr>';
+  }).join('') || '<tr class="empty-row"><td colspan="6">Nenhuma programada. Use "+ Manutenção" → Programada.</td></tr>';
+  var avulRows = motoAvul.map(function(x) {
+    return '<tr>' +
+      '<td>' + (x.tipo || '—') + '</td>' +
+      '<td>' + (x.descricao || '—') + '</td>' +
+      '<td><span class="text-red">' + fmtBRL(x.custo) + '</span></td>' +
+      '<td>' + fmtDate(x.data) + '</td>' +
+      '<td>' + (x.prox_data ? fmtDate(x.prox_data) : (x.prox_km ? x.prox_km + ' km' : '—')) + '</td>' +
+      '<td><div class="btn-actions">' +
+        '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
+      '</div></td></tr>';
+  }).join('') || '<tr class="empty-row"><td colspan="6">Nenhuma avulsa registrada.</td></tr>';
+  return subHdr('📅 Programadas') +
+    '<div class="table-wrap" style="margin-bottom:0.5rem"><table>' +
+      '<thead><tr><th>Item</th><th>Intervalo</th><th>Última troca</th><th>KM Atual</th><th>Situação</th><th>Ações</th></tr></thead>' +
+      '<tbody>' + progRows + '</tbody></table></div>' +
+    subHdr('🔧 Manutenções Avulsas') +
+    '<div class="table-wrap"><table>' +
+      '<thead><tr><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Próx.</th><th>Ações</th></tr></thead>' +
+      '<tbody>' + avulRows + '</tbody></table></div>';
+}
+
+async function renderManutencoesTab() {
+  var container = document.getElementById('manutencoes-motos-list');
+  if (!container) return;
+  container.innerHTML = '<p style="color:#94a3b8;padding:1rem 0">Carregando...</p>';
+  var results = await Promise.all([
+    db.from('veiculos').select('id, modelo, placa, km_atual').order('modelo'),
+    db.from('manut_programada').select('*').order('created_at'),
+    db.from('manutencoes').select('*').order('created_at', { ascending: false })
+  ]);
+  var veiculos = results[0].data || [];
+  var allProgs = results[1].data || [];
+  var allAvul  = results[2].data || [];
+  _manutencoesCache = { veiculos: veiculos, allProgs: allProgs, allAvul: allAvul };
+  if (!veiculos.length) {
+    container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:2rem">Nenhuma moto cadastrada.</p>';
+    return;
+  }
+  container.innerHTML = veiculos.map(function(vei) {
+    var kmAtual  = Number(vei.km_atual) || 0;
+    var motoProg = allProgs.filter(function(p) { return p.veiculo_id === vei.id; });
+    var motoAvul = allAvul.filter(function(a) { return a.veiculo_id === vei.id; });
+    var vencidas = 0, proximas = 0;
+    motoProg.forEach(function(x) {
+      if (!x.ultima_km) return;
+      var restante = kmAtual ? (Number(x.ultima_km) + Number(x.intervalo_km)) - kmAtual : null;
+      if (restante === null) return;
+      if (restante <= 0) vencidas++; else if (restante <= 500) proximas++;
+    });
+    var badges = '';
+    if (vencidas) badges += '<span class="badge badge-red" style="margin-left:0.5rem">⚠️ ' + vencidas + ' vencida(s)</span>';
+    if (proximas) badges += '<span class="badge badge-yellow" style="margin-left:0.5rem">🔴 ' + proximas + ' próxima(s)</span>';
+    if (!vencidas && !proximas && motoProg.length) badges += '<span class="badge badge-green" style="margin-left:0.5rem">✅ Em dia</span>';
+    var avulCount = motoAvul.length ? '<span style="margin-left:auto;font-size:0.82rem;color:#94a3b8">' + motoAvul.length + ' avulsa(s)</span>' : '';
+    return '<div style="border:1px solid #334155;border-radius:0.5rem;margin-bottom:0.6rem;overflow:hidden">' +
+      '<div onclick="toggleManutMoto(\'' + vei.id + '\')" style="display:flex;align-items:center;gap:0.5rem;padding:0.8rem 1rem;cursor:pointer;background:#1e293b;user-select:none">' +
+        '<span id="acc-manut-arrow-' + vei.id + '" style="font-size:0.7rem;color:#94a3b8">▶</span>' +
+        '<span style="font-weight:600">' + veiculoLabel(vei) + '</span>' +
+        badges + avulCount +
+      '</div>' +
+      '<div id="acc-manut-body-' + vei.id + '" style="display:none;padding:0.5rem 1rem 1rem"></div>' +
+    '</div>';
   }).join('');
 }
+
+function toggleManutMoto(veiculoId) {
+  var body  = document.getElementById('acc-manut-body-' + veiculoId);
+  var arrow = document.getElementById('acc-manut-arrow-' + veiculoId);
+  if (!body) return;
+  var open = body.style.display !== 'none';
+  if (open) {
+    body.style.display = 'none';
+    if (arrow) arrow.textContent = '▶';
+  } else {
+    if (!body.innerHTML.trim() && _manutencoesCache) {
+      var vei      = _manutencoesCache.veiculos.find(function(v) { return v.id === veiculoId; });
+      var motoProg = _manutencoesCache.allProgs.filter(function(p) { return p.veiculo_id === veiculoId; });
+      var motoAvul = _manutencoesCache.allAvul.filter(function(a) { return a.veiculo_id === veiculoId; });
+      if (vei) body.innerHTML = _buildManutMotoBody(vei, motoProg, motoAvul);
+    }
+    body.style.display = 'block';
+    if (arrow) arrow.textContent = '▼';
+  }
+}
+
+function renderManutProgramada() { renderManutencoesTab(); }
 
 function openNewManutChoice() {
   openModal('modal-tipo-manut');
@@ -1302,32 +1354,7 @@ async function regerarParcelas(aluguelId) {
 }
 
 // --- MANUTENÇÕES ---
-async function renderManutencoes() {
-  showLoading('manutencoes-tbody', 7);
-  var fmId = document.getElementById('filtro-moto-manut') ? document.getElementById('filtro-moto-manut').value : '';
-  var query = db.from('manutencoes').select('*, veiculos(modelo, placa)').order('created_at', { ascending: false });
-  if (fmId) query = query.eq('veiculo_id', fmId);
-  const { data } = await query;
-  const m = data || [];
-  document.getElementById('manutencoes-tbody').innerHTML = m.length
-    ? m.map(function(x) {
-        var vei = x.veiculos;
-        return '<tr>' +
-          '<td>' + (vei ? veiculoLabel(vei) : '-') + '</td>' +
-          '<td>' + x.tipo + '</td>' +
-          '<td>' + (x.descricao || '-') + '</td>' +
-          '<td><span class="text-red">' + fmtBRL(x.custo) + '</span></td>' +
-          '<td>' + fmtDate(x.data) + '</td>' +
-          '<td>' + (x.prox_data ? fmtDate(x.prox_data) : (x.prox_km ? x.prox_km + ' km' : '-')) + '</td>' +
-          '<td>' +
-            '<div class="btn-actions">' +
-              '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button>' +
-              '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
-            '</div>' +
-          '</td></tr>';
-      }).join('')
-    : '<tr class="empty-row"><td colspan="7">Nenhuma manutenção encontrada</td></tr>';
-}
+function renderManutencoes() { renderManutencoesTab(); }
 
 function openNewManutencao() {
   document.getElementById('form-manutencao').reset();
@@ -1369,7 +1396,7 @@ async function submitManutencao() {
     : await db.from('manutencoes').insert(m);
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-manutencao');
-  if (document.getElementById('custos-geral').classList.contains('active')) renderManutencoes();
+  if (document.getElementById('custos-geral').classList.contains('active')) renderManutencoesTab();
 }
 
 // --- DESPESAS (accordion por moto) ---
