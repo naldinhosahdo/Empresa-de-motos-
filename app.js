@@ -858,7 +858,7 @@ function showCustosTab(tab) {
   document.getElementById('btn-nova-manut').style.display   = tab === 'manutencoes' ? '' : 'none';
   document.getElementById('btn-nova-despesa').style.display = tab === 'despesas'    ? '' : 'none';
   if (tab === 'manutencoes') { populateVeiculoSelects(); renderManutProgramada(); renderManutencoes(); }
-  if (tab === 'despesas')    { populateVeiculoSelects(); renderDespesas(); }
+  if (tab === 'despesas')    { populateVeiculoSelects(); renderDespesasProgramadas(); renderDespesas(); }
 }
 
 // --- MANUTENÇÃO PROGRAMADA ---
@@ -1370,6 +1370,81 @@ async function submitManutencao() {
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-manutencao');
   if (document.getElementById('custos-geral').classList.contains('active')) renderManutencoes();
+}
+
+// --- DESPESAS PROGRAMADAS (recorrentes) ---
+async function renderDespesasProgramadas() {
+  var tbody = document.getElementById('despesas-prog-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Carregando...</td></tr>';
+  var fmId = document.getElementById('filtro-moto-despesa') ? document.getElementById('filtro-moto-despesa').value : '';
+  var query = db.from('veiculos').select('id, modelo, placa, seguro_rastreador_mensal').order('modelo');
+  if (fmId) query = query.eq('id', fmId);
+  var { data: veiculos } = await query;
+  var v = veiculos || [];
+  var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  var p2 = function(n) { return String(n).padStart(2, '0'); };
+  var fmtD = function(d) { return p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear(); };
+  var entries = [];
+  v.forEach(function(vei) {
+    var vl = veiculoLabel(vei);
+    // IPVA — próxima parcela (Feb-Jun, dia 10)
+    var ipvaMeses = [2, 3, 4, 5, 6];
+    var encontrou = false;
+    for (var y = hoje.getFullYear(); y <= hoje.getFullYear() + 1 && !encontrou; y++) {
+      for (var i = 0; i < ipvaMeses.length && !encontrou; i++) {
+        var d = new Date(y, ipvaMeses[i] - 1, 10);
+        if (d >= hoje) {
+          var parc = ipvaMeses[i] - 1;
+          entries.push({ veiculo: vl, tipo: 'IPVA (parcela ' + parc + '/5)', data: d, valor: '—', diff: Math.round((d - hoje) / 86400000) });
+          encontrou = true;
+        }
+      }
+    }
+    // Licenciamento — dia 10 do mês calculado pelo último dígito da placa
+    if (vei.placa) {
+      var digitos = vei.placa.replace(/\D/g, '');
+      var ult = digitos.length ? parseInt(digitos.slice(-1)) : null;
+      if (ult !== null) {
+        var mesLic = (ult === 0 ? 10 : ult) + 2;
+        var anoLic = hoje.getFullYear();
+        if (mesLic > 12) { mesLic -= 12; anoLic++; }
+        var dLic = new Date(anoLic, mesLic - 1, 10);
+        if (dLic < hoje) dLic = new Date(anoLic + 1, mesLic - 1, 10);
+        entries.push({ veiculo: vl, tipo: 'Licenciamento', data: dLic, valor: '—', diff: Math.round((dLic - hoje) / 86400000) });
+      }
+    }
+    // Seguro + Rastreador — mensal, dia 10
+    if (vei.seguro_rastreador_mensal) {
+      var dSeg = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
+      if (dSeg < hoje) dSeg = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
+      entries.push({ veiculo: vl, tipo: 'Seguro + Rastreador', data: dSeg, valor: fmtBRL(vei.seguro_rastreador_mensal), diff: Math.round((dSeg - hoje) / 86400000) });
+    }
+  });
+  entries.sort(function(a, b) { return a.diff - b.diff; });
+  if (!entries.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Nenhuma despesa recorrente encontrada.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = entries.map(function(e) {
+    var situacao;
+    if (e.diff < 0) {
+      situacao = '<span class="badge badge-red">⚠️ Vencido há ' + Math.abs(e.diff) + ' dia(s)</span>';
+    } else if (e.diff === 0) {
+      situacao = '<span class="badge badge-red">⚠️ Vence hoje</span>';
+    } else if (e.diff <= 30) {
+      situacao = '<span class="badge badge-yellow">🟡 Em ' + e.diff + ' dia(s)</span>';
+    } else {
+      situacao = '<span class="badge badge-green">✅ Em dia</span>';
+    }
+    return '<tr>' +
+      '<td><strong>' + e.veiculo + '</strong></td>' +
+      '<td>' + e.tipo + '</td>' +
+      '<td>' + fmtD(e.data) + '</td>' +
+      '<td>' + e.valor + '</td>' +
+      '<td>' + situacao + '</td>' +
+    '</tr>';
+  }).join('');
 }
 
 // --- DESPESAS ---
