@@ -172,13 +172,14 @@ async function loadNotificacoes() {
   var em5 = new Date(hoje.getTime() + 5 * 86400000);
   var em5Str = em5.toISOString().split('T')[0];
   var em2Str = new Date(hoje.getTime() + 2 * 86400000).toISOString().split('T')[0];
+  var em7Str  = new Date(hoje.getTime() + 7 * 86400000).toISOString().split('T')[0];
 
   var hoje0Str = hojeLocalStr();
   var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }, { data: veiculosData }, { data: progsData }] = await Promise.all([
     db.from('despesas').select('*, veiculos(modelo, placa)')
       .lte('vencimento', em30Str).not('vencimento', 'is', null).order('vencimento'),
     db.from('manutencoes').select('*, veiculos(modelo, placa)')
-      .lte('prox_data', em30Str).not('prox_data', 'is', null).order('prox_data'),
+      .lte('prox_data', em7Str).not('prox_data', 'is', null).order('prox_data'),
     db.from('alugueis').select('*, veiculos(modelo, placa)')
       .eq('status', 'ativo').lte('fim', em5Str).not('fim', 'is', null).order('fim'),
     db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))')
@@ -205,7 +206,6 @@ async function loadNotificacoes() {
   var anoHoje  = hoje.getFullYear();
   var mesHoje  = hoje.getMonth() + 1;
   var diaHoje  = hoje.getDate();
-  var em7Str   = new Date(hoje.getTime() + 7 * 86400000).toISOString().split('T')[0];
   var alertasRecorrentes = [];
   (veiculosData || []).forEach(function(vei) {
     var vl = { modelo: vei.modelo, placa: vei.placa };
