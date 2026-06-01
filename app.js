@@ -844,7 +844,7 @@ async function populateVeiculoSelects() {
     if (el) el.innerHTML = filterOpts;
   });
   var elProg = document.getElementById('filtro-moto-prog');
-  if (elProg) elProg.innerHTML = opts;
+  if (elProg) elProg.innerHTML = filterOpts;
 }
 
 var periodoLabel = { dia: 'Dia', semana: 'Semana', mes: 'Mês' };
@@ -868,22 +868,44 @@ function showCustosTab(tab) {
 // --- MANUTENÇÃO PROGRAMADA ---
 async function renderManutProgramada() {
   var tbody = document.getElementById('programada-tbody');
+  var thead = document.querySelector('#tab-programada thead tr');
   if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Carregando...</td></tr>';
   var fmId = document.getElementById('filtro-moto-prog') ? document.getElementById('filtro-moto-prog').value : '';
+  var showAll = !fmId;
+  var colCount = showAll ? 7 : 6;
   var query = db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)').order('created_at');
   if (fmId) query = query.eq('veiculo_id', fmId);
   var { data: progs } = await query;
   var p = progs || [];
+  if (thead) {
+    thead.innerHTML = (showAll ? '<th>Moto</th>' : '') +
+      '<th>Item</th><th>Intervalo</th><th>Última troca</th><th>KM Atual</th><th>Situação</th><th>Ações</th>';
+  }
   if (!tbody) return;
   if (!p.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Nenhuma manutenção programada para esta moto. Clique em "+ Programada" para adicionar.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="' + colCount + '">Nenhuma manutenção programada' + (showAll ? '' : ' para esta moto') + '. Clique em "+ Programada" para adicionar.</td></tr>';
     return;
   }
-  tbody.innerHTML = p.map(function(x) {
+  p = p.map(function(x) {
     var vei = x.veiculos;
     var kmAtual = vei ? (Number(vei.km_atual) || 0) : 0;
     var proximaKm = x.ultima_km ? (Number(x.ultima_km) + Number(x.intervalo_km)) : null;
     var restante  = (proximaKm && kmAtual) ? proximaKm - kmAtual : null;
+    var prioridade = (!x.ultima_km || restante === null) ? 3 : restante <= 0 ? 0 : restante <= 500 ? 1 : 2;
+    return Object.assign({}, x, { _kmAtual: kmAtual, _restante: restante, _prioridade: prioridade });
+  });
+  if (showAll) {
+    p.sort(function(a, b) {
+      if (a._prioridade !== b._prioridade) return a._prioridade - b._prioridade;
+      var ra = a._restante !== null ? a._restante : Infinity;
+      var rb = b._restante !== null ? b._restante : Infinity;
+      return ra - rb;
+    });
+  }
+  tbody.innerHTML = p.map(function(x) {
+    var vei = x.veiculos;
+    var restante = x._restante;
+    var kmAtual  = x._kmAtual;
     var situacao;
     if (!x.ultima_km) {
       situacao = '<span class="badge badge-gray">Não configurado</span>';
@@ -897,7 +919,9 @@ async function renderManutProgramada() {
       situacao = '<span class="badge badge-gray">—</span>';
     }
     var safeItem = (x.item || '').replace(/'/g, "\\'");
+    var motoCol = showAll ? '<td><strong>' + (vei ? veiculoLabel(vei) : '—') + '</strong></td>' : '';
     return '<tr>' +
+      motoCol +
       '<td><strong>' + (x.item || '-') + '</strong></td>' +
       '<td>A cada ' + Number(x.intervalo_km).toLocaleString('pt-BR') + ' km</td>' +
       '<td>' + (x.ultima_km ? Number(x.ultima_km).toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
