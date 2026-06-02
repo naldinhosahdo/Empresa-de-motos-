@@ -436,6 +436,36 @@ tfoot td { padding: 0.8rem 1.1rem; font-weight: 700; }
 
 .modal-sm { max-width: 400px; }
 
+.modal-card {
+  background: var(--bg2);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 600px;
+  max-height: 92vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg), 0 0 60px rgba(59,130,246,0.08);
+  animation: slideUp 0.25s ease;
+}
+
+.modal-card > .form-row,
+.modal-card > .form-group {
+  padding: 0 1.5rem;
+}
+
+.modal-card > .form-row:first-of-type,
+.modal-card > .form-group:first-of-type {
+  padding-top: 1.4rem;
+}
+
+.modal-card > p {
+  padding: 1rem 1.5rem 0;
+}
+
+.modal-card > div[style*="flex-direction:column"] {
+  padding: 0 1.5rem 1.5rem;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;

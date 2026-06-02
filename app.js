@@ -1456,7 +1456,11 @@ function _buildDespesaMotoBody(vei, motoDesp) {
       '<td>' + fmtD(e.data) + '</td>' +
       '<td>' + e.valor + '</td>' +
       '<td>' + _sitBadge(e.diff) + '</td>' +
-      '<td><button class="btn btn-sm btn-primary" onclick="registrarDespesaProg(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\')">✓ Registrar</button></td>' +
+      '<td><div class="btn-actions">' +
+        '<button class="btn btn-sm btn-primary" onclick="registrarDespesaProg(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\')">✓ Registrar</button>' +
+        '<button class="btn btn-sm btn-secondary" onclick="editDespesaProgAuto(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\')">Editar</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="excluirDespesaAutoCalc()">Excluir</button>' +
+      '</div></td>' +
     '</tr>';
   }).join('');
   // Programadas manuais (salvas no banco com programada=true)
@@ -1606,6 +1610,23 @@ function openNewDespesaProg() {
   document.getElementById('modal-despesa-prog-title').textContent = 'Nova Despesa Programada';
   populateVeiculoSelects();
   openModal('modal-despesa-prog');
+}
+
+async function editDespesaProgAuto(veiculoId, tipo, vencimento) {
+  await populateVeiculoSelects();
+  document.getElementById('dp-id').value         = '';
+  document.getElementById('dp-moto').value       = veiculoId;
+  var tipoSelect = tipo.indexOf('IPVA') === 0 ? 'IPVA' : tipo.indexOf('Seguro') === 0 ? 'Seguro' : tipo;
+  document.getElementById('dp-tipo').value       = tipoSelect;
+  document.getElementById('dp-valor').value      = '';
+  document.getElementById('dp-vencimento').value = vencimento;
+  document.getElementById('dp-obs').value        = '';
+  document.getElementById('modal-despesa-prog-title').textContent = 'Editar Despesa Programada';
+  openModal('modal-despesa-prog');
+}
+
+function excluirDespesaAutoCalc() {
+  alert('Esta despesa é calculada automaticamente com base nos dados da moto e não pode ser excluída.');
 }
 
 async function editDespesaProg(id) {
