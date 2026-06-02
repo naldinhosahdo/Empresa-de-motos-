@@ -376,6 +376,16 @@ tfoot td { padding: 0.8rem 1.1rem; font-weight: 700; }
 
 .btn-sm { padding: 0.28rem 0.6rem; font-size: 0.75rem; border-radius: 6px; }
 
+.btn-success {
+  background: linear-gradient(135deg, var(--green), #16a34a);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(34,197,94,0.3);
+}
+.btn-success:hover {
+  box-shadow: 0 4px 20px rgba(34,197,94,0.5);
+  transform: translateY(-1px);
+}
+
 .btn-info {
   background: linear-gradient(135deg, #0ea5e9, #0284c7);
   color: #fff;

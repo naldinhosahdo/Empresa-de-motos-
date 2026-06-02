@@ -1449,22 +1449,34 @@ function _buildDespesaMotoBody(vei, motoDesp) {
   var isoD = function(d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); };
   var subHdr = function(txt) { return '<div style="font-weight:600;font-size:0.82rem;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;margin:0.75rem 0 0.4rem">' + txt + '</div>'; };
   var progRows = progs.map(function(e) {
+    var tipoKey  = e.tipo.indexOf('IPVA') === 0 ? 'IPVA' : e.tipo.indexOf('Seguro') === 0 ? 'Seguro + Rastreador' : e.tipo;
     var safeTipo = e.tipo.replace(/'/g, "\\'");
+    var safeKey  = tipoKey.replace(/'/g, "\\'");
     var safeVenc = isoD(e.data);
+    var pagoRec  = motoDesp.find(function(d) { return d.programada && d.pago && d.tipo === tipoKey && d.vencimento === safeVenc; });
+    if (pagoRec) {
+      return '<tr>' +
+        '<td>' + e.tipo + '</td>' +
+        '<td>' + fmtD(e.data) + '</td>' +
+        '<td>' + e.valor + '</td>' +
+        '<td><span class="badge badge-green">✅ Pago</span></td>' +
+        '<td><button class="btn btn-sm btn-secondary" onclick="desmarcarDespesaProgPaga(\'' + vei.id + '\',\'' + safeKey + '\',\'' + safeVenc + '\')">Desfazer</button></td>' +
+      '</tr>';
+    }
     return '<tr>' +
       '<td>' + e.tipo + '</td>' +
       '<td>' + fmtD(e.data) + '</td>' +
       '<td>' + e.valor + '</td>' +
       '<td>' + _sitBadge(e.diff) + '</td>' +
       '<td><div class="btn-actions">' +
-        '<button class="btn btn-sm btn-primary" onclick="registrarDespesaProg(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\')">✓ Registrar</button>' +
+        '<button class="btn btn-sm btn-success" onclick="marcarDespesaProgPaga(\'' + vei.id + '\',\'' + safeKey + '\',\'' + safeVenc + '\')">✓ Pago</button>' +
         '<button class="btn btn-sm btn-secondary" onclick="editDespesaProgAuto(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\')">Editar</button>' +
         '<button class="btn btn-sm btn-danger" onclick="excluirDespesaAutoCalc()">Excluir</button>' +
       '</div></td>' +
     '</tr>';
   }).join('');
-  // Programadas manuais (salvas no banco com programada=true)
-  var motoProgM = motoDesp.filter(function(d) { return d.programada; });
+  // Programadas manuais (salvas no banco com programada=true, pago=false)
+  var motoProgM = motoDesp.filter(function(d) { return d.programada && !d.pago; });
   progRows += motoProgM.map(function(x) {
     var venc = x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—';
     var diff = x.vencimento ? Math.round((new Date(x.vencimento + 'T00:00:00') - hoje) / 86400000) : null;
@@ -1507,7 +1519,7 @@ async function renderDespesasTab() {
   container.innerHTML = '<p style="color:#94a3b8;padding:1rem 0">Carregando...</p>';
   var [veiculosRes, despesasRes] = await Promise.all([
     db.from('veiculos').select('id, modelo, placa, seguro_rastreador_mensal').order('modelo'),
-    db.from('despesas').select('id, tipo, ano, valor, vencimento, obs, veiculo_id, programada').order('created_at', { ascending: false })
+    db.from('despesas').select('id, tipo, ano, valor, vencimento, obs, veiculo_id, programada, pago').order('created_at', { ascending: false })
   ]);
   var veiculos = veiculosRes.data || [];
   var allDespesas = despesasRes.data || [];
@@ -1607,6 +1619,31 @@ async function editDespesaProgAuto(veiculoId, tipo, vencimento) {
 
 function excluirDespesaAutoCalc() {
   alert('Esta despesa é calculada automaticamente com base nos dados da moto e não pode ser excluída.');
+}
+
+async function marcarDespesaProgPaga(veiculoId, tipoKey, vencimento) {
+  var res = await db.from('despesas').insert({
+    veiculo_id: veiculoId,
+    tipo: tipoKey,
+    vencimento: vencimento,
+    programada: true,
+    pago: true
+  });
+  if (res.error) { alert('Erro ao marcar como pago: ' + res.error.message); return; }
+  _despesasCache = null;
+  renderDespesasTab();
+}
+
+async function desmarcarDespesaProgPaga(veiculoId, tipoKey, vencimento) {
+  await db.from('despesas')
+    .delete()
+    .eq('veiculo_id', veiculoId)
+    .eq('tipo', tipoKey)
+    .eq('vencimento', vencimento)
+    .eq('programada', true)
+    .eq('pago', true);
+  _despesasCache = null;
+  renderDespesasTab();
 }
 
 async function editDespesaProg(id) {
