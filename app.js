@@ -247,13 +247,13 @@ async function loadNotificacoes() {
     }
   });
 
-  // Manutenção programada — alerta quando km_atual >= proxima_km - 500
+  // Manutenção programada — alerta quando km_atual >= proxima_km - 100
   (progsData || []).forEach(function(p) {
     var vei = p.veiculos;
     if (!p.ultima_km || !vei || !vei.km_atual) return;
     var proximaKm = Number(p.ultima_km) + Number(p.intervalo_km);
     var restante = proximaKm - Number(vei.km_atual);
-    if (restante > 500) return;
+    if (restante > 100) return;
     var vencido = restante <= 0;
     var kmTexto = vencido ? '⚠️ Vencido (' + Math.abs(restante).toLocaleString('pt-BR') + ' km atrás)' : '🔴 Faltam ' + restante.toLocaleString('pt-BR') + ' km';
     alertasRecorrentes.push({
@@ -875,7 +875,7 @@ function _buildManutMotoBody(vei, motoProg, motoAvul) {
       situacao = '<span class="badge badge-gray">Não configurado</span>';
     } else if (restante !== null && restante <= 0) {
       situacao = '<span class="badge badge-red">⚠️ Vencido</span>';
-    } else if (restante !== null && restante <= 500) {
+    } else if (restante !== null && restante <= 100) {
       situacao = '<span class="badge badge-yellow">🔴 Em ' + restante.toLocaleString('pt-BR') + ' km</span>';
     } else if (restante !== null) {
       situacao = '<span class="badge badge-green">Em ' + restante.toLocaleString('pt-BR') + ' km</span>';
@@ -943,7 +943,7 @@ async function renderManutencoesTab() {
       if (!x.ultima_km) return;
       var restante = kmAtual ? (Number(x.ultima_km) + Number(x.intervalo_km)) - kmAtual : null;
       if (restante === null) return;
-      if (restante <= 0) vencidas++; else if (restante <= 500) proximas++;
+      if (restante <= 0) vencidas++; else if (restante <= 100) proximas++;
     });
     var badges = '';
     if (vencidas) badges += '<span class="badge badge-red" style="margin-left:0.5rem">⚠️ ' + vencidas + ' vencida(s)</span>';
