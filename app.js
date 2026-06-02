@@ -1532,9 +1532,16 @@ async function renderDespesasTab() {
   container.innerHTML = veiculos.map(function(vei) {
     var progs     = _getProgRecorrentes(vei, hoje);
     var motoDesp  = allDespesas.filter(function(d) { return d.veiculo_id === vei.id; });
-    var motoProgM = motoDesp.filter(function(d) { return d.programada; });
-    var vencidas  = progs.filter(function(e) { return e.diff < 0; }).length;
-    var proximas  = progs.filter(function(e) { return e.diff >= 0 && e.diff <= 30; }).length;
+    var p2h = function(n) { return String(n).padStart(2, '0'); };
+    var vencidas = 0, proximas = 0;
+    progs.forEach(function(e) {
+      var tipoKey = e.tipo.indexOf('IPVA') === 0 ? 'IPVA' : e.tipo.indexOf('Seguro') === 0 ? 'Seguro + Rastreador' : e.tipo;
+      var venc = e.data.getFullYear() + '-' + p2h(e.data.getMonth() + 1) + '-' + p2h(e.data.getDate());
+      var pago = motoDesp.some(function(d) { return d.programada && d.pago && d.tipo === tipoKey && d.vencimento === venc; });
+      if (pago) return;
+      if (e.diff < 0) vencidas++; else if (e.diff <= 30) proximas++;
+    });
+    var motoProgM = motoDesp.filter(function(d) { return d.programada && !d.pago; });
     motoProgM.forEach(function(x) {
       if (!x.vencimento) return;
       var diff = Math.round((new Date(x.vencimento + 'T00:00:00') - hoje) / 86400000);
