@@ -1478,30 +1478,12 @@ function _buildDespesaMotoBody(vei, motoDesp) {
         '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
       '</div></td></tr>';
   }).join('');
-  if (!progRows) progRows = '<tr class="empty-row"><td colspan="5">Nenhuma despesa recorrente configurada.</td></tr>';
-  var motoAvul = motoDesp.filter(function(d) { return !d.programada; });
-  var avulsaRows = motoAvul.length ? motoAvul.map(function(x) {
-    var venc = x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—';
-    return '<tr>' +
-      '<td>' + (x.tipo || '—') + '</td>' +
-      '<td>' + (x.ano || '—') + '</td>' +
-      '<td><span class="text-red">' + fmtBRL(x.valor) + '</span></td>' +
-      '<td>' + venc + '</td>' +
-      '<td>' + (x.obs || '—') + '</td>' +
-      '<td><div class="btn-actions">' +
-        '<button class="btn btn-sm btn-secondary" onclick="editDespesa(\'' + x.id + '\')">Editar</button>' +
-        '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
-      '</div></td></tr>';
-  }).join('') : '<tr class="empty-row"><td colspan="6">Nenhuma despesa avulsa registrada.</td></tr>';
+  if (!progRows) progRows = '<tr class="empty-row"><td colspan="5">Nenhuma despesa programada configurada.</td></tr>';
 
   return subHdr('📅 Programadas (Recorrentes)') +
-    '<div class="table-wrap" style="margin-bottom:0.5rem"><table>' +
-      '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th>Ação</th></tr></thead>' +
-      '<tbody>' + progRows + '</tbody></table></div>' +
-    subHdr('🧾 Despesas Avulsas') +
     '<div class="table-wrap"><table>' +
-      '<thead><tr><th>Tipo</th><th>Ano Ref.</th><th>Valor</th><th>Vencimento</th><th>Observação</th><th>Ações</th></tr></thead>' +
-      '<tbody>' + avulsaRows + '</tbody></table></div>';
+      '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th>Ação</th></tr></thead>' +
+      '<tbody>' + progRows + '</tbody></table></div>';
 }
 
 async function registrarDespesaProg(veiculoId, tipo, vencimento) {
@@ -1538,7 +1520,6 @@ async function renderDespesasTab() {
   container.innerHTML = veiculos.map(function(vei) {
     var progs     = _getProgRecorrentes(vei, hoje);
     var motoDesp  = allDespesas.filter(function(d) { return d.veiculo_id === vei.id; });
-    var motoAvul  = motoDesp.filter(function(d) { return !d.programada; });
     var motoProgM = motoDesp.filter(function(d) { return d.programada; });
     var vencidas  = progs.filter(function(e) { return e.diff < 0; }).length;
     var proximas  = progs.filter(function(e) { return e.diff >= 0 && e.diff <= 30; }).length;
@@ -1550,12 +1531,11 @@ async function renderDespesasTab() {
     var badges = vencidas ? '<span class="badge badge-red" style="margin-left:0.5rem">⚠️ ' + vencidas + ' vencida(s)</span>' : '';
     badges += proximas ? '<span class="badge badge-yellow" style="margin-left:0.5rem">🟡 ' + proximas + ' próxima(s)</span>' : '';
     if (!vencidas && !proximas) badges += '<span class="badge badge-green" style="margin-left:0.5rem">✅ Em dia</span>';
-    var desp = motoAvul.length ? '<span style="margin-left:auto;font-size:0.82rem;color:#94a3b8">' + motoAvul.length + ' avulsa(s)</span>' : '';
     return '<div style="border:1px solid #334155;border-radius:0.5rem;margin-bottom:0.6rem;overflow:hidden">' +
       '<div onclick="toggleDespesaMoto(\'' + vei.id + '\')" style="display:flex;align-items:center;gap:0.5rem;padding:0.8rem 1rem;cursor:pointer;background:#1e293b;user-select:none">' +
         '<span id="acc-desp-arrow-' + vei.id + '" style="font-size:0.7rem;color:#94a3b8;transition:transform 0.2s">▶</span>' +
         '<span style="font-weight:600">' + veiculoLabel(vei) + '</span>' +
-        badges + desp +
+        badges +
       '</div>' +
       '<div id="acc-desp-body-' + vei.id + '" style="display:none;padding:0.5rem 1rem 1rem"></div>' +
     '</div>';
