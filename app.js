@@ -1469,7 +1469,7 @@ function _buildDespesaMotoBody(vei, motoDesp) {
       '<td>' + e.valor + '</td>' +
       '<td>' + _sitBadge(e.diff) + '</td>' +
       '<td><div class="btn-actions">' +
-        '<button class="btn btn-sm btn-success" onclick="marcarDespesaProgPaga(\'' + vei.id + '\',\'' + safeKey + '\',\'' + safeVenc + '\')">✓ Pago</button>' +
+        '<button class="btn btn-sm btn-success" onclick="marcarDespesaProgPaga(\'' + vei.id + '\',\'' + safeKey + '\',\'' + safeVenc + '\')">✓ Pagar</button>' +
         '<button class="btn btn-sm btn-secondary" onclick="editDespesaProgAuto(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\')">Editar</button>' +
         '<button class="btn btn-sm btn-danger" onclick="excluirDespesaAutoCalc()">Excluir</button>' +
       '</div></td>' +
