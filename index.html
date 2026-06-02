@@ -698,16 +698,13 @@
 
 <!-- MODAL DESPESA PROGRAMADA -->
 <div class="modal-overlay" id="modal-despesa-prog">
-  <div class="modal">
+  <div class="modal-card">
     <div class="modal-header">
-      <h3 id="modal-despesa-prog-title">📅 Nova Despesa Programada</h3>
+      <h3 id="modal-despesa-prog-title">Nova Despesa Programada</h3>
       <button class="modal-close" onclick="closeModal('modal-despesa-prog')">&times;</button>
     </div>
-    <div style="padding:0.75rem 1.5rem;background:#1e3a5f;border-bottom:1px solid #334155;font-size:0.82rem;color:#93c5fd">
-      Esta despesa aparecerá na seção <strong>Programadas</strong> da moto selecionada.
-    </div>
     <input type="hidden" id="dp-id">
-    <div class="form-row" style="padding:1rem 1.5rem 0">
+    <div class="form-row">
       <div class="form-group">
         <label>Moto *</label>
         <select id="dp-moto"></select>
@@ -724,7 +721,7 @@
         </select>
       </div>
     </div>
-    <div class="form-row" style="padding:0 1.5rem">
+    <div class="form-row">
       <div class="form-group">
         <label>Valor (R$)</label>
         <input type="text" inputmode="decimal" id="dp-valor" placeholder="0,00">
@@ -734,13 +731,13 @@
         <input type="date" id="dp-vencimento">
       </div>
     </div>
-    <div class="form-group" style="padding:0 1.5rem">
+    <div class="form-group">
       <label>Observação</label>
       <input type="text" id="dp-obs" placeholder="Ex: Parcela 3/5, IPVA 2026...">
     </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-secondary" onclick="closeModal('modal-despesa-prog')">Cancelar</button>
-      <button type="button" class="btn btn-primary" onclick="submitDespesaProg()">Salvar na seção Programadas</button>
+      <button type="button" class="btn btn-primary" onclick="submitDespesaProg()">Salvar</button>
     </div>
   </div>
 </div>
@@ -879,6 +876,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=131"></script>
+<script src="app.js?v=130"></script>
 </body>
 </html>
