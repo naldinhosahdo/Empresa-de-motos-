@@ -834,7 +834,7 @@ async function populateVeiculoSelects() {
   const v = data || [];
   const opts  = v.map(function(vei) { return '<option value="' + vei.id + '">' + veiculoLabel(vei) + '</option>'; }).join('');
   const noOpt = '<option value="">Nenhum veículo cadastrado</option>';
-  ['aluguel-moto', 'manut-moto', 'despesa-moto', 'prog-moto'].forEach(function(id) {
+  ['aluguel-moto', 'manut-moto', 'despesa-moto', 'prog-moto', 'desp-prog-moto'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.innerHTML = v.length ? opts : noOpt;
   });
@@ -1568,6 +1568,56 @@ async function abrirDespesaNotif(veiculoId, tipo, vencimento, notifKey) {
   openModal('modal-despesa');
   await populateVeiculoSelects();
   document.getElementById('despesa-moto').value = veiculoId;
+}
+
+function openNewDespesaChoice() {
+  document.getElementById('desp-step1').style.display = '';
+  document.getElementById('desp-step2').style.display = 'none';
+  openModal('modal-tipo-despesa');
+}
+
+function despTipoStep(step) {
+  document.getElementById('desp-step1').style.display = step === 1 ? '' : 'none';
+  document.getElementById('desp-step2').style.display = step === 2 ? '' : 'none';
+  if (step === 2) populateVeiculoSelects();
+}
+
+async function confirmarDespProg() {
+  var veiculoId = document.getElementById('desp-prog-moto').value;
+  var tipo      = document.getElementById('desp-prog-tipo').value;
+  if (!veiculoId || !tipo) { alert('Selecione a moto e o tipo.'); return; }
+  var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  var p2 = function(n) { return String(n).padStart(2, '0'); };
+  var vencimento = '';
+  if (tipo === 'IPVA') {
+    var ipvaMeses = [2, 3, 4, 5, 6];
+    outer: for (var y = hoje.getFullYear(); y <= hoje.getFullYear() + 1; y++) {
+      for (var i = 0; i < ipvaMeses.length; i++) {
+        var d = new Date(y, ipvaMeses[i] - 1, 10);
+        if (d >= hoje) { vencimento = y + '-' + p2(ipvaMeses[i]) + '-10'; break outer; }
+      }
+    }
+  } else if (tipo === 'Licenciamento') {
+    var { data: vei } = await db.from('veiculos').select('placa').eq('id', veiculoId).single();
+    if (vei && vei.placa) {
+      var digitos = vei.placa.replace(/\D/g, '');
+      var ult = digitos.length ? parseInt(digitos.slice(-1)) : null;
+      if (ult !== null) {
+        var mesLic = (ult === 0 ? 10 : ult) + 2;
+        var anoLic = hoje.getFullYear();
+        if (mesLic > 12) { mesLic -= 12; anoLic++; }
+        var dLic = new Date(anoLic, mesLic - 1, 10);
+        if (dLic < hoje) dLic = new Date(anoLic + 1, mesLic - 1, 10);
+        vencimento = dLic.getFullYear() + '-' + p2(dLic.getMonth() + 1) + '-10';
+      }
+    }
+  } else if (tipo === 'Seguro') {
+    var dSeg = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
+    if (dSeg < hoje) dSeg = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
+    vencimento = dSeg.getFullYear() + '-' + p2(dSeg.getMonth() + 1) + '-' + p2(dSeg.getDate());
+  }
+  closeModal('modal-tipo-despesa');
+  registrarDespesaProg(veiculoId, tipo, vencimento);
 }
 
 function openNewDespesa() {

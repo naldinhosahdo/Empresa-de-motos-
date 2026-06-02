@@ -236,7 +236,7 @@
       <h2 class="section-title">Custos</h2>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
         <button id="btn-nova-manut"   class="btn btn-primary" onclick="openNewManutChoice()">+ Manutenção</button>
-        <button id="btn-nova-despesa" class="btn btn-primary" onclick="openNewDespesa()" style="display:none">+ Despesa</button>
+        <button id="btn-nova-despesa" class="btn btn-primary" onclick="openNewDespesaChoice()" style="display:none">+ Despesa</button>
       </div>
     </div>
 
@@ -681,6 +681,45 @@
   </div>
 </div>
 
+<!-- MODAL TIPO DE DESPESA -->
+<div class="modal-overlay" id="modal-tipo-despesa">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Nova Despesa</h3>
+      <button class="modal-close" onclick="closeModal('modal-tipo-despesa')">&times;</button>
+    </div>
+    <!-- Passo 1: escolha do tipo -->
+    <div id="desp-step1">
+      <p style="color:#94a3b8;margin-bottom:1.25rem;font-size:0.9rem">Qual tipo de despesa deseja registrar?</p>
+      <div style="display:flex;flex-direction:column;gap:0.75rem">
+        <button class="btn btn-primary" onclick="despTipoStep(2)">📅 Programada — IPVA, Licenciamento ou Seguro</button>
+        <button class="btn btn-secondary" onclick="closeModal('modal-tipo-despesa');openNewDespesa()">🧾 Avulsa — registrar qualquer despesa</button>
+      </div>
+    </div>
+    <!-- Passo 2: selecionar moto e tipo programado -->
+    <div id="desp-step2" style="display:none">
+      <p style="color:#94a3b8;margin-bottom:1rem;font-size:0.9rem">Selecione a moto e o tipo:</p>
+      <div class="form-group" style="margin-bottom:0.75rem">
+        <label>Moto *</label>
+        <select id="desp-prog-moto"></select>
+      </div>
+      <div class="form-group" style="margin-bottom:1.25rem">
+        <label>Tipo *</label>
+        <select id="desp-prog-tipo">
+          <option value="">Selecione...</option>
+          <option value="IPVA">IPVA</option>
+          <option value="Licenciamento">Licenciamento</option>
+          <option value="Seguro">Seguro</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-secondary" onclick="despTipoStep(1)">← Voltar</button>
+        <button class="btn btn-primary" onclick="confirmarDespProg()">Continuar →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL DESPESA FIXA -->
 <div class="modal-overlay" id="modal-despesa">
   <div class="modal">
@@ -815,6 +854,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=128"></script>
+<script src="app.js?v=129"></script>
 </body>
 </html>
