@@ -1488,7 +1488,8 @@ async function registrarDespesaProg(veiculoId, tipo, vencimento) {
   document.getElementById('despesa-id').value        = '';
   document.getElementById('modal-despesa-title').textContent = 'Registrar Despesa';
   document.getElementById('despesa-moto').value      = veiculoId;
-  document.getElementById('despesa-tipo').value      = tipo;
+  var tipoSelect = tipo.indexOf('IPVA') === 0 ? 'IPVA' : tipo.indexOf('Seguro') === 0 ? 'Seguro' : tipo;
+  document.getElementById('despesa-tipo').value      = tipoSelect;
   document.getElementById('despesa-ano').value       = vencimento ? vencimento.substring(0, 4) : new Date().getFullYear();
   document.getElementById('despesa-vencimento').value = vencimento;
   openModal('modal-despesa');
