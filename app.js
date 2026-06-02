@@ -834,7 +834,7 @@ async function populateVeiculoSelects() {
   const v = data || [];
   const opts  = v.map(function(vei) { return '<option value="' + vei.id + '">' + veiculoLabel(vei) + '</option>'; }).join('');
   const noOpt = '<option value="">Nenhum veículo cadastrado</option>';
-  ['aluguel-moto', 'manut-moto', 'despesa-moto', 'prog-moto', 'desp-prog-moto'].forEach(function(id) {
+  ['aluguel-moto', 'manut-moto', 'despesa-moto', 'prog-moto', 'dp-moto'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.innerHTML = v.length ? opts : noOpt;
   });
@@ -1458,8 +1458,25 @@ function _buildDespesaMotoBody(vei, motoDesp) {
       '<td>' + _sitBadge(e.diff) + '</td>' +
       '<td><button class="btn btn-sm btn-primary" onclick="registrarDespesaProg(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\')">✓ Registrar</button></td>' +
     '</tr>';
-  }).join('') || '<tr class="empty-row"><td colspan="5">Nenhuma despesa recorrente configurada.</td></tr>';
-  var avulsaRows = motoDesp.length ? motoDesp.map(function(x) {
+  }).join('');
+  // Programadas manuais (salvas no banco com programada=true)
+  var motoProgM = motoDesp.filter(function(d) { return d.programada; });
+  progRows += motoProgM.map(function(x) {
+    var venc = x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—';
+    var diff = x.vencimento ? Math.round((new Date(x.vencimento + 'T00:00:00') - hoje) / 86400000) : null;
+    return '<tr>' +
+      '<td>' + (x.tipo || '—') + '</td>' +
+      '<td>' + venc + '</td>' +
+      '<td>' + (x.valor ? fmtBRL(x.valor) : '—') + '</td>' +
+      '<td>' + (diff !== null ? _sitBadge(diff) : '<span class="badge badge-gray">—</span>') + '</td>' +
+      '<td><div class="btn-actions">' +
+        '<button class="btn btn-sm btn-secondary" onclick="editDespesaProg(\'' + x.id + '\')">Editar</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
+      '</div></td></tr>';
+  }).join('');
+  if (!progRows) progRows = '<tr class="empty-row"><td colspan="5">Nenhuma despesa recorrente configurada.</td></tr>';
+  var motoAvul = motoDesp.filter(function(d) { return !d.programada; });
+  var avulsaRows = motoAvul.length ? motoAvul.map(function(x) {
     var venc = x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—';
     return '<tr>' +
       '<td>' + (x.tipo || '—') + '</td>' +
@@ -1472,6 +1489,7 @@ function _buildDespesaMotoBody(vei, motoDesp) {
         '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
       '</div></td></tr>';
   }).join('') : '<tr class="empty-row"><td colspan="6">Nenhuma despesa avulsa registrada.</td></tr>';
+
   return subHdr('📅 Programadas (Recorrentes)') +
     '<div class="table-wrap" style="margin-bottom:0.5rem"><table>' +
       '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th>Ação</th></tr></thead>' +
@@ -1503,7 +1521,7 @@ async function renderDespesasTab() {
   container.innerHTML = '<p style="color:#94a3b8;padding:1rem 0">Carregando...</p>';
   var [veiculosRes, despesasRes] = await Promise.all([
     db.from('veiculos').select('id, modelo, placa, seguro_rastreador_mensal').order('modelo'),
-    db.from('despesas').select('id, tipo, ano, valor, vencimento, obs, veiculo_id').order('created_at', { ascending: false })
+    db.from('despesas').select('id, tipo, ano, valor, vencimento, obs, veiculo_id, programada').order('created_at', { ascending: false })
   ]);
   var veiculos = veiculosRes.data || [];
   var allDespesas = despesasRes.data || [];
@@ -1514,14 +1532,21 @@ async function renderDespesasTab() {
   }
   var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   container.innerHTML = veiculos.map(function(vei) {
-    var progs = _getProgRecorrentes(vei, hoje);
-    var motoDesp = allDespesas.filter(function(d) { return d.veiculo_id === vei.id; });
-    var vencidas = progs.filter(function(e) { return e.diff < 0; }).length;
-    var proximas = progs.filter(function(e) { return e.diff >= 0 && e.diff <= 30; }).length;
+    var progs     = _getProgRecorrentes(vei, hoje);
+    var motoDesp  = allDespesas.filter(function(d) { return d.veiculo_id === vei.id; });
+    var motoAvul  = motoDesp.filter(function(d) { return !d.programada; });
+    var motoProgM = motoDesp.filter(function(d) { return d.programada; });
+    var vencidas  = progs.filter(function(e) { return e.diff < 0; }).length;
+    var proximas  = progs.filter(function(e) { return e.diff >= 0 && e.diff <= 30; }).length;
+    motoProgM.forEach(function(x) {
+      if (!x.vencimento) return;
+      var diff = Math.round((new Date(x.vencimento + 'T00:00:00') - hoje) / 86400000);
+      if (diff < 0) vencidas++; else if (diff <= 30) proximas++;
+    });
     var badges = vencidas ? '<span class="badge badge-red" style="margin-left:0.5rem">⚠️ ' + vencidas + ' vencida(s)</span>' : '';
     badges += proximas ? '<span class="badge badge-yellow" style="margin-left:0.5rem">🟡 ' + proximas + ' próxima(s)</span>' : '';
     if (!vencidas && !proximas) badges += '<span class="badge badge-green" style="margin-left:0.5rem">✅ Em dia</span>';
-    var desp = motoDesp.length ? '<span style="margin-left:auto;font-size:0.82rem;color:#94a3b8">' + motoDesp.length + ' avulsa(s)</span>' : '';
+    var desp = motoAvul.length ? '<span style="margin-left:auto;font-size:0.82rem;color:#94a3b8">' + motoAvul.length + ' avulsa(s)</span>' : '';
     return '<div style="border:1px solid #334155;border-radius:0.5rem;margin-bottom:0.6rem;overflow:hidden">' +
       '<div onclick="toggleDespesaMoto(\'' + vei.id + '\')" style="display:flex;align-items:center;gap:0.5rem;padding:0.8rem 1rem;cursor:pointer;background:#1e293b;user-select:none">' +
         '<span id="acc-desp-arrow-' + vei.id + '" style="font-size:0.7rem;color:#94a3b8;transition:transform 0.2s">▶</span>' +
@@ -1570,54 +1595,51 @@ async function abrirDespesaNotif(veiculoId, tipo, vencimento, notifKey) {
   document.getElementById('despesa-moto').value = veiculoId;
 }
 
-function openNewDespesaChoice() {
-  document.getElementById('desp-step1').style.display = '';
-  document.getElementById('desp-step2').style.display = 'none';
-  openModal('modal-tipo-despesa');
+function openNewDespesaChoice() { openModal('modal-tipo-despesa'); }
+
+function openNewDespesaProg() {
+  document.getElementById('dp-id').value         = '';
+  document.getElementById('dp-tipo').value       = '';
+  document.getElementById('dp-valor').value      = '';
+  document.getElementById('dp-vencimento').value = '';
+  document.getElementById('dp-obs').value        = '';
+  document.getElementById('modal-despesa-prog-title').textContent = 'Nova Despesa Programada';
+  populateVeiculoSelects();
+  openModal('modal-despesa-prog');
 }
 
-function despTipoStep(step) {
-  document.getElementById('desp-step1').style.display = step === 1 ? '' : 'none';
-  document.getElementById('desp-step2').style.display = step === 2 ? '' : 'none';
-  if (step === 2) populateVeiculoSelects();
+async function editDespesaProg(id) {
+  var { data: d } = await db.from('despesas').select('*').eq('id', id).single();
+  if (!d) return;
+  await populateVeiculoSelects();
+  document.getElementById('dp-id').value         = d.id;
+  document.getElementById('dp-moto').value       = d.veiculo_id || '';
+  document.getElementById('dp-tipo').value       = d.tipo || '';
+  document.getElementById('dp-valor').value      = d.valor || '';
+  document.getElementById('dp-vencimento').value = d.vencimento || '';
+  document.getElementById('dp-obs').value        = d.obs || '';
+  document.getElementById('modal-despesa-prog-title').textContent = 'Editar Despesa Programada';
+  openModal('modal-despesa-prog');
 }
 
-async function confirmarDespProg() {
-  var veiculoId = document.getElementById('desp-prog-moto').value;
-  var tipo      = document.getElementById('desp-prog-tipo').value;
-  if (!veiculoId || !tipo) { alert('Selecione a moto e o tipo.'); return; }
-  var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-  var p2 = function(n) { return String(n).padStart(2, '0'); };
-  var vencimento = '';
-  if (tipo === 'IPVA') {
-    var ipvaMeses = [2, 3, 4, 5, 6];
-    outer: for (var y = hoje.getFullYear(); y <= hoje.getFullYear() + 1; y++) {
-      for (var i = 0; i < ipvaMeses.length; i++) {
-        var d = new Date(y, ipvaMeses[i] - 1, 10);
-        if (d >= hoje) { vencimento = y + '-' + p2(ipvaMeses[i]) + '-10'; break outer; }
-      }
-    }
-  } else if (tipo === 'Licenciamento') {
-    var { data: vei } = await db.from('veiculos').select('placa').eq('id', veiculoId).single();
-    if (vei && vei.placa) {
-      var digitos = vei.placa.replace(/\D/g, '');
-      var ult = digitos.length ? parseInt(digitos.slice(-1)) : null;
-      if (ult !== null) {
-        var mesLic = (ult === 0 ? 10 : ult) + 2;
-        var anoLic = hoje.getFullYear();
-        if (mesLic > 12) { mesLic -= 12; anoLic++; }
-        var dLic = new Date(anoLic, mesLic - 1, 10);
-        if (dLic < hoje) dLic = new Date(anoLic + 1, mesLic - 1, 10);
-        vencimento = dLic.getFullYear() + '-' + p2(dLic.getMonth() + 1) + '-10';
-      }
-    }
-  } else if (tipo === 'Seguro') {
-    var dSeg = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
-    if (dSeg < hoje) dSeg = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
-    vencimento = dSeg.getFullYear() + '-' + p2(dSeg.getMonth() + 1) + '-' + p2(dSeg.getDate());
-  }
-  closeModal('modal-tipo-despesa');
-  registrarDespesaProg(veiculoId, tipo, vencimento);
+async function submitDespesaProg() {
+  var id = document.getElementById('dp-id').value;
+  var d = {
+    veiculo_id:  document.getElementById('dp-moto').value || null,
+    tipo:        document.getElementById('dp-tipo').value,
+    valor:       document.getElementById('dp-valor').value || null,
+    vencimento:  document.getElementById('dp-vencimento').value || null,
+    obs:         document.getElementById('dp-obs').value.trim(),
+    programada:  true
+  };
+  if (!d.tipo || !d.vencimento) { alert('Tipo e vencimento são obrigatórios.'); return; }
+  var result = id
+    ? await db.from('despesas').update(d).eq('id', id)
+    : await db.from('despesas').insert(d);
+  if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
+  closeModal('modal-despesa-prog');
+  _despesasCache = null;
+  if (document.getElementById('custos-geral').classList.contains('active')) renderDespesasTab();
 }
 
 function openNewDespesa() {
