@@ -1628,10 +1628,15 @@ async function marcarDespesaProgPaga(veiculoId, tipoKey, vencimento) {
     vencimento: vencimento,
     programada: true,
     pago: true
-  });
+  }).select('id').single();
   if (res.error) { alert('Erro ao marcar como pago: ' + res.error.message); return; }
-  _despesasCache = null;
-  renderDespesasTab();
+  if (_despesasCache) {
+    _despesasCache.allDespesas.push({
+      id: res.data ? res.data.id : '_tmp',
+      veiculo_id: veiculoId, tipo: tipoKey, vencimento: vencimento, programada: true, pago: true
+    });
+  }
+  _refreshDespesaAccordion(veiculoId);
 }
 
 async function desmarcarDespesaProgPaga(veiculoId, tipoKey, vencimento) {
@@ -1642,8 +1647,20 @@ async function desmarcarDespesaProgPaga(veiculoId, tipoKey, vencimento) {
     .eq('vencimento', vencimento)
     .eq('programada', true)
     .eq('pago', true);
-  _despesasCache = null;
-  renderDespesasTab();
+  if (_despesasCache) {
+    _despesasCache.allDespesas = _despesasCache.allDespesas.filter(function(d) {
+      return !(d.veiculo_id === veiculoId && d.tipo === tipoKey && d.vencimento === vencimento && d.programada && d.pago);
+    });
+  }
+  _refreshDespesaAccordion(veiculoId);
+}
+
+function _refreshDespesaAccordion(veiculoId) {
+  var body = document.getElementById('acc-desp-body-' + veiculoId);
+  if (!body || !_despesasCache) return;
+  var vei      = _despesasCache.veiculos.find(function(v) { return v.id === veiculoId; });
+  var motoDesp = _despesasCache.allDespesas.filter(function(d) { return d.veiculo_id === veiculoId; });
+  if (vei) { body.innerHTML = _buildDespesaMotoBody(vei, motoDesp); body.style.display = 'block'; }
 }
 
 async function editDespesaProg(id) {
