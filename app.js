@@ -680,8 +680,8 @@ function consultarCPF(tipo) {
   var cpf = document.getElementById('cliente-cpf').value.replace(/\D/g, '');
   if (!cpf) { alert('Preencha o CPF antes de consultar.'); return; }
   navigator.clipboard.writeText(cpf).catch(function() {});
-  if (tipo === 'tjce') {
-    window.open('https://esaj.tjce.jus.br/cpopg/open.do', '_blank');
+  if (tipo === 'detran') {
+    window.open('https://sistemas.detran.ce.gov.br/central', '_blank');
   } else {
     window.open('https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais', '_blank');
   }
