@@ -1446,10 +1446,19 @@ function _buildDespesaMotoBody(vei, motoDesp) {
   var progs = _getProgRecorrentes(vei, hoje);
   var p2 = function(n) { return String(n).padStart(2, '0'); };
   var fmtD = function(d) { return p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear(); };
+  var isoD = function(d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); };
   var subHdr = function(txt) { return '<div style="font-weight:600;font-size:0.82rem;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;margin:0.75rem 0 0.4rem">' + txt + '</div>'; };
   var progRows = progs.map(function(e) {
-    return '<tr><td>' + e.tipo + '</td><td>' + fmtD(e.data) + '</td><td>' + e.valor + '</td><td>' + _sitBadge(e.diff) + '</td></tr>';
-  }).join('') || '<tr class="empty-row"><td colspan="4">Nenhuma despesa recorrente configurada.</td></tr>';
+    var safeTipo = e.tipo.replace(/'/g, "\\'");
+    var safeVenc = isoD(e.data);
+    return '<tr>' +
+      '<td>' + e.tipo + '</td>' +
+      '<td>' + fmtD(e.data) + '</td>' +
+      '<td>' + e.valor + '</td>' +
+      '<td>' + _sitBadge(e.diff) + '</td>' +
+      '<td><button class="btn btn-sm btn-primary" onclick="registrarDespesaProg(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\')">✓ Registrar</button></td>' +
+    '</tr>';
+  }).join('') || '<tr class="empty-row"><td colspan="5">Nenhuma despesa recorrente configurada.</td></tr>';
   var avulsaRows = motoDesp.length ? motoDesp.map(function(x) {
     var venc = x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—';
     return '<tr>' +
@@ -1465,12 +1474,24 @@ function _buildDespesaMotoBody(vei, motoDesp) {
   }).join('') : '<tr class="empty-row"><td colspan="6">Nenhuma despesa avulsa registrada.</td></tr>';
   return subHdr('📅 Programadas (Recorrentes)') +
     '<div class="table-wrap" style="margin-bottom:0.5rem"><table>' +
-      '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th></tr></thead>' +
+      '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th>Ação</th></tr></thead>' +
       '<tbody>' + progRows + '</tbody></table></div>' +
     subHdr('🧾 Despesas Avulsas') +
     '<div class="table-wrap"><table>' +
       '<thead><tr><th>Tipo</th><th>Ano Ref.</th><th>Valor</th><th>Vencimento</th><th>Observação</th><th>Ações</th></tr></thead>' +
       '<tbody>' + avulsaRows + '</tbody></table></div>';
+}
+
+async function registrarDespesaProg(veiculoId, tipo, vencimento) {
+  await populateVeiculoSelects();
+  document.getElementById('form-despesa').reset();
+  document.getElementById('despesa-id').value        = '';
+  document.getElementById('modal-despesa-title').textContent = 'Registrar Despesa';
+  document.getElementById('despesa-moto').value      = veiculoId;
+  document.getElementById('despesa-tipo').value      = tipo;
+  document.getElementById('despesa-ano').value       = vencimento ? vencimento.substring(0, 4) : new Date().getFullYear();
+  document.getElementById('despesa-vencimento').value = vencimento;
+  openModal('modal-despesa');
 }
 
 var _despesasCache = null;
