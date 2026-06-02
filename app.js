@@ -188,7 +188,7 @@ async function loadNotificacoes() {
     db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)')
   ]);
 
-  var alertasDespesas = (despesasData || []).map(function(d) {
+  var alertasDespesas = (despesasData || []).filter(function(d) { return !d.pago; }).map(function(d) {
     return { key: 'despesa_' + d.id, data: d.vencimento, label: d.tipo, veiculo: d.veiculos, valor: fmtBRL(d.valor), tipo: 'despesa' };
   });
   var alertasManut = (manutData || []).map(function(m) {
@@ -562,7 +562,7 @@ async function renderDashboard() {
     vencimentos.push({ tipo: 'Contrato', descricao: 'Fim do aluguel — ' + (x.cliente || '-'), moto: vei ? veiculoLabel(vei) : '-', dias: diffDias });
   });
   d.forEach(function(x) {
-    if (!x.vencimento) return;
+    if (!x.vencimento || x.pago) return;
     var diffDias = Math.round((new Date(x.vencimento) - new Date(hojeStr)) / 86400000);
     if (diffDias > 30) return;
     var vei = v.find(function(vv) { return vv.id === x.veiculo_id; });
