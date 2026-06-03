@@ -1527,10 +1527,33 @@ function _buildDespesaMotoBody(vei, motoDesp) {
   }).join('');
   if (!progRows) progRows = '<tr class="empty-row"><td colspan="5">Nenhuma despesa programada configurada.</td></tr>';
 
+  // Pagas
+  var motoPagas = motoDesp.filter(function(d) { return d.programada && d.pago; });
+  motoPagas.sort(function(a, b) { return (b.vencimento || '').localeCompare(a.vencimento || ''); });
+  var pagasRows = motoPagas.map(function(x) {
+    var venc = x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—';
+    var safeId   = String(x.id).replace(/'/g, "\\'");
+    var safeTipo = String(x.tipo || '').replace(/'/g, "\\'");
+    var safeVenc = x.vencimento || '';
+    return '<tr>' +
+      '<td>' + (x.tipo || '—') + '</td>' +
+      '<td>' + venc + '</td>' +
+      '<td>' + (x.valor ? fmtBRL(x.valor) : '—') + '</td>' +
+      '<td><div class="btn-actions">' +
+        '<button class="btn btn-sm btn-danger" onclick="desfazerPagamentoProg(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\',\'' + safeId + '\')">↩ Desfazer</button>' +
+      '</div></td>' +
+    '</tr>';
+  }).join('');
+  if (!pagasRows) pagasRows = '<tr class="empty-row"><td colspan="4">Nenhuma despesa paga registrada.</td></tr>';
+
   return subHdr('📅 Programadas (Recorrentes)') +
     '<div class="table-wrap"><table>' +
       '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th>Ação</th></tr></thead>' +
-      '<tbody>' + progRows + '</tbody></table></div>';
+      '<tbody>' + progRows + '</tbody></table></div>' +
+    subHdr('✅ Pagas') +
+    '<div class="table-wrap"><table>' +
+      '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor Pago</th><th>Ação</th></tr></thead>' +
+      '<tbody>' + pagasRows + '</tbody></table></div>';
 }
 
 async function registrarDespesaProg(veiculoId, tipo, vencimento) {
@@ -1725,6 +1748,15 @@ async function desmarcarDespesaProgPaga(veiculoId, tipoKey, vencimento) {
     _despesasCache.allDespesas = _despesasCache.allDespesas.filter(function(d) {
       return !(d.veiculo_id === veiculoId && d.tipo === tipoKey && d.vencimento === vencimento && d.programada && d.pago);
     });
+  }
+  _refreshDespesaAccordion(veiculoId);
+}
+
+async function desfazerPagamentoProg(veiculoId, tipoKey, vencimento, id) {
+  if (!confirm('Desfazer pagamento de ' + tipoKey + ' (' + (vencimento ? vencimento.split('-').reverse().join('/') : '—') + ')?')) return;
+  await db.from('despesas').delete().eq('id', id);
+  if (_despesasCache) {
+    _despesasCache.allDespesas = _despesasCache.allDespesas.filter(function(d) { return d.id !== id; });
   }
   _refreshDespesaAccordion(veiculoId);
 }
