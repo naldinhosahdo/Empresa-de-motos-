@@ -1292,8 +1292,12 @@ async function abrirParcelas(aluguelId) {
     ? '<div style="font-size:0.78rem;color:var(--text2);margin-bottom:0.75rem">' +
         'Aluguel: ' + fmtBRL(aluguelSemCaucao) + ' + Caução: ' + fmtBRL(caucao) + ' = Total a receber: <strong>' + fmtBRL(aluguelSemCaucao + caucao) + '</strong>' +
         ' &nbsp;<button class="btn btn-sm btn-secondary" onclick="regerarParcelas(\'' + aluguelId + '\')" style="font-size:0.72rem;padding:2px 8px">↺ Regenerar</button>' +
+        ' <button class="btn btn-sm btn-primary" onclick="abrirProrrogar(\'' + aluguelId + '\',' + (aluguel.valor||0) + ')" style="font-size:0.72rem;padding:2px 8px">📅 Prorrogar</button>' +
       '</div>'
-    : '<div style="text-align:right;margin-bottom:0.5rem"><button class="btn btn-sm btn-secondary" onclick="regerarParcelas(\'' + aluguelId + '\')" style="font-size:0.72rem;padding:2px 8px">↺ Regenerar</button></div>';
+    : '<div style="text-align:right;margin-bottom:0.5rem">' +
+        '<button class="btn btn-sm btn-secondary" onclick="regerarParcelas(\'' + aluguelId + '\')" style="font-size:0.72rem;padding:2px 8px">↺ Regenerar</button>' +
+        ' <button class="btn btn-sm btn-primary" onclick="abrirProrrogar(\'' + aluguelId + '\',' + (aluguel.valor||0) + ')" style="font-size:0.72rem;padding:2px 8px">📅 Prorrogar</button>' +
+      '</div>';
 
   document.getElementById('modal-parcelas-resumo').innerHTML =
     caucaoInfo +
@@ -1357,6 +1361,73 @@ async function regerarParcelas(aluguelId) {
   await db.from('parcelas').delete().eq('aluguel_id', aluguelId);
   var ok = await gerarParcelas(aluguelId, aluguel);
   if (ok) abrirParcelas(aluguelId);
+}
+
+function abrirProrrogar(aluguelId, valorAtual) {
+  document.getElementById('prorrogar-aluguel-id').value = aluguelId;
+  document.getElementById('prorrogar-qtd').value = '1';
+  document.getElementById('prorrogar-valor').value = valorAtual || '';
+  document.getElementById('prorrogar-preview').textContent = '';
+  openModal('modal-prorrogar');
+}
+
+function atualizarPreviewProrrogar() {
+  var qtd   = parseInt(document.getElementById('prorrogar-qtd').value) || 0;
+  var valor = parseFloat(document.getElementById('prorrogar-valor').value) || 0;
+  var el = document.getElementById('prorrogar-preview');
+  if (qtd > 0 && valor > 0) {
+    el.textContent = qtd + ' parcela(s) de ' + fmtBRL(valor) + ' = Total adicional: ' + fmtBRL(qtd * valor);
+  } else {
+    el.textContent = '';
+  }
+}
+
+async function submitProrrogar() {
+  var aluguelId = document.getElementById('prorrogar-aluguel-id').value;
+  var qtd   = parseInt(document.getElementById('prorrogar-qtd').value) || 0;
+  var valor = parseFloat(document.getElementById('prorrogar-valor').value) || 0;
+  if (qtd < 1) { alert('Informe pelo menos 1 período.'); return; }
+  if (!valor)  { alert('Informe o valor por período.'); return; }
+
+  var { data: aluguel } = await db.from('alugueis').select('*').eq('id', aluguelId).single();
+  if (!aluguel) { alert('Aluguel não encontrado.'); return; }
+
+  // Busca a última parcela para continuar a numeração e a data
+  var { data: parcelas } = await db.from('parcelas').select('*').eq('aluguel_id', aluguelId).order('numero', { ascending: false });
+  var ultimaNum  = parcelas && parcelas.length ? Number(parcelas[0].numero) : 0;
+  var ultimaVenc = parcelas && parcelas.length ? parcelas[0].vencimento : (aluguel.inicio || hojeLocalStr());
+
+  // Calcula intervalo em dias conforme período
+  var intervalo = aluguel.periodo === 'dia' ? 1 : aluguel.periodo === 'mes' ? 30 : aluguel.periodo === 'quinzena' ? 15 : 7;
+  var periodoNome = aluguel.periodo === 'dia' ? 'Dia' : aluguel.periodo === 'mes' ? 'Mês' : aluguel.periodo === 'quinzena' ? 'Quinzena' : 'Semana';
+
+  var novasParcelas = [];
+  var baseDate = new Date(ultimaVenc + 'T00:00:00');
+  for (var i = 1; i <= qtd; i++) {
+    baseDate = new Date(baseDate.getTime() + intervalo * 86400000);
+    var p2 = function(n) { return String(n).padStart(2,'0'); };
+    var venc = baseDate.getFullYear() + '-' + p2(baseDate.getMonth()+1) + '-' + p2(baseDate.getDate());
+    novasParcelas.push({
+      aluguel_id: aluguelId,
+      numero: ultimaNum + i,
+      descricao: 'Parcela ' + (ultimaNum + i) + ' — ' + periodoNome + ' ' + (ultimaNum + i),
+      valor: valor,
+      vencimento: venc,
+      pago: false
+    });
+  }
+
+  var res = await db.from('parcelas').insert(novasParcelas);
+  if (res.error) { alert('Erro: ' + res.error.message); return; }
+
+  // Atualiza fim do aluguel e total
+  var novasParcelas2 = novasParcelas;
+  var novoFim = novasParcelas2[novasParcelas2.length - 1].vencimento;
+  var novoTotal = Number(aluguel.total || 0) + qtd * valor;
+  await db.from('alugueis').update({ fim: novoFim, total: novoTotal }).eq('id', aluguelId);
+
+  closeModal('modal-prorrogar');
+  abrirParcelas(aluguelId);
 }
 
 // --- MANUTENÇÕES ---
