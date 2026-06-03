@@ -1683,6 +1683,18 @@ async function submitPagarDespesaProg() {
 }
 
 async function marcarDespesaProgPaga(veiculoId, tipoKey, vencimento, valor) {
+  // Apaga override de data (programada=true, pago=false) antes de registrar o pagamento
+  await db.from('despesas')
+    .delete()
+    .eq('veiculo_id', veiculoId)
+    .eq('tipo', tipoKey)
+    .eq('programada', true)
+    .eq('pago', false);
+  if (_despesasCache) {
+    _despesasCache.allDespesas = _despesasCache.allDespesas.filter(function(d) {
+      return !(d.veiculo_id === veiculoId && d.tipo === tipoKey && d.programada && !d.pago);
+    });
+  }
   var res = await db.from('despesas').insert({
     veiculo_id: veiculoId,
     tipo: tipoKey,
