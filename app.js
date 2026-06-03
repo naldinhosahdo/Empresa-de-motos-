@@ -1320,11 +1320,11 @@ async function abrirParcelas(aluguelId) {
           ? fmtBRL(p.valor) + ' → <strong>' + fmtBRL(p.valor_pago) + '</strong>'
           : fmtBRL(p.valor);
         return '<div class="parcela-item ' + cls + '">' +
-          '<div>' +
-            '<div style="font-weight:600;font-size:0.9rem">' + p.descricao + '</div>' +
-            '<div style="font-size:0.78rem;color:var(--text2)">Vence: ' + fmtDate(p.vencimento) + ' · ' + valorExibido + '</div>' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
+            '<div style="font-weight:600;font-size:0.9rem;flex:1;min-width:0">' + p.descricao + '</div>' +
+            '<div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0">' + badge + btn + '</div>' +
           '</div>' +
-          '<div style="display:flex;align-items:center;gap:0.5rem">' + badge + btn + '</div>' +
+          '<div style="font-size:0.78rem;color:var(--text2);margin-top:0.25rem">Vence: ' + fmtDate(p.vencimento) + ' · ' + valorExibido + '</div>' +
         '</div>';
       }).join('')
     : '<p style="color:var(--text2);padding:1rem 0">Nenhuma parcela encontrada. <button class="btn btn-sm btn-primary" onclick="gerarParcelasManual(\'' + aluguelId + '\')">Gerar parcelas</button></p>';
