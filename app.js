@@ -688,6 +688,8 @@ function consultarCPF(tipo) {
   navigator.clipboard.writeText(cpf).catch(function() {});
   if (tipo === 'detran') {
     window.open('https://sistemas.detran.ce.gov.br/central', '_blank');
+  } else if (tipo === 'receita') {
+    window.open('https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp', '_blank');
   } else {
     window.open('https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais', '_blank');
   }
