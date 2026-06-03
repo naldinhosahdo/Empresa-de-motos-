@@ -1400,20 +1400,27 @@ async function submitManutencao() {
 }
 
 // --- DESPESAS (accordion por moto) ---
-function _getProgRecorrentes(vei, hoje) {
+function _getProgRecorrentes(vei, hoje, pagoDesp) {
   var p2 = function(n) { return String(n).padStart(2, '0'); };
+  var isoD = function(d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); };
+  var isPago = function(tipoKey, vencStr) {
+    if (!pagoDesp) return false;
+    return pagoDesp.some(function(d) { return d.programada && d.pago && d.tipo === tipoKey && d.vencimento === vencStr; });
+  };
   var entries = [];
+  // IPVA — percorre meses até achar o próximo não pago
   var ipvaMeses = [2, 3, 4, 5, 6];
   var encontrou = false;
-  for (var y = hoje.getFullYear(); y <= hoje.getFullYear() + 1 && !encontrou; y++) {
+  for (var y = hoje.getFullYear(); y <= hoje.getFullYear() + 2 && !encontrou; y++) {
     for (var i = 0; i < ipvaMeses.length && !encontrou; i++) {
       var d = new Date(y, ipvaMeses[i] - 1, 10);
-      if (d >= hoje) {
+      if (d >= hoje && !isPago('IPVA', isoD(d))) {
         entries.push({ tipo: 'IPVA (parcela ' + (ipvaMeses[i] - 1) + '/5)', data: d, valor: '—', valorNum: null, diff: Math.round((d - hoje) / 86400000) });
         encontrou = true;
       }
     }
   }
+  // Licenciamento — avança 1 ano se já pago
   if (vei.placa) {
     var digitos = vei.placa.replace(/\D/g, '');
     var ult = digitos.length ? parseInt(digitos.slice(-1)) : null;
@@ -1423,12 +1430,19 @@ function _getProgRecorrentes(vei, hoje) {
       if (mesLic > 12) { mesLic -= 12; anoLic++; }
       var dLic = new Date(anoLic, mesLic - 1, 10);
       if (dLic < hoje) dLic = new Date(anoLic + 1, mesLic - 1, 10);
+      while (isPago('Licenciamento', isoD(dLic))) {
+        dLic = new Date(dLic.getFullYear() + 1, mesLic - 1, 10);
+      }
       entries.push({ tipo: 'Licenciamento', data: dLic, valor: '—', valorNum: null, diff: Math.round((dLic - hoje) / 86400000) });
     }
   }
+  // Seguro + Rastreador — avança 1 mês se já pago
   if (vei.seguro_rastreador_mensal) {
     var dSeg = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
     if (dSeg < hoje) dSeg = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
+    while (isPago('Seguro + Rastreador', isoD(dSeg))) {
+      dSeg = new Date(dSeg.getFullYear(), dSeg.getMonth() + 1, 10);
+    }
     entries.push({ tipo: 'Seguro + Rastreador', data: dSeg, valor: fmtBRL(vei.seguro_rastreador_mensal), valorNum: vei.seguro_rastreador_mensal, diff: Math.round((dSeg - hoje) / 86400000) });
   }
   return entries;
@@ -1443,26 +1457,16 @@ function _sitBadge(diff) {
 
 function _buildDespesaMotoBody(vei, motoDesp) {
   var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-  var progs = _getProgRecorrentes(vei, hoje);
   var p2 = function(n) { return String(n).padStart(2, '0'); };
   var fmtD = function(d) { return p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear(); };
   var isoD = function(d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); };
   var subHdr = function(txt) { return '<div style="font-weight:600;font-size:0.82rem;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;margin:0.75rem 0 0.4rem">' + txt + '</div>'; };
+  var progs = _getProgRecorrentes(vei, hoje, motoDesp);
   var progRows = progs.map(function(e) {
     var tipoKey  = e.tipo.indexOf('IPVA') === 0 ? 'IPVA' : e.tipo.indexOf('Seguro') === 0 ? 'Seguro + Rastreador' : e.tipo;
     var safeTipo = e.tipo.replace(/'/g, "\\'");
     var safeKey  = tipoKey.replace(/'/g, "\\'");
     var safeVenc = isoD(e.data);
-    var pagoRec  = motoDesp.find(function(d) { return d.programada && d.pago && d.tipo === tipoKey && d.vencimento === safeVenc; });
-    if (pagoRec) {
-      return '<tr>' +
-        '<td>' + e.tipo + '</td>' +
-        '<td>' + fmtD(e.data) + '</td>' +
-        '<td>' + (pagoRec.valor ? fmtBRL(pagoRec.valor) : e.valor) + '</td>' +
-        '<td><span class="badge badge-green">✅ Pago</span></td>' +
-        '<td><button class="btn btn-sm btn-secondary" onclick="desmarcarDespesaProgPaga(\'' + vei.id + '\',\'' + safeKey + '\',\'' + safeVenc + '\')">Desfazer</button></td>' +
-      '</tr>';
-    }
     return '<tr>' +
       '<td>' + e.tipo + '</td>' +
       '<td>' + fmtD(e.data) + '</td>' +
@@ -1530,8 +1534,8 @@ async function renderDespesasTab() {
   }
   var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   container.innerHTML = veiculos.map(function(vei) {
-    var progs     = _getProgRecorrentes(vei, hoje);
     var motoDesp  = allDespesas.filter(function(d) { return d.veiculo_id === vei.id; });
+    var progs     = _getProgRecorrentes(vei, hoje, motoDesp);
     var p2h = function(n) { return String(n).padStart(2, '0'); };
     var vencidas = 0, proximas = 0;
     progs.forEach(function(e) {
