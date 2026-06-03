@@ -1458,7 +1458,7 @@ function _buildDespesaMotoBody(vei, motoDesp) {
       return '<tr>' +
         '<td>' + e.tipo + '</td>' +
         '<td>' + fmtD(e.data) + '</td>' +
-        '<td>' + e.valor + '</td>' +
+        '<td>' + (pagoRec.valor ? fmtBRL(pagoRec.valor) : e.valor) + '</td>' +
         '<td><span class="badge badge-green">✅ Pago</span></td>' +
         '<td><button class="btn btn-sm btn-secondary" onclick="desmarcarDespesaProgPaga(\'' + vei.id + '\',\'' + safeKey + '\',\'' + safeVenc + '\')">Desfazer</button></td>' +
       '</tr>';
