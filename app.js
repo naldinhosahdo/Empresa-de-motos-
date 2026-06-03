@@ -1407,43 +1407,68 @@ function _getProgRecorrentes(vei, hoje, pagoDesp) {
     if (!pagoDesp) return false;
     return pagoDesp.some(function(d) { return d.programada && d.pago && d.tipo === tipoKey && d.vencimento === vencStr; });
   };
+  // Override: programada=true, pago=false record salvo manualmente para sobrescrever a data calculada
+  var findOverride = function(tipoKey) {
+    if (!pagoDesp) return null;
+    return pagoDesp.find(function(d) { return d.programada && !d.pago && d.tipo === tipoKey; }) || null;
+  };
   var entries = [];
-  // IPVA — percorre meses até achar o próximo não pago
+  // IPVA — usa override se existir, senão percorre meses até achar o próximo não pago
   var ipvaMeses = [2, 3, 4, 5, 6];
-  var encontrou = false;
-  for (var y = hoje.getFullYear(); y <= hoje.getFullYear() + 2 && !encontrou; y++) {
-    for (var i = 0; i < ipvaMeses.length && !encontrou; i++) {
-      var d = new Date(y, ipvaMeses[i] - 1, 10);
-      if (d >= hoje && !isPago('IPVA', isoD(d))) {
-        entries.push({ tipo: 'IPVA (parcela ' + (ipvaMeses[i] - 1) + '/5)', data: d, valor: '—', valorNum: null, diff: Math.round((d - hoje) / 86400000) });
-        encontrou = true;
+  var ipvaOverride = findOverride('IPVA');
+  if (ipvaOverride) {
+    var dIpvaO = new Date(ipvaOverride.vencimento + 'T00:00:00');
+    var mesO = dIpvaO.getMonth() + 1;
+    var tipoLabelO = (mesO >= 2 && mesO <= 6) ? 'IPVA (parcela ' + (mesO - 1) + '/5)' : 'IPVA';
+    entries.push({ tipo: tipoLabelO, data: dIpvaO, valor: '—', valorNum: null, diff: Math.round((dIpvaO - hoje) / 86400000), overrideId: ipvaOverride.id });
+  } else {
+    var encontrou = false;
+    for (var y = hoje.getFullYear(); y <= hoje.getFullYear() + 2 && !encontrou; y++) {
+      for (var i = 0; i < ipvaMeses.length && !encontrou; i++) {
+        var d = new Date(y, ipvaMeses[i] - 1, 10);
+        if (d >= hoje && !isPago('IPVA', isoD(d))) {
+          entries.push({ tipo: 'IPVA (parcela ' + (ipvaMeses[i] - 1) + '/5)', data: d, valor: '—', valorNum: null, diff: Math.round((d - hoje) / 86400000) });
+          encontrou = true;
+        }
       }
     }
   }
-  // Licenciamento — avança 1 ano se já pago
+  // Licenciamento — usa override se existir, senão avança 1 ano se já pago
   if (vei.placa) {
     var digitos = vei.placa.replace(/\D/g, '');
     var ult = digitos.length ? parseInt(digitos.slice(-1)) : null;
     if (ult !== null) {
-      var mesLic = (ult === 0 ? 10 : ult) + 2;
-      var anoLic = hoje.getFullYear();
-      if (mesLic > 12) { mesLic -= 12; anoLic++; }
-      var dLic = new Date(anoLic, mesLic - 1, 10);
-      if (dLic < hoje) dLic = new Date(anoLic + 1, mesLic - 1, 10);
-      while (isPago('Licenciamento', isoD(dLic))) {
-        dLic = new Date(dLic.getFullYear() + 1, mesLic - 1, 10);
+      var licOverride = findOverride('Licenciamento');
+      if (licOverride) {
+        var dLicO = new Date(licOverride.vencimento + 'T00:00:00');
+        entries.push({ tipo: 'Licenciamento', data: dLicO, valor: '—', valorNum: null, diff: Math.round((dLicO - hoje) / 86400000), overrideId: licOverride.id });
+      } else {
+        var mesLic = (ult === 0 ? 10 : ult) + 2;
+        var anoLic = hoje.getFullYear();
+        if (mesLic > 12) { mesLic -= 12; anoLic++; }
+        var dLic = new Date(anoLic, mesLic - 1, 10);
+        if (dLic < hoje) dLic = new Date(anoLic + 1, mesLic - 1, 10);
+        while (isPago('Licenciamento', isoD(dLic))) {
+          dLic = new Date(dLic.getFullYear() + 1, mesLic - 1, 10);
+        }
+        entries.push({ tipo: 'Licenciamento', data: dLic, valor: '—', valorNum: null, diff: Math.round((dLic - hoje) / 86400000) });
       }
-      entries.push({ tipo: 'Licenciamento', data: dLic, valor: '—', valorNum: null, diff: Math.round((dLic - hoje) / 86400000) });
     }
   }
-  // Seguro + Rastreador — avança 1 mês se já pago
+  // Seguro + Rastreador — usa override se existir, senão avança 1 mês se já pago
   if (vei.seguro_rastreador_mensal) {
-    var dSeg = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
-    if (dSeg < hoje) dSeg = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
-    while (isPago('Seguro + Rastreador', isoD(dSeg))) {
-      dSeg = new Date(dSeg.getFullYear(), dSeg.getMonth() + 1, 10);
+    var segOverride = findOverride('Seguro + Rastreador');
+    if (segOverride) {
+      var dSegO = new Date(segOverride.vencimento + 'T00:00:00');
+      entries.push({ tipo: 'Seguro + Rastreador', data: dSegO, valor: fmtBRL(vei.seguro_rastreador_mensal), valorNum: vei.seguro_rastreador_mensal, diff: Math.round((dSegO - hoje) / 86400000), overrideId: segOverride.id });
+    } else {
+      var dSeg = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
+      if (dSeg < hoje) dSeg = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
+      while (isPago('Seguro + Rastreador', isoD(dSeg))) {
+        dSeg = new Date(dSeg.getFullYear(), dSeg.getMonth() + 1, 10);
+      }
+      entries.push({ tipo: 'Seguro + Rastreador', data: dSeg, valor: fmtBRL(vei.seguro_rastreador_mensal), valorNum: vei.seguro_rastreador_mensal, diff: Math.round((dSeg - hoje) / 86400000) });
     }
-    entries.push({ tipo: 'Seguro + Rastreador', data: dSeg, valor: fmtBRL(vei.seguro_rastreador_mensal), valorNum: vei.seguro_rastreador_mensal, diff: Math.round((dSeg - hoje) / 86400000) });
   }
   return entries;
 }
@@ -1462,11 +1487,15 @@ function _buildDespesaMotoBody(vei, motoDesp) {
   var isoD = function(d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); };
   var subHdr = function(txt) { return '<div style="font-weight:600;font-size:0.82rem;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;margin:0.75rem 0 0.4rem">' + txt + '</div>'; };
   var progs = _getProgRecorrentes(vei, hoje, motoDesp);
+  // IDs dos registros que estão sendo usados como override de data — não duplicar no bloco manual
+  var overrideIds = {};
+  progs.forEach(function(e) { if (e.overrideId) overrideIds[e.overrideId] = true; });
   var progRows = progs.map(function(e) {
     var tipoKey  = e.tipo.indexOf('IPVA') === 0 ? 'IPVA' : e.tipo.indexOf('Seguro') === 0 ? 'Seguro + Rastreador' : e.tipo;
     var safeTipo = e.tipo.replace(/'/g, "\\'");
     var safeKey  = tipoKey.replace(/'/g, "\\'");
     var safeVenc = isoD(e.data);
+    var safeOvId = e.overrideId ? String(e.overrideId).replace(/'/g, "\\'") : '';
     return '<tr>' +
       '<td>' + e.tipo + '</td>' +
       '<td>' + fmtD(e.data) + '</td>' +
@@ -1474,13 +1503,13 @@ function _buildDespesaMotoBody(vei, motoDesp) {
       '<td>' + _sitBadge(e.diff) + '</td>' +
       '<td><div class="btn-actions">' +
         '<button class="btn btn-sm btn-success" onclick="abrirPagarDespesaProgModal(\'' + vei.id + '\',\'' + safeKey + '\',\'' + safeVenc + '\',\'' + safeTipo + '\',' + (e.valorNum || '') + ')">✓ Pagar</button>' +
-        '<button class="btn btn-sm btn-secondary" onclick="editDespesaProgAuto(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\')">Editar</button>' +
+        '<button class="btn btn-sm btn-secondary" onclick="editDespesaProgAuto(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\',\'' + safeOvId + '\')">Editar</button>' +
         '<button class="btn btn-sm btn-danger" onclick="excluirDespesaAutoCalc()">Excluir</button>' +
       '</div></td>' +
     '</tr>';
   }).join('');
-  // Programadas manuais (salvas no banco com programada=true, pago=false)
-  var motoProgM = motoDesp.filter(function(d) { return d.programada && !d.pago; });
+  // Programadas manuais (salvas no banco com programada=true, pago=false) — excluir overrides já exibidos
+  var motoProgM = motoDesp.filter(function(d) { return d.programada && !d.pago && !overrideIds[d.id]; });
   progRows += motoProgM.map(function(x) {
     var venc = x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—';
     var diff = x.vencimento ? Math.round((new Date(x.vencimento + 'T00:00:00') - hoje) / 86400000) : null;
@@ -1615,9 +1644,9 @@ function openNewDespesaProg() {
   openModal('modal-despesa-prog');
 }
 
-async function editDespesaProgAuto(veiculoId, tipo, vencimento) {
+async function editDespesaProgAuto(veiculoId, tipo, vencimento, overrideId) {
   await populateVeiculoSelects();
-  document.getElementById('dp-id').value         = '';
+  document.getElementById('dp-id').value         = overrideId || '';
   document.getElementById('dp-moto').value       = veiculoId;
   var tipoSelect = tipo.indexOf('IPVA') === 0 ? 'IPVA' : tipo.indexOf('Seguro') === 0 ? 'Seguro' : tipo;
   document.getElementById('dp-tipo').value       = tipoSelect;
@@ -1710,22 +1739,37 @@ async function editDespesaProg(id) {
 
 async function submitDespesaProg() {
   var id = document.getElementById('dp-id').value;
+  var veiculoId = document.getElementById('dp-moto').value || null;
   var d = {
-    veiculo_id:  document.getElementById('dp-moto').value || null,
+    veiculo_id:  veiculoId,
     tipo:        document.getElementById('dp-tipo').value,
-    valor:       document.getElementById('dp-valor').value || null,
+    valor:       parseFloat(document.getElementById('dp-valor').value) || null,
     vencimento:  document.getElementById('dp-vencimento').value || null,
     obs:         document.getElementById('dp-obs').value.trim(),
     programada:  true
   };
   if (!d.tipo || !d.vencimento) { alert('Tipo e vencimento são obrigatórios.'); return; }
-  var result = id
-    ? await db.from('despesas').update(d).eq('id', id)
-    : await db.from('despesas').insert(d);
+  var result;
+  if (id) {
+    result = await db.from('despesas').update(d).eq('id', id);
+  } else {
+    result = await db.from('despesas').insert(d).select('id').single();
+  }
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-despesa-prog');
-  _despesasCache = null;
-  if (document.getElementById('custos-geral').classList.contains('active')) renderDespesasTab();
+  if (_despesasCache && veiculoId) {
+    if (id) {
+      var idx = _despesasCache.allDespesas.findIndex(function(r) { return r.id === id; });
+      if (idx >= 0) Object.assign(_despesasCache.allDespesas[idx], d);
+      else _despesasCache.allDespesas.push(Object.assign({ id: id }, d));
+    } else if (result.data && result.data.id) {
+      _despesasCache.allDespesas.push(Object.assign({ id: result.data.id }, d));
+    }
+    _refreshDespesaAccordion(veiculoId);
+  } else {
+    _despesasCache = null;
+    if (document.getElementById('custos-geral').classList.contains('active')) renderDespesasTab();
+  }
 }
 
 function openNewDespesa() {
