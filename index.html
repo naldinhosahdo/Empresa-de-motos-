@@ -863,31 +863,6 @@
   </div>
 </div>
 
-<!-- MODAL PRORROGAR ALUGUEL -->
-<div class="modal-overlay" id="modal-prorrogar">
-  <div class="modal" style="max-width:400px">
-    <div class="modal-header">
-      <h3>📅 Prorrogar Aluguel</h3>
-      <button class="modal-close" onclick="closeModal('modal-prorrogar')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="prorrogar-aluguel-id">
-      <div class="form-group">
-        <label>Quantos períodos adicionar?</label>
-        <input type="number" id="prorrogar-qtd" min="1" value="1" placeholder="Ex: 2" oninput="atualizarPreviewProrrogar()">
-      </div>
-      <div class="form-group">
-        <label>Valor por período (R$)</label>
-        <input type="number" id="prorrogar-valor" min="0" step="0.01" placeholder="Ex: 350,00" oninput="atualizarPreviewProrrogar()">
-      </div>
-      <p id="prorrogar-preview" style="font-size:0.85rem;color:var(--text2);margin-top:0.5rem"></p>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" onclick="closeModal('modal-prorrogar')">Cancelar</button>
-      <button type="button" class="btn btn-primary" onclick="submitProrrogar()">Confirmar</button>
-    </div>
-  </div>
-</div>
 
 <!-- MODAL CONFIGURAÇÕES -->
 <div class="modal-overlay" id="modal-config">
@@ -925,6 +900,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=157"></script>
+<script src="app.js?v=158"></script>
 </body>
 </html>
