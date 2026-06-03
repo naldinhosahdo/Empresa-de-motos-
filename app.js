@@ -502,12 +502,13 @@ async function renderDashboard() {
   var receitaMes   = pp.filter(function(x) { return x.data_pagamento && x.data_pagamento.startsWith(anoMes); })
                        .reduce(function(s, x) { return s + Number(x.valor_pago || x.valor || 0); }, 0);
 
-  var dPago = d.filter(function(x) { return x.pago; });
+  // Contar: despesas pagas (programadas quitadas) + avulsas (sempre já incorridas)
+  var dCusto = d.filter(function(x) { return x.pago || !x.programada; });
   var custosTotal = m.reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
-                  + dPago.reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+                  + dCusto.reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
   var custosMes   = m.filter(function(x) { return x.data && x.data.startsWith(anoMes); })
                     .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
-                  + dPago.filter(function(x) { return x.vencimento && x.vencimento.startsWith(anoMes); })
+                  + dCusto.filter(function(x) { return x.vencimento && x.vencimento.startsWith(anoMes); })
                     .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
 
   var lucroTotal = receitaTotal - custosTotal;
@@ -1526,10 +1527,31 @@ function _buildDespesaMotoBody(vei, motoDesp) {
   }).join('');
   if (!progRows) progRows = '<tr class="empty-row"><td colspan="5">Nenhuma despesa programada configurada.</td></tr>';
 
+  // Avulsas
+  var motoAvul = motoDesp.filter(function(d) { return !d.programada; });
+  var avulRows = motoAvul.map(function(x) {
+    var venc = x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—';
+    return '<tr>' +
+      '<td>' + (x.tipo || '—') + '</td>' +
+      '<td>' + venc + '</td>' +
+      '<td>' + (x.valor ? fmtBRL(x.valor) : '—') + '</td>' +
+      '<td>' + (x.obs || '—') + '</td>' +
+      '<td><div class="btn-actions">' +
+        '<button class="btn btn-sm btn-secondary" onclick="editDespesa(\'' + x.id + '\')">Editar</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
+      '</div></td></tr>';
+  }).join('');
+  if (!avulRows) avulRows = '<tr class="empty-row"><td colspan="5">Nenhuma despesa avulsa registrada.</td></tr>';
+
   return subHdr('📅 Programadas (Recorrentes)') +
     '<div class="table-wrap"><table>' +
       '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th>Ação</th></tr></thead>' +
-      '<tbody>' + progRows + '</tbody></table></div>';
+      '<tbody>' + progRows + '</tbody></table></div>' +
+    subHdr('🧾 Avulsas') +
+    '<div style="margin-bottom:0.5rem"><button class="btn btn-sm btn-secondary" onclick="openNewDespesaAvulsa(\'' + vei.id + '\')">+ Nova Avulsa</button></div>' +
+    '<div class="table-wrap"><table>' +
+      '<thead><tr><th>Tipo</th><th>Data</th><th>Valor</th><th>Obs</th><th>Ação</th></tr></thead>' +
+      '<tbody>' + avulRows + '</tbody></table></div>';
 }
 
 async function registrarDespesaProg(veiculoId, tipo, vencimento) {
@@ -1781,6 +1803,15 @@ function openNewDespesa() {
   openModal('modal-despesa');
 }
 
+async function openNewDespesaAvulsa(veiculoId) {
+  document.getElementById('form-despesa').reset();
+  document.getElementById('despesa-id').value = '';
+  document.getElementById('modal-despesa-title').textContent = 'Nova Despesa Avulsa';
+  await populateVeiculoSelects();
+  if (veiculoId) document.getElementById('despesa-moto').value = veiculoId;
+  openModal('modal-despesa');
+}
+
 async function editDespesa(id) {
   const { data: d } = await db.from('despesas').select('*').eq('id', id).single();
   if (!d) return;
@@ -1864,7 +1895,7 @@ async function renderRelatorios() {
     var receita = receitaPorVeiculo[vei.id] || 0;
     var custos  = m.filter(function(x) { return x.veiculo_id === vei.id; })
                   .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
-                + d.filter(function(x) { return x.veiculo_id === vei.id && x.pago; })
+                + d.filter(function(x) { return x.veiculo_id === vei.id && (x.pago || !x.programada); })
                   .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
     var qtd = a.filter(function(x) { return x.veiculo_id === vei.id; }).length;
     var lucro = receita - custos;
