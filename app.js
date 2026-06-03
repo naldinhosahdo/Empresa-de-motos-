@@ -502,11 +502,12 @@ async function renderDashboard() {
   var receitaMes   = pp.filter(function(x) { return x.data_pagamento && x.data_pagamento.startsWith(anoMes); })
                        .reduce(function(s, x) { return s + Number(x.valor_pago || x.valor || 0); }, 0);
 
+  var dPago = d.filter(function(x) { return x.pago; });
   var custosTotal = m.reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
-                  + d.reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+                  + dPago.reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
   var custosMes   = m.filter(function(x) { return x.data && x.data.startsWith(anoMes); })
                     .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
-                  + d.filter(function(x) { return x.vencimento && x.vencimento.startsWith(anoMes); })
+                  + dPago.filter(function(x) { return x.vencimento && x.vencimento.startsWith(anoMes); })
                     .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
 
   var lucroTotal = receitaTotal - custosTotal;
@@ -1863,7 +1864,7 @@ async function renderRelatorios() {
     var receita = receitaPorVeiculo[vei.id] || 0;
     var custos  = m.filter(function(x) { return x.veiculo_id === vei.id; })
                   .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
-                + d.filter(function(x) { return x.veiculo_id === vei.id; })
+                + d.filter(function(x) { return x.veiculo_id === vei.id && x.pago; })
                   .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
     var qtd = a.filter(function(x) { return x.veiculo_id === vei.id; }).length;
     var lucro = receita - custos;
