@@ -1699,8 +1699,9 @@ async function submitPagarDespesaProg() {
   var veiculoId  = document.getElementById('pdp-veiculo-id').value;
   var tipoKey    = document.getElementById('pdp-tipo-key').value;
   var vencimento = document.getElementById('pdp-vencimento').value;
-  var valor      = parseFloat(document.getElementById('pdp-valor').value.replace(',', '.')) || null;
-  if (!valor) { alert('Informe o valor pago.'); return; }
+  var raw        = document.getElementById('pdp-valor').value.trim().replace(',', '.');
+  var valor      = parseFloat(raw);
+  if (raw === '' || isNaN(valor)) { alert('Informe o valor pago.'); return; }
   closeModal('modal-pagar-despesa-prog');
   await marcarDespesaProgPaga(veiculoId, tipoKey, vencimento, valor);
 }
@@ -1722,7 +1723,7 @@ async function marcarDespesaProgPaga(veiculoId, tipoKey, vencimento, valor) {
     veiculo_id: veiculoId,
     tipo: tipoKey,
     vencimento: vencimento,
-    valor: valor || null,
+    valor: (valor === null || valor === undefined || isNaN(valor)) ? null : valor,
     programada: true,
     pago: true
   }).select('id').single();
