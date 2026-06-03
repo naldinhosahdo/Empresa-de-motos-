@@ -696,6 +696,29 @@
   </div>
 </div>
 
+<!-- MODAL PAGAR DESPESA PROGRAMADA -->
+<div class="modal-overlay" id="modal-pagar-despesa-prog">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3 id="modal-pagar-despesa-prog-title">Pagar Despesa</h3>
+      <button class="modal-close" onclick="closeModal('modal-pagar-despesa-prog')">&times;</button>
+    </div>
+    <input type="hidden" id="pdp-veiculo-id">
+    <input type="hidden" id="pdp-tipo-key">
+    <input type="hidden" id="pdp-vencimento">
+    <form style="padding:1.25rem 1.5rem 0">
+      <div class="form-group">
+        <label>Valor pago (R$) *</label>
+        <input type="text" inputmode="decimal" id="pdp-valor" placeholder="0,00">
+      </div>
+    </form>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('modal-pagar-despesa-prog')">Cancelar</button>
+      <button type="button" class="btn btn-success" onclick="submitPagarDespesaProg()">✓ Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL DESPESA PROGRAMADA -->
 <div class="modal-overlay" id="modal-despesa-prog">
   <div class="modal-card">
@@ -876,6 +899,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=139"></script>
+<script src="app.js?v=140"></script>
 </body>
 </html>

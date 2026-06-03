@@ -1409,7 +1409,7 @@ function _getProgRecorrentes(vei, hoje) {
     for (var i = 0; i < ipvaMeses.length && !encontrou; i++) {
       var d = new Date(y, ipvaMeses[i] - 1, 10);
       if (d >= hoje) {
-        entries.push({ tipo: 'IPVA (parcela ' + (ipvaMeses[i] - 1) + '/5)', data: d, valor: '—', diff: Math.round((d - hoje) / 86400000) });
+        entries.push({ tipo: 'IPVA (parcela ' + (ipvaMeses[i] - 1) + '/5)', data: d, valor: '—', valorNum: null, diff: Math.round((d - hoje) / 86400000) });
         encontrou = true;
       }
     }
@@ -1423,13 +1423,13 @@ function _getProgRecorrentes(vei, hoje) {
       if (mesLic > 12) { mesLic -= 12; anoLic++; }
       var dLic = new Date(anoLic, mesLic - 1, 10);
       if (dLic < hoje) dLic = new Date(anoLic + 1, mesLic - 1, 10);
-      entries.push({ tipo: 'Licenciamento', data: dLic, valor: '—', diff: Math.round((dLic - hoje) / 86400000) });
+      entries.push({ tipo: 'Licenciamento', data: dLic, valor: '—', valorNum: null, diff: Math.round((dLic - hoje) / 86400000) });
     }
   }
   if (vei.seguro_rastreador_mensal) {
     var dSeg = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
     if (dSeg < hoje) dSeg = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
-    entries.push({ tipo: 'Seguro + Rastreador', data: dSeg, valor: fmtBRL(vei.seguro_rastreador_mensal), diff: Math.round((dSeg - hoje) / 86400000) });
+    entries.push({ tipo: 'Seguro + Rastreador', data: dSeg, valor: fmtBRL(vei.seguro_rastreador_mensal), valorNum: vei.seguro_rastreador_mensal, diff: Math.round((dSeg - hoje) / 86400000) });
   }
   return entries;
 }
@@ -1469,7 +1469,7 @@ function _buildDespesaMotoBody(vei, motoDesp) {
       '<td>' + e.valor + '</td>' +
       '<td>' + _sitBadge(e.diff) + '</td>' +
       '<td><div class="btn-actions">' +
-        '<button class="btn btn-sm btn-success" onclick="marcarDespesaProgPaga(\'' + vei.id + '\',\'' + safeKey + '\',\'' + safeVenc + '\')">✓ Pagar</button>' +
+        '<button class="btn btn-sm btn-success" onclick="abrirPagarDespesaProgModal(\'' + vei.id + '\',\'' + safeKey + '\',\'' + safeVenc + '\',\'' + safeTipo + '\',' + (e.valorNum || '') + ')">✓ Pagar</button>' +
         '<button class="btn btn-sm btn-secondary" onclick="editDespesaProgAuto(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\')">Editar</button>' +
         '<button class="btn btn-sm btn-danger" onclick="excluirDespesaAutoCalc()">Excluir</button>' +
       '</div></td>' +
@@ -1628,11 +1628,31 @@ function excluirDespesaAutoCalc() {
   alert('Esta despesa é calculada automaticamente com base nos dados da moto e não pode ser excluída.');
 }
 
-async function marcarDespesaProgPaga(veiculoId, tipoKey, vencimento) {
+function abrirPagarDespesaProgModal(veiculoId, tipoKey, vencimento, displayTipo, valorSugerido) {
+  document.getElementById('pdp-veiculo-id').value  = veiculoId;
+  document.getElementById('pdp-tipo-key').value    = tipoKey;
+  document.getElementById('pdp-vencimento').value  = vencimento;
+  document.getElementById('pdp-valor').value       = valorSugerido ? String(valorSugerido).replace('.', ',') : '';
+  document.getElementById('modal-pagar-despesa-prog-title').textContent = 'Pagar — ' + displayTipo;
+  openModal('modal-pagar-despesa-prog');
+}
+
+async function submitPagarDespesaProg() {
+  var veiculoId  = document.getElementById('pdp-veiculo-id').value;
+  var tipoKey    = document.getElementById('pdp-tipo-key').value;
+  var vencimento = document.getElementById('pdp-vencimento').value;
+  var valor      = parseFloat(document.getElementById('pdp-valor').value.replace(',', '.')) || null;
+  if (!valor) { alert('Informe o valor pago.'); return; }
+  closeModal('modal-pagar-despesa-prog');
+  await marcarDespesaProgPaga(veiculoId, tipoKey, vencimento, valor);
+}
+
+async function marcarDespesaProgPaga(veiculoId, tipoKey, vencimento, valor) {
   var res = await db.from('despesas').insert({
     veiculo_id: veiculoId,
     tipo: tipoKey,
     vencimento: vencimento,
+    valor: valor || null,
     programada: true,
     pago: true
   }).select('id').single();
@@ -1640,7 +1660,7 @@ async function marcarDespesaProgPaga(veiculoId, tipoKey, vencimento) {
   if (_despesasCache) {
     _despesasCache.allDespesas.push({
       id: res.data ? res.data.id : '_tmp',
-      veiculo_id: veiculoId, tipo: tipoKey, vencimento: vencimento, programada: true, pago: true
+      veiculo_id: veiculoId, tipo: tipoKey, vencimento: vencimento, valor: valor, programada: true, pago: true
     });
   }
   _refreshDespesaAccordion(veiculoId);
