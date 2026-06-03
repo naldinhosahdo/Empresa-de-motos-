@@ -107,8 +107,12 @@ function calcularValorParcela(valorOriginal, vencimento, dataPagamento) {
   } else if (diffDias === 0) {
     return { valor: valorOriginal, descricao: 'Pago no vencimento — sem ajuste', tipo: 'normal' };
   } else {
-    var multa = valorOriginal * 0.03 * diffDias;
-    return { valor: valorOriginal + multa, descricao: 'Multa: ' + diffDias + ' dia(s) × 3% = +' + fmtBRL(multa), tipo: 'multa' };
+    // Multa: 2% uma única vez + juros de 1% ao mês (0,0333% ao dia)
+    var multaUnica = valorOriginal * 0.02;
+    var jurosDia   = valorOriginal * (0.01 / 30) * diffDias;
+    var total      = multaUnica + jurosDia;
+    var desc       = 'Multa 2%: +' + fmtBRL(multaUnica) + ' · Juros (' + diffDias + ' dia(s) × 0,033%/dia): +' + fmtBRL(jurosDia);
+    return { valor: valorOriginal + total, descricao: desc, tipo: 'multa' };
   }
 }
 
@@ -2250,7 +2254,7 @@ async function gerarContrato(id, win) {
     '<div class="sec">4. Do Pagamento</div>' +
     '<div class="cl"><strong>4.1</strong> Pagando antes do vencimento, o Locatário tem <strong>5% de desconto</strong> no valor da parcela.</div>' +
     '<div class="cl"><strong>4.2</strong> Pagando no dia do vencimento, o valor é o cheio, sem desconto nem acréscimo.</div>' +
-    '<div class="cl"><strong>4.3</strong> Atraso gera multa de <strong>3% por dia</strong> sobre o valor da parcela, a partir do primeiro dia de atraso. Exemplo: parcela de ' + fmtValor(a.valor) + ' atrasada 3 dias = ' + fmtValor(a.valor) + ' + ' + fmtValor((a.valor||0) * 0.03 * 3) + ' = ' + fmtValor((a.valor||0) * 1.09) + '.</div>' +
+    '<div class="cl"><strong>4.3</strong> O atraso gera <strong>multa de 2%</strong> sobre o valor da parcela (cobrada uma única vez no primeiro dia) mais <strong>juros de 1% ao mês</strong> (0,033% ao dia) enquanto o débito permanecer em aberto. Exemplo: parcela de ' + fmtValor(a.valor) + ' atrasada 7 dias = ' + fmtValor(a.valor) + ' + multa ' + fmtValor((a.valor||0)*0.02) + ' + juros ' + fmtValor((a.valor||0)*(0.01/30)*7) + ' = ' + fmtValor((a.valor||0) + (a.valor||0)*0.02 + (a.valor||0)*(0.01/30)*7) + '.</div>' +
     '<div class="cl"><strong>4.4</strong> Em caso de atraso, o Locador poderá <strong>bloquear a moto pelo rastreador a qualquer momento, sem aviso prévio</strong>. O bloqueio só será retirado após o pagamento total do débito com a multa.</div>' +
 
     '<div class="sec">5. O que o Locatário deve fazer</div>' +
