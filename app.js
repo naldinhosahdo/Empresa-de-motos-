@@ -2261,7 +2261,7 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>5.1</strong> Devolver a moto nas mesmas condições em que recebeu, salvo desgaste normal de uso.</div>' +
     '<div class="cl"><strong>5.2</strong> Usar capacete e todos os equipamentos de segurança exigidos pelo Código de Trânsito.</div>' +
     '<div class="cl"><strong>5.3</strong> Não emprestar, ceder nem sublocar a moto para outra pessoa sem autorização escrita do Locador.</div>' +
-    '<div class="cl"><strong>5.4</strong> Manter o tanque abastecido e o nível de óleo adequado. A troca de óleo (por km ou tempo) é responsabilidade do Locador.</div>' +
+    '<div class="cl"><strong>5.4</strong> Manter o tanque abastecido e verificar regularmente o nível de óleo do motor, comunicando ao Locador caso esteja abaixo do normal. A adição e a troca de óleo são de responsabilidade exclusiva do Locador.</div>' +
     '<div class="cl"><strong>5.5</strong> Todas as multas de trânsito cometidas durante a locação são de responsabilidade do Locatário.</div>' +
     '<div class="cl"><strong>5.6</strong> É proibido usar a moto para atividades ilegais, carregar cargas não permitidas ou participar de rachas e competições.</div>' +
     '<div class="cl"><strong>5.7</strong> Em caso de acidente, roubo, furto ou qualquer ocorrência policial, avisar o Locador imediatamente.</div>' +
