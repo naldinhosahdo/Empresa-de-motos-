@@ -2214,7 +2214,7 @@ async function gerarContrato(id, win) {
     '</style></head><body>' +
     '<button class="pbtn" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>' +
     '<h1>Contrato de Locação de Motocicleta</h1>' +
-    '<div class="sub">Instrumento Particular de Locação celebrado entre as partes abaixo qualificadas.</div>' +
+    '<div class="sub">Contrato firmado entre as partes identificadas abaixo.</div>' +
     '<div class="ref">Nº ' + contratoNum + ' &nbsp;|&nbsp; ' + cfg.cidade + ', ' + hoje + '</div>' +
 
     '<div class="sec">1. Das Partes</div>' +
@@ -2248,34 +2248,34 @@ async function gerarContrato(id, win) {
     '</table>' +
 
     '<div class="sec">4. Do Pagamento</div>' +
-    '<div class="cl"><strong>4.1</strong> O pagamento efetuado antes da data de vencimento garantirá ao Locatário desconto de <strong>5% (cinco por cento)</strong> sobre o valor da parcela.</div>' +
-    '<div class="cl"><strong>4.2</strong> O pagamento realizado na data do vencimento será pelo valor integral acordado, sem acréscimos ou descontos.</div>' +
-    '<div class="cl"><strong>4.3</strong> O atraso no pagamento implicará multa moratória de <strong>3% (três por cento) do valor da parcela por dia de atraso</strong>, calculada de forma simples (não composta), incidindo a partir do primeiro dia após o vencimento. Exemplo: parcela de ' + fmtValor(a.valor) + ' atrasada 3 dias = ' + fmtValor(a.valor) + ' + ' + fmtValor((a.valor||0) * 0.03 * 3) + ' = ' + fmtValor((a.valor||0) * 1.09) + '.</div>' +
-    '<div class="cl"><strong>4.4</strong> O atraso no pagamento autoriza o Locador a acionar o <strong>bloqueio remoto do veículo</strong> via dispositivo rastreador, independentemente de notificação prévia, permanecendo o veículo bloqueado até a quitação integral do débito acrescido das multas moratórias devidas.</div>' +
+    '<div class="cl"><strong>4.1</strong> Pagando antes do vencimento, o Locatário tem <strong>5% de desconto</strong> no valor da parcela.</div>' +
+    '<div class="cl"><strong>4.2</strong> Pagando no dia do vencimento, o valor é o cheio, sem desconto nem acréscimo.</div>' +
+    '<div class="cl"><strong>4.3</strong> Atraso gera multa de <strong>3% por dia</strong> sobre o valor da parcela, a partir do primeiro dia de atraso. Exemplo: parcela de ' + fmtValor(a.valor) + ' atrasada 3 dias = ' + fmtValor(a.valor) + ' + ' + fmtValor((a.valor||0) * 0.03 * 3) + ' = ' + fmtValor((a.valor||0) * 1.09) + '.</div>' +
+    '<div class="cl"><strong>4.4</strong> Em caso de atraso, o Locador poderá <strong>bloquear a moto pelo rastreador a qualquer momento, sem aviso prévio</strong>. O bloqueio só será retirado após o pagamento total do débito com a multa.</div>' +
 
-    '<div class="sec">5. Das Obrigações do Locatário</div>' +
-    '<div class="cl"><strong>5.1</strong> O Locatário se compromete a devolver o veículo nas mesmas condições em que o recebeu, salvo desgaste natural de uso.</div>' +
-    '<div class="cl"><strong>5.2</strong> É obrigatório o uso de capacete e demais equipamentos de segurança previstos no Código de Trânsito Brasileiro.</div>' +
-    '<div class="cl"><strong>5.3</strong> É vedado ao Locatário sublocar, ceder ou emprestar o veículo a terceiros sem autorização prévia e por escrito do Locador.</div>' +
-    '<div class="cl"><strong>5.4</strong> O Locatário é responsável pelo abastecimento de combustível e por manter o nível de óleo do motor dentro da faixa adequada durante todo o período de locação, adquirindo e adicionando óleo sempre que necessário. A troca periódica de óleo, por quilometragem ou tempo, é de responsabilidade exclusiva do Locador.</div>' +
-    '<div class="cl"><strong>5.5</strong> Todas as multas de trânsito, infrações e penalidades ocorridas durante o período de locação são de inteira responsabilidade do Locatário.</div>' +
-    '<div class="cl"><strong>5.6</strong> Fica proibida a utilização do veículo para atividades ilícitas, transporte de cargas não autorizadas ou participação em competições de qualquer natureza.</div>' +
-    '<div class="cl"><strong>5.7</strong> O Locatário se obriga a comunicar imediatamente o Locador em caso de acidente, roubo, furto ou qualquer ocorrência policial envolvendo o veículo.</div>' +
+    '<div class="sec">5. O que o Locatário deve fazer</div>' +
+    '<div class="cl"><strong>5.1</strong> Devolver a moto nas mesmas condições em que recebeu, salvo desgaste normal de uso.</div>' +
+    '<div class="cl"><strong>5.2</strong> Usar capacete e todos os equipamentos de segurança exigidos pelo Código de Trânsito.</div>' +
+    '<div class="cl"><strong>5.3</strong> Não emprestar, ceder nem sublocar a moto para outra pessoa sem autorização escrita do Locador.</div>' +
+    '<div class="cl"><strong>5.4</strong> Manter o tanque abastecido e o nível de óleo adequado. A troca de óleo (por km ou tempo) é responsabilidade do Locador.</div>' +
+    '<div class="cl"><strong>5.5</strong> Todas as multas de trânsito cometidas durante a locação são de responsabilidade do Locatário.</div>' +
+    '<div class="cl"><strong>5.6</strong> É proibido usar a moto para atividades ilegais, carregar cargas não permitidas ou participar de rachas e competições.</div>' +
+    '<div class="cl"><strong>5.7</strong> Em caso de acidente, roubo, furto ou qualquer ocorrência policial, avisar o Locador imediatamente.</div>' +
     '<div class="cl"><strong>5.8</strong> O Locatário tem até <strong>24 horas</strong> após a assinatura deste contrato para aceitar, no aplicativo <strong>Carteira Digital de Trânsito (CDT)</strong>, a transferência do veículo para seu nome como condutor principal. Caso não cumpra esse prazo, o Locador poderá cancelar a locação.</div>' +
 
-    '<div class="sec">6. Da Responsabilidade por Danos</div>' +
-    '<div class="cl"><strong>6.1</strong> O Locatário responde por todos os danos causados ao veículo durante o período de locação, sejam por colisão, tombamento, vandalismo ou qualquer outro sinistro, exceto os decorrentes de desgaste natural.</div>' +
-    '<div class="cl"><strong>6.2</strong> O valor da caução poderá ser retido total ou parcialmente para cobrir danos, multas ou débitos pendentes ao final do contrato.</div>' +
+    '<div class="sec">6. Danos à Moto</div>' +
+    '<div class="cl"><strong>6.1</strong> O Locatário é responsável por qualquer dano causado à moto durante a locação, como batidas, tombamentos ou vandalismo. Danos por desgaste normal não são cobrados.</div>' +
+    '<div class="cl"><strong>6.2</strong> A caução pode ser usada para cobrir danos, multas ou valores em aberto no final do contrato.</div>' +
 
-    '<div class="sec">7. Da Rescisão</div>' +
-    '<div class="cl"><strong>7.1</strong> O presente contrato poderá ser rescindido por qualquer das partes mediante aviso prévio de 24 (vinte e quatro) horas.</div>' +
-    '<div class="cl"><strong>7.2</strong> A devolução do veículo fora do prazo acordado implicará cobrança proporcional pelo período excedente, conforme a modalidade contratada.</div>' +
-    '<div class="cl"><strong>7.3</strong> O descumprimento de qualquer cláusula deste contrato autoriza o Locador a reaver o veículo imediatamente, independentemente de notificação judicial.</div>' +
+    '<div class="sec">7. Cancelamento e Encerramento</div>' +
+    '<div class="cl"><strong>7.1</strong> Qualquer uma das partes pode encerrar o contrato avisando com <strong>24 horas de antecedência</strong>.</div>' +
+    '<div class="cl"><strong>7.2</strong> Devolver a moto após o prazo combinado gera cobrança proporcional pelos dias extras.</div>' +
+    '<div class="cl"><strong>7.3</strong> Se qualquer regra deste contrato for descumprida, o Locador poderá recolher a moto imediatamente.</div>' +
 
-    '<div class="sec">8. Do Foro</div>' +
-    '<div class="cl"><strong>8.1</strong> As partes elegem o foro da Comarca de Fortaleza, Estado do Ceará, para dirimir quaisquer controvérsias oriundas deste contrato, com renúncia a qualquer outro, por mais privilegiado que seja.</div>' +
+    '<div class="sec">8. Em caso de conflito</div>' +
+    '<div class="cl"><strong>8.1</strong> Qualquer problema que não seja resolvido entre as partes será tratado no foro da Comarca de Fortaleza/CE.</div>' +
 
-    '<div class="cl" style="margin-top:16px;text-align:justify">E, por estarem assim justas e contratadas, as partes assinam o presente instrumento em 2 (duas) vias de igual teor e forma.</div>' +
+    '<div class="cl" style="margin-top:16px;text-align:justify">As partes declaram ter lido e concordado com todos os termos acima, assinando este contrato em 2 vias.</div>' +
     '<div class="cl" style="text-align:center;margin-top:8px"><strong>' + cfg.cidade + ', ' + hoje + '</strong></div>' +
 
     '<div class="asrow">' +
