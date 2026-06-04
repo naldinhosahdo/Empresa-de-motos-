@@ -552,7 +552,21 @@ async function renderDashboard() {
     .reduce(function(s, x) { return s + Number(x.caucao || 0); }, 0);
   document.getElementById('dash-caucao').textContent = fmtBRL(caucaoPendente);
 
-  var ocupacao = v.length > 0 ? Math.round((motosAlugadas / v.length) * 100) : 0;
+  // Occupancy: dias alugados no mês / (dias no mês × total de motos)
+  var mesInicioStr = anoMes + '-01';
+  var diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+  var mesFimStr = anoMes + '-' + String(diasNoMes).padStart(2, '0');
+  var diasAlugados = aNaoCancelado.reduce(function(sum, al) {
+    if (!al.inicio) return sum;
+    var inicio = al.inicio < mesInicioStr ? mesInicioStr : al.inicio;
+    var fimReal = al.fim && al.fim < hojeStr ? al.fim : hojeStr;
+    var fim = fimReal < mesFimStr ? fimReal : mesFimStr;
+    if (fim < inicio) return sum;
+    return sum + Math.round((new Date(fim) - new Date(inicio)) / 86400000) + 1;
+  }, 0);
+  var ocupacao = v.length > 0
+    ? Math.min(100, Math.round(diasAlugados / (diasNoMes * v.length) * 100))
+    : 0;
   document.getElementById('dash-ocupacao').textContent = ocupacao + '%';
 
   // Vencimentos próximos (up to 30 days, including overdue)
