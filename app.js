@@ -461,7 +461,7 @@ document.addEventListener('input', function(e) {
 document.querySelectorAll('.nav-item').forEach(function(a) {
   a.addEventListener('click', function(e) {
     e.preventDefault();
-    showSection(a.dataset.section);
+    if (a.dataset.section) showSection(a.dataset.section);
   });
 });
 
