@@ -414,7 +414,7 @@ db.auth.getSession().then(function(res) {
 });
 
 // --- NAVIGATION ---
-function showSection(name, addHistory) {
+function showSection(name, addHistory, renderOpts) {
   document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
   document.querySelectorAll('.nav-item').forEach(function(a) { a.classList.remove('active'); });
   document.getElementById(name).classList.add('active');
@@ -425,7 +425,7 @@ function showSection(name, addHistory) {
   if (name === 'dashboard')  renderDashboard();
   if (name === 'clientes')   renderClientes();
   if (name === 'motos')      renderVeiculos();
-  if (name === 'alugueis')   { populateClienteSelect(); populateVeiculoSelects(); renderAlugueis(); }
+  if (name === 'alugueis')   { populateClienteSelect(); populateVeiculoSelects(); renderAlugueis(renderOpts && renderOpts.ordenarPorVencimento); }
   if (name === 'custos-geral') { showCustosTab('manutencoes'); }
   if (name === 'relatorios') renderRelatorios();
   if (name === 'checklist')  buildChecklist();
@@ -436,13 +436,10 @@ function showSection(name, addHistory) {
 }
 
 function abrirContratosVencer() {
-  populateClienteSelect();
-  populateVeiculoSelects();
   var fmEl = document.getElementById('filtro-moto-aluguel');
   if (fmEl) fmEl.value = '';
   document.getElementById('filtro-status-aluguel').value = 'ativo';
-  showSection('alugueis');
-  renderAlugueis(true);
+  showSection('alugueis', true, { ordenarPorVencimento: true });
 }
 
 window.addEventListener('popstate', function(e) {
