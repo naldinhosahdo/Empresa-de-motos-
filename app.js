@@ -704,7 +704,7 @@ function consultarCPF(tipo) {
   } else if (tipo === 'receita') {
     window.open('https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp', '_blank');
   } else if (tipo === 'senatran') {
-    window.open('https://portalservicos.senatran.serpro.gov.br/#/consultarCondutorCPF', '_blank');
+    window.open('https://portalservicos.senatran.serpro.gov.br/#/condutor/validar-cnh', '_blank');
   } else {
     window.open('https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais', '_blank');
   }
