@@ -481,16 +481,17 @@ document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
 
 // --- DASHBOARD ---
 async function renderDashboard() {
-  const [{ data: veiculos }, { data: alugueis }, { data: manutencoes }, { data: despesas }, { data: parcelasPagas }, { data: parcelasAbertas }] = await Promise.all([
+  const [{ data: veiculos }, { data: alugueis }, { data: manutencoes }, { data: despesas }, { data: parcelasPagas }, { data: parcelasAbertas }, { data: clientes }] = await Promise.all([
     db.from('veiculos').select('*'),
     db.from('alugueis').select('*'),
     db.from('manutencoes').select('*'),
     db.from('despesas').select('*'),
     db.from('parcelas').select('*, alugueis(veiculo_id)').eq('pago', true),
-    db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))').eq('pago', false).order('vencimento')
+    db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))').eq('pago', false).order('vencimento'),
+    db.from('clientes').select('id')
   ]);
 
-  const v = veiculos || [], a = alugueis || [], m = manutencoes || [], d = despesas || [], pp = parcelasPagas || [], pa = parcelasAbertas || [];
+  const v = veiculos || [], a = alugueis || [], m = manutencoes || [], d = despesas || [], pp = parcelasPagas || [], pa = parcelasAbertas || [], cl = clientes || [];
 
   var hoje = new Date();
   var hojeStr = hojeLocalStr();
@@ -546,6 +547,7 @@ async function renderDashboard() {
     return x.status === 'ativo' && x.fim && x.fim >= hojeStr && x.fim <= limite5dStr;
   }).length;
   document.getElementById('dash-vencer').textContent = vencer;
+  document.getElementById('dash-clientes-total').textContent = cl.length;
 
   var caucaoPendente = aNaoCancelado
     .filter(function(x) { return x.caucao_devolvido !== 'sim'; })
