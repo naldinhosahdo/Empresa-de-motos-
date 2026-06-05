@@ -701,6 +701,8 @@ function consultarCPF(tipo) {
     window.open('https://sistemas.detran.ce.gov.br/central', '_blank');
   } else if (tipo === 'receita') {
     window.open('https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp', '_blank');
+  } else if (tipo === 'senatran') {
+    window.open('https://portalservicos.senatran.serpro.gov.br/#/consultarCondutorCPF', '_blank');
   } else {
     window.open('https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais', '_blank');
   }
