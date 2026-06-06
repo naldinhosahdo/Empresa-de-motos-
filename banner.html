@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Banner Aluguel de Moto</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #111;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  .banner {
+    width: 420px;
+    background: linear-gradient(160deg, #1a0000 0%, #0d0d0d 50%, #1a0500 100%);
+    border-radius: 16px;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    position: relative;
+    box-shadow: 0 0 60px rgba(220,30,30,0.3);
+  }
+
+  /* Top accent line */
+  .banner::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #cc0000, #ff4400, #cc0000);
+  }
+
+  /* Hero section */
+  .hero {
+    padding: 28px 24px 0;
+    position: relative;
+  }
+
+  .location {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(204,0,0,0.2);
+    border: 1px solid rgba(204,0,0,0.4);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 11px;
+    color: #ff6666;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+
+  .headline {
+    font-family: 'Bebas Neue', 'Inter', sans-serif;
+    font-size: 58px;
+    line-height: 0.95;
+    color: #fff;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .headline span {
+    color: #cc0000;
+    display: block;
+  }
+
+  .subheadline {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #aaa;
+    font-weight: 500;
+  }
+
+  .subheadline strong {
+    color: #fff;
+    font-weight: 700;
+  }
+
+  /* Moto image placeholder area */
+  .moto-area {
+    text-align: center;
+    padding: 16px 0 0;
+    position: relative;
+  }
+
+  .moto-img {
+    width: 85%;
+    filter: drop-shadow(0 8px 24px rgba(204,0,0,0.5));
+  }
+
+  /* Target badges */
+  .target-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 24px;
+    background: rgba(255,255,255,0.03);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .target-badge {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 6px 10px;
+    text-align: center;
+    font-size: 10px;
+    color: #ccc;
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .target-badge .icon { font-size: 16px; display: block; margin-bottom: 2px; }
+
+  /* Diferenciais */
+  .diferenciais {
+    display: flex;
+    gap: 8px;
+    padding: 14px 24px;
+    justify-content: center;
+  }
+
+  .dif-item {
+    flex: 1;
+    background: linear-gradient(135deg, rgba(204,0,0,0.15), rgba(204,0,0,0.05));
+    border: 1px solid rgba(204,0,0,0.3);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+    font-size: 10px;
+    color: #ff8888;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .dif-item .dif-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+
+  /* Preços */
+  .precos {
+    padding: 0 24px 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .preco-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+
+  .preco-card.destaque {
+    background: linear-gradient(135deg, #cc0000, #880000);
+    border-color: #cc0000;
+    grid-column: 1 / -1;
+  }
+
+  .preco-label {
+    font-size: 9px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .preco-card.destaque .preco-label { color: rgba(255,255,255,0.7); }
+
+  .preco-valor {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .preco-card.destaque .preco-valor { font-size: 32px; }
+
+  .preco-desc {
+    font-size: 9px;
+    color: #666;
+    margin-top: 2px;
+  }
+
+  .preco-card.destaque .preco-desc { color: rgba(255,255,255,0.6); }
+
+  /* Slogan */
+  .slogan {
+    text-align: center;
+    padding: 10px 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .slogan p {
+    font-size: 11px;
+    color: #666;
+    font-style: italic;
+  }
+
+  .slogan strong {
+    color: #cc0000;
+    font-style: normal;
+  }
+
+  /* CTA */
+  .cta {
+    margin: 0 24px 24px;
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 20px rgba(37,211,102,0.3);
+  }
+
+  .cta-icon { font-size: 32px; }
+
+  .cta-text { flex: 1; }
+
+  .cta-top {
+    font-size: 10px;
+    color: rgba(255,255,255,0.8);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .cta-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    color: #fff;
+    letter-spacing: 1px;
+    line-height: 1.1;
+  }
+
+  .cta-bottom {
+    font-size: 10px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 600;
+  }
+
+  .vagas {
+    background: #fff200;
+    color: #000;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    align-self: flex-start;
+    margin-top: 2px;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+<div class="banner">
+
+  <div class="hero">
+    <div class="location">📍 Fortaleza — CE</div>
+    <div class="headline">
+      Trabalhe<br>
+      <span>hoje</span>
+      mesmo!
+    </div>
+    <div class="subheadline">Aluguel de <strong>Honda Bros 2020</strong> — nova, revisada e pronta</div>
+
+    <div class="moto-area">
+      <!-- Substitua o src pela foto real da sua moto -->
+      <img class="moto-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Honda_NXR_Bros_160_2019.jpg/800px-Honda_NXR_Bros_160_2019.jpg" alt="Honda Bros 2020" onerror="this.style.display='none'">
+    </div>
+  </div>
+
+  <div class="target-row">
+    <div class="target-badge"><span class="icon">🛵</span>Uber Moto</div>
+    <div class="target-badge"><span class="icon">🟡</span>99 Moto</div>
+    <div class="target-badge"><span class="icon">📦</span>Entregas</div>
+    <div class="target-badge"><span class="icon">💼</span>Autônomo</div>
+  </div>
+
+  <div class="diferenciais">
+    <div class="dif-item"><span class="dif-icon">🛡️</span>Seguro<br>Incluso</div>
+    <div class="dif-item"><span class="dif-icon">📡</span>Rastreador<br>Incluso</div>
+    <div class="dif-item"><span class="dif-icon">🔧</span>Moto<br>Revisada</div>
+    <div class="dif-item"><span class="dif-icon">📄</span>Contrato<br>Seguro</div>
+  </div>
+
+  <div class="precos">
+    <div class="preco-card">
+      <div class="preco-label">Por semana</div>
+      <div class="preco-valor">R$350</div>
+      <div class="preco-desc">pagamento semanal</div>
+    </div>
+    <div class="preco-card">
+      <div class="preco-label">Pagando antecipado</div>
+      <div class="preco-valor">R$332</div>
+      <div class="preco-desc">economia de R$18</div>
+    </div>
+    <div class="preco-card destaque">
+      <div class="preco-label">Total para começar hoje</div>
+      <div class="preco-valor">R$1.000</div>
+      <div class="preco-desc">1ª semana + caução R$650 (reembolsável)</div>
+    </div>
+  </div>
+
+  <div class="slogan">
+    <p>Uma moto. <strong>Infinitas possibilidades.</strong> Sua liberdade começa aqui.</p>
+  </div>
+
+  <div class="cta">
+    <div class="cta-icon">💬</div>
+    <div class="cta-text">
+      <div class="cta-top">Chame no WhatsApp agora</div>
+      <div class="cta-number">85 9 9749-5454</div>
+      <div class="cta-bottom">Respondemos na hora</div>
+    </div>
+    <div>
+      <div class="vagas">Vagas<br>limitadas</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
