@@ -1816,14 +1816,15 @@ async function submitDespesaProg() {
     valor:       parseFloat(document.getElementById('dp-valor').value) || null,
     vencimento:  document.getElementById('dp-vencimento').value || null,
     obs:         document.getElementById('dp-obs').value.trim(),
-    programada:  true
+    programada:  true,
+    pago:        false
   };
   if (!d.tipo || !d.vencimento) { alert('Tipo e vencimento são obrigatórios.'); return; }
   var result;
   if (id) {
     result = await db.from('despesas').update(d).eq('id', id);
   } else {
-    result = await db.from('despesas').insert(d).select('id').single();
+    result = await db.from('despesas').insert(d).select('*').single();
   }
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-despesa-prog');
@@ -1833,7 +1834,11 @@ async function submitDespesaProg() {
       if (idx >= 0) Object.assign(_despesasCache.allDespesas[idx], d);
       else _despesasCache.allDespesas.push(Object.assign({ id: id }, d));
     } else if (result.data && result.data.id) {
-      _despesasCache.allDespesas.push(Object.assign({ id: result.data.id }, d));
+      _despesasCache.allDespesas.push(result.data);
+    } else {
+      _despesasCache = null;
+      if (document.getElementById('custos-geral').classList.contains('active')) renderDespesasTab();
+      return;
     }
     _refreshDespesaAccordion(veiculoId);
   } else {
