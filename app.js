@@ -1569,6 +1569,24 @@ function _buildDespesaMotoBody(vei, motoDesp) {
   }).join('');
   if (!pagasRows) pagasRows = '<tr class="empty-row"><td colspan="4">Nenhuma despesa paga registrada.</td></tr>';
 
+  // Avulsas (programada=false)
+  var motoAvulsas = motoDesp.filter(function(d) { return !d.programada; });
+  motoAvulsas.sort(function(a, b) { return (b.vencimento || '').localeCompare(a.vencimento || ''); });
+  var avulsasRows = motoAvulsas.map(function(x) {
+    var venc = x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—';
+    var diff = x.vencimento ? Math.round((new Date(x.vencimento + 'T00:00:00') - hoje) / 86400000) : null;
+    return '<tr>' +
+      '<td>' + (x.tipo || '—') + '</td>' +
+      '<td>' + venc + '</td>' +
+      '<td>' + (x.valor ? fmtBRL(x.valor) : '—') + '</td>' +
+      '<td>' + (diff !== null ? _sitBadge(diff) : '<span class="badge badge-gray">—</span>') + '</td>' +
+      '<td><div class="btn-actions">' +
+        '<button class="btn btn-sm btn-secondary" onclick="editDespesaAvulsa(\'' + x.id + '\')">Editar</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
+      '</div></td></tr>';
+  }).join('');
+  if (!avulsasRows) avulsasRows = '<tr class="empty-row"><td colspan="5">Nenhuma despesa avulsa registrada.</td></tr>';
+
   return subHdr('📅 Programadas (Recorrentes)') +
     '<div class="table-wrap"><table>' +
       '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th>Ação</th></tr></thead>' +
@@ -1576,7 +1594,12 @@ function _buildDespesaMotoBody(vei, motoDesp) {
     subHdr('✅ Pagas') +
     '<div class="table-wrap"><table>' +
       '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor Pago</th><th>Ação</th></tr></thead>' +
-      '<tbody>' + pagasRows + '</tbody></table></div>';
+      '<tbody>' + pagasRows + '</tbody></table></div>' +
+    subHdr('🧾 Avulsas') +
+    '<div style="margin-bottom:0.5rem"><button class="btn btn-sm btn-secondary" onclick="openNewDespesaAvulsa(\'' + vei.id + '\')">+ Nova Avulsa</button></div>' +
+    '<div class="table-wrap"><table>' +
+      '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th>Ação</th></tr></thead>' +
+      '<tbody>' + avulsasRows + '</tbody></table></div>';
 }
 
 async function registrarDespesaProg(veiculoId, tipo, vencimento) {
@@ -1628,14 +1651,16 @@ async function renderDespesasTab() {
       var diff = Math.round((new Date(x.vencimento + 'T00:00:00') - hoje) / 86400000);
       if (diff < 0) vencidas++; else if (diff <= 30) proximas++;
     });
+    var avulsaCount = motoDesp.filter(function(d) { return !d.programada; }).length;
     var badges = vencidas ? '<span class="badge badge-red" style="margin-left:0.5rem">⚠️ ' + vencidas + ' vencida(s)</span>' : '';
     badges += proximas ? '<span class="badge badge-yellow" style="margin-left:0.5rem">🟡 ' + proximas + ' próxima(s)</span>' : '';
     if (!vencidas && !proximas) badges += '<span class="badge badge-green" style="margin-left:0.5rem">✅ Em dia</span>';
+    var avulLabel = avulsaCount ? '<span style="margin-left:auto;font-size:0.82rem;color:#94a3b8">' + avulsaCount + ' avulsa(s)</span>' : '';
     return '<div style="border:1px solid #334155;border-radius:0.5rem;margin-bottom:0.6rem;overflow:hidden">' +
       '<div onclick="toggleDespesaMoto(\'' + vei.id + '\')" style="display:flex;align-items:center;gap:0.5rem;padding:0.8rem 1rem;cursor:pointer;background:#1e293b;user-select:none">' +
         '<span id="acc-desp-arrow-' + vei.id + '" style="font-size:0.7rem;color:#94a3b8;transition:transform 0.2s">▶</span>' +
         '<span style="font-weight:600">' + veiculoLabel(vei) + '</span>' +
-        badges +
+        badges + avulLabel +
       '</div>' +
       '<div id="acc-desp-body-' + vei.id + '" style="display:none;padding:0.5rem 1rem 1rem"></div>' +
     '</div>';
@@ -1859,6 +1884,21 @@ async function openNewDespesaAvulsa(veiculoId) {
   openModal('modal-despesa');
 }
 
+async function editDespesaAvulsa(id) {
+  var { data: d } = await db.from('despesas').select('*').eq('id', id).single();
+  if (!d) return;
+  await populateVeiculoSelects();
+  document.getElementById('despesa-id').value         = d.id;
+  document.getElementById('modal-despesa-title').textContent = 'Editar Despesa Avulsa';
+  document.getElementById('despesa-moto').value       = d.veiculo_id || '';
+  document.getElementById('despesa-tipo').value       = d.tipo || '';
+  document.getElementById('despesa-ano').value        = d.ano || '';
+  document.getElementById('despesa-valor').value      = d.valor || '';
+  document.getElementById('despesa-vencimento').value = d.vencimento || '';
+  document.getElementById('despesa-obs').value        = d.obs || '';
+  openModal('modal-despesa');
+}
+
 async function editDespesa(id) {
   const { data: d } = await db.from('despesas').select('*').eq('id', id).single();
   if (!d) return;
@@ -1898,7 +1938,20 @@ async function submitDespesa(e) {
     if (!id && result.data && result.data.id) dismissNotif('despesa_' + result.data.id);
     _pendingNotifKey = null;
   }
-  if (document.getElementById('custos-geral').classList.contains('active')) renderDespesasTab();
+  var veiculoId = d.veiculo_id;
+  if (_despesasCache && veiculoId) {
+    if (id) {
+      var idx = _despesasCache.allDespesas.findIndex(function(r) { return r.id === id; });
+      if (idx >= 0) Object.assign(_despesasCache.allDespesas[idx], d);
+      else _despesasCache.allDespesas.push(Object.assign({ id: id }, d));
+    } else if (result.data && result.data.id) {
+      _despesasCache.allDespesas.push(Object.assign({ id: result.data.id }, d));
+    }
+    _refreshDespesaAccordion(veiculoId);
+  } else {
+    _despesasCache = null;
+    if (document.getElementById('custos-geral').classList.contains('active')) renderDespesasTab();
+  }
 }
 
 // --- RELATÓRIOS ---
