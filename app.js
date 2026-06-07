@@ -1528,27 +1528,10 @@ function _buildDespesaMotoBody(vei, motoDesp) {
       '<td>' + _sitBadge(e.diff) + '</td>' +
       '<td><div class="btn-actions">' +
         '<button class="btn btn-sm btn-success" onclick="abrirPagarDespesaProgModal(\'' + vei.id + '\',\'' + safeKey + '\',\'' + safeVenc + '\',\'' + safeTipo + '\',' + (e.valorNum || '') + ')">✓ Pagar</button>' +
-        '<button class="btn btn-sm btn-secondary" onclick="editDespesaProgAuto(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\',\'' + safeOvId + '\')">Editar</button>' +
-        '<button class="btn btn-sm btn-danger" onclick="excluirDespesaAutoCalc()">Excluir</button>' +
       '</div></td>' +
     '</tr>';
   }).join('');
-  // Programadas manuais (salvas no banco com programada=true, pago=false) — excluir overrides já exibidos
-  var motoProgM = motoDesp.filter(function(d) { return d.programada && !d.pago && !overrideIds[d.id]; });
-  progRows += motoProgM.map(function(x) {
-    var venc = x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—';
-    var diff = x.vencimento ? Math.round((new Date(x.vencimento + 'T00:00:00') - hoje) / 86400000) : null;
-    return '<tr>' +
-      '<td>' + (x.tipo || '—') + '</td>' +
-      '<td>' + venc + '</td>' +
-      '<td>' + (x.valor ? fmtBRL(x.valor) : '—') + '</td>' +
-      '<td>' + (diff !== null ? _sitBadge(diff) : '<span class="badge badge-gray">—</span>') + '</td>' +
-      '<td><div class="btn-actions">' +
-        '<button class="btn btn-sm btn-secondary" onclick="editDespesaProg(\'' + x.id + '\')">Editar</button>' +
-        '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + x.id + '\')">Excluir</button>' +
-      '</div></td></tr>';
-  }).join('');
-  if (!progRows) progRows = '<tr class="empty-row"><td colspan="5">Nenhuma despesa programada configurada.</td></tr>';
+  if (!progRows) progRows = '<tr class="empty-row"><td colspan="4">Nenhuma despesa programada configurada.</td></tr>';
 
   // Pagas
   var motoPagas = motoDesp.filter(function(d) { return d.programada && d.pago; });
@@ -1571,7 +1554,7 @@ function _buildDespesaMotoBody(vei, motoDesp) {
 
   return subHdr('📅 Programadas (Recorrentes)') +
     '<div class="table-wrap"><table>' +
-      '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th>Ação</th></tr></thead>' +
+      '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th></th></tr></thead>' +
       '<tbody>' + progRows + '</tbody></table></div>' +
     subHdr('✅ Pagas') +
     '<div class="table-wrap"><table>' +
