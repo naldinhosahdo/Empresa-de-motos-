@@ -1550,16 +1550,36 @@ function _buildDespesaMotoBody(vei, motoDesp) {
       '</div></td>' +
     '</tr>';
   }).join('');
-  if (!pagasRows) pagasRows = '<tr class="empty-row"><td colspan="4">Nenhuma despesa paga registrada.</td></tr>';
+  // Despesas Avulsas = programadas pagas + avulsas (programada=false), misturadas
+  var motoPagas   = motoDesp.filter(function(d) { return d.programada && d.pago; });
+  var motoAvulsas = motoDesp.filter(function(d) { return !d.programada; });
+  var combined    = motoPagas.concat(motoAvulsas);
+  combined.sort(function(a, b) { return (b.vencimento || '').localeCompare(a.vencimento || ''); });
+  var avulsasRows = combined.map(function(x) {
+    var venc = x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—';
+    var safeId   = String(x.id).replace(/'/g, "\\'");
+    var safeTipo = String(x.tipo || '').replace(/'/g, "\\'");
+    var safeVenc = x.vencimento || '';
+    var acao = x.programada
+      ? '<button class="btn btn-sm btn-danger" onclick="desfazerPagamentoProg(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\',\'' + safeId + '\')">↩ Desfazer</button>'
+      : '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + safeId + '\')">Excluir</button>';
+    return '<tr>' +
+      '<td>' + (x.tipo || '—') + '</td>' +
+      '<td>' + venc + '</td>' +
+      '<td>' + (x.valor ? fmtBRL(x.valor) : '—') + '</td>' +
+      '<td><div class="btn-actions">' + acao + '</div></td>' +
+    '</tr>';
+  }).join('');
+  if (!avulsasRows) avulsasRows = '<tr class="empty-row"><td colspan="4">Nenhuma despesa avulsa registrada.</td></tr>';
 
   return subHdr('📅 Programadas (Recorrentes)') +
     '<div class="table-wrap"><table>' +
       '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th></th></tr></thead>' +
       '<tbody>' + progRows + '</tbody></table></div>' +
-    subHdr('✅ Pagas') +
+    subHdr('🧾 Despesas Avulsas') +
     '<div class="table-wrap"><table>' +
-      '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor Pago</th><th>Ação</th></tr></thead>' +
-      '<tbody>' + pagasRows + '</tbody></table></div>';
+      '<thead><tr><th>Tipo</th><th>Data</th><th>Valor</th><th>Ação</th></tr></thead>' +
+      '<tbody>' + avulsasRows + '</tbody></table></div>';
 }
 
 async function registrarDespesaProg(veiculoId, tipo, vencimento) {
@@ -1878,7 +1898,7 @@ async function submitDespesa(e) {
   if (id) {
     result = await db.from('despesas').update(d).eq('id', id);
   } else {
-    result = await db.from('despesas').insert(d).select('id').single();
+    result = await db.from('despesas').insert(d).select('*').single();
   }
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
   closeModal('modal-despesa');
@@ -1887,7 +1907,24 @@ async function submitDespesa(e) {
     if (!id && result.data && result.data.id) dismissNotif('despesa_' + result.data.id);
     _pendingNotifKey = null;
   }
-  if (document.getElementById('custos-geral').classList.contains('active')) renderDespesasTab();
+  var veiculoId = d.veiculo_id;
+  if (_despesasCache && veiculoId) {
+    if (id) {
+      var idx = _despesasCache.allDespesas.findIndex(function(r) { return r.id === id; });
+      if (idx >= 0) Object.assign(_despesasCache.allDespesas[idx], d);
+      else _despesasCache.allDespesas.push(Object.assign({ id: id }, d));
+    } else if (result.data && result.data.id) {
+      _despesasCache.allDespesas.push(result.data);
+    } else {
+      _despesasCache = null;
+      if (document.getElementById('custos-geral').classList.contains('active')) renderDespesasTab();
+      return;
+    }
+    _refreshDespesaAccordion(veiculoId);
+  } else {
+    _despesasCache = null;
+    if (document.getElementById('custos-geral').classList.contains('active')) renderDespesasTab();
+  }
 }
 
 // --- RELATÓRIOS ---
