@@ -1531,25 +1531,29 @@ function _buildDespesaMotoBody(vei, motoDesp) {
       '</div></td>' +
     '</tr>';
   }).join('');
-  if (!progRows) progRows = '<tr class="empty-row"><td colspan="4">Nenhuma despesa programada configurada.</td></tr>';
-
-  // Pagas
-  var motoPagas = motoDesp.filter(function(d) { return d.programada && d.pago; });
-  motoPagas.sort(function(a, b) { return (b.vencimento || '').localeCompare(a.vencimento || ''); });
-  var pagasRows = motoPagas.map(function(x) {
-    var venc = x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—';
+  // Manually-added programadas that aren't auto-calc overrides (e.g. multas, taxas extras)
+  var motoProgM = motoDesp.filter(function(d) { return d.programada && !d.pago && !overrideIds[d.id]; });
+  motoProgM.sort(function(a, b) { return (a.vencimento || '').localeCompare(b.vencimento || ''); });
+  var progMRows = motoProgM.map(function(x) {
     var safeId   = String(x.id).replace(/'/g, "\\'");
     var safeTipo = String(x.tipo || '').replace(/'/g, "\\'");
     var safeVenc = x.vencimento || '';
+    var vencDate = x.vencimento ? new Date(x.vencimento + 'T00:00:00') : null;
+    var diff = vencDate ? Math.ceil((vencDate - hoje) / 86400000) : null;
     return '<tr>' +
       '<td>' + (x.tipo || '—') + '</td>' +
-      '<td>' + venc + '</td>' +
+      '<td>' + (x.vencimento ? x.vencimento.split('-').reverse().join('/') : '—') + '</td>' +
       '<td>' + (x.valor ? fmtBRL(x.valor) : '—') + '</td>' +
+      '<td>' + (diff !== null ? _sitBadge(diff) : '—') + '</td>' +
       '<td><div class="btn-actions">' +
-        '<button class="btn btn-sm btn-danger" onclick="desfazerPagamentoProg(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\',\'' + safeId + '\')">↩ Desfazer</button>' +
+        '<button class="btn btn-sm btn-success" onclick="abrirPagarDespesaProgModal(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\',\'' + safeTipo + '\',' + (x.valor || '') + ')">✓ Pagar</button>' +
+        '<button class="btn btn-sm btn-danger" style="margin-left:4px" onclick="confirmDelete(\'despesa\',\'' + safeId + '\')">Excluir</button>' +
       '</div></td>' +
     '</tr>';
   }).join('');
+  progRows = progRows + progMRows;
+  if (!progRows) progRows = '<tr class="empty-row"><td colspan="4">Nenhuma despesa programada configurada.</td></tr>';
+
   // Despesas Avulsas = programadas pagas + avulsas (programada=false), misturadas
   var motoPagas   = motoDesp.filter(function(d) { return d.programada && d.pago; });
   var motoAvulsas = motoDesp.filter(function(d) { return !d.programada; });
