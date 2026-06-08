@@ -1521,6 +1521,9 @@ function _buildDespesaMotoBody(vei, motoDesp) {
     var safeKey  = tipoKey.replace(/'/g, "\\'");
     var safeVenc = isoD(e.data);
     var safeOvId = e.overrideId ? String(e.overrideId).replace(/'/g, "\\'") : '';
+    var editarBtn = e.tipo.indexOf('Seguro') === 0
+      ? ' <button class="btn btn-sm btn-secondary" onclick="abrirEditarSeguro(\'' + vei.id + '\',' + (e.valorNum || 'null') + ',\'' + safeVenc + '\',\'' + safeOvId + '\')">✎ Editar</button>'
+      : '';
     return '<tr>' +
       '<td>' + e.tipo + '</td>' +
       '<td>' + fmtD(e.data) + '</td>' +
@@ -1528,6 +1531,7 @@ function _buildDespesaMotoBody(vei, motoDesp) {
       '<td>' + _sitBadge(e.diff) + '</td>' +
       '<td><div class="btn-actions">' +
         '<button class="btn btn-sm btn-success" onclick="abrirPagarDespesaProgModal(\'' + vei.id + '\',\'' + safeKey + '\',\'' + safeVenc + '\',\'' + safeTipo + '\',' + (e.valorNum || '') + ')">✓ Pagar</button>' +
+        editarBtn +
       '</div></td>' +
     '</tr>';
   }).join('');
@@ -1584,6 +1588,54 @@ function _buildDespesaMotoBody(vei, motoDesp) {
     '<div class="table-wrap"><table>' +
       '<thead><tr><th>Tipo</th><th>Data</th><th>Valor</th><th>Ação</th></tr></thead>' +
       '<tbody>' + avulsasRows + '</tbody></table></div>';
+}
+
+function abrirEditarSeguro(veiculoId, valorAtual, dataAtual, overrideId) {
+  document.getElementById('es-veiculo-id').value = veiculoId || '';
+  document.getElementById('es-override-id').value = overrideId || '';
+  document.getElementById('es-valor').value = valorAtual ? String(valorAtual).replace('.', ',') : '';
+  document.getElementById('es-vencimento').value = dataAtual || '';
+  document.getElementById('es-obs').value = '';
+  openModal('modal-editar-seguro');
+}
+
+async function salvarEditarSeguro() {
+  var veiculoId  = document.getElementById('es-veiculo-id').value;
+  var overrideId = document.getElementById('es-override-id').value;
+  var valorRaw   = document.getElementById('es-valor').value.replace(',', '.').trim();
+  var valor      = valorRaw ? parseFloat(valorRaw) : null;
+  var vencimento = document.getElementById('es-vencimento').value;
+  var obs        = document.getElementById('es-obs').value.trim();
+
+  if (!veiculoId) return;
+  if (!valor && !vencimento) { alert('Informe ao menos o valor ou a data de vencimento.'); return; }
+
+  var erros = [];
+
+  // Atualiza valor mensal no veículo
+  if (valor) {
+    var { error: errVei } = await db.from('veiculos').update({ seguro_rastreador_mensal: valor }).eq('id', veiculoId);
+    if (errVei) erros.push('Erro ao atualizar valor: ' + errVei.message);
+  }
+
+  // Salva/atualiza override de data na tabela despesas
+  if (vencimento) {
+    var despData = { veiculo_id: veiculoId, tipo: 'Seguro + Rastreador', vencimento: vencimento, valor: valor, programada: true, pago: false, obs: obs || null };
+    var errDesp;
+    if (overrideId) {
+      ({ error: errDesp } = await db.from('despesas').update(despData).eq('id', overrideId));
+    } else {
+      ({ error: errDesp } = await db.from('despesas').insert(despData));
+    }
+    if (errDesp) erros.push('Erro ao salvar data: ' + errDesp.message);
+  }
+
+  if (erros.length) { alert(erros.join('\n')); return; }
+
+  closeModal('modal-editar-seguro');
+  _despesasCache = null;
+  if (document.getElementById('custos-geral').classList.contains('active')) renderDespesasTab();
+  loadNotificacoes();
 }
 
 async function registrarDespesaProg(veiculoId, tipo, vencimento) {

@@ -776,6 +776,36 @@
   </div>
 </div>
 
+<!-- MODAL EDITAR SEGURO + RASTREADOR -->
+<div class="modal-overlay" id="modal-editar-seguro">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Editar Seguro + Rastreador</h3>
+      <button class="modal-close" onclick="closeModal('modal-editar-seguro')">&times;</button>
+    </div>
+    <input type="hidden" id="es-veiculo-id">
+    <input type="hidden" id="es-override-id">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Valor mensal (R$)</label>
+        <input type="text" inputmode="decimal" id="es-valor" placeholder="0,00">
+      </div>
+      <div class="form-group">
+        <label>Próximo vencimento</label>
+        <input type="date" id="es-vencimento">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Observação</label>
+      <input type="text" id="es-obs" placeholder="Ex: proporcional jun/jul, instalação dia 05...">
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('modal-editar-seguro')">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="salvarEditarSeguro()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL DESPESA FIXA -->
 <div class="modal-overlay" id="modal-despesa">
   <div class="modal">
@@ -911,6 +941,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=174"></script>
+<script src="app.js?v=175"></script>
 </body>
 </html>
