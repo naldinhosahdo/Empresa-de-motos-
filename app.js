@@ -2278,7 +2278,8 @@ async function gerarContrato(id, win) {
 
     '<div class="sec">6. Danos à Moto</div>' +
     '<div class="cl"><strong>6.1</strong> O Locatário é responsável por qualquer dano causado à moto durante a locação, como batidas, tombamentos ou vandalismo. Danos por desgaste normal não são cobrados.</div>' +
-    '<div class="cl"><strong>6.2</strong> A caução pode ser usada para cobrir danos, multas ou valores em aberto no final do contrato.</div>' +
+    '<div class="cl"><strong>6.2</strong> Em caso de acidente, o Locatário é responsável pelo pagamento da franquia do seguro, no valor de <strong>R$ 1.000,00</strong>. Esse valor será descontado da caução. Se a caução não for suficiente, o Locatário deverá pagar a diferença.</div>' +
+    '<div class="cl"><strong>6.3</strong> A caução pode ser usada para cobrir danos, multas ou valores em aberto no final do contrato.</div>' +
 
     '<div class="sec">7. Cancelamento e Encerramento</div>' +
     '<div class="cl"><strong>7.1</strong> Qualquer uma das partes pode encerrar o contrato avisando com <strong>24 horas de antecedência</strong>.</div>' +
