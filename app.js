@@ -7,37 +7,38 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 var _pendingNotifKey = null;
 
 // --- CONFIGURAÇÕES DO LOCADOR ---
-var CONFIG_KEY = 'geremoto_config';
-function getConfig() {
-  try {
-    var c = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
-    return {
-      nome:     c.nome     || 'Arisnaldo Sahdo Freire',
-      cpf:      c.cpf      || '071.235.863-36',
-      endereco: c.endereco || 'Rua Alameda das Borboletas, nº 69, Fortaleza - CE',
-      cidade:   c.cidade   || 'Fortaleza/CE'
-    };
-  } catch(e) {
-    return { nome: 'Arisnaldo Sahdo Freire', cpf: '071.235.863-36', endereco: 'Rua Alameda das Borboletas, nº 69, Fortaleza - CE', cidade: 'Fortaleza/CE' };
-  }
+var _configCache = { nome: '', cpf: '', endereco: '', cidade: 'Fortaleza/CE' };
+
+async function loadConfig() {
+  var { data } = await db.from('config').select('*').eq('id', 1).single();
+  if (data) _configCache = data;
 }
+
+function getConfig() {
+  return _configCache;
+}
+
 function abrirConfig() {
   var c = getConfig();
-  document.getElementById('config-nome').value     = c.nome;
-  document.getElementById('config-cpf').value      = c.cpf;
-  document.getElementById('config-endereco').value = c.endereco;
-  document.getElementById('config-cidade').value   = c.cidade;
+  document.getElementById('config-nome').value     = c.nome     || '';
+  document.getElementById('config-cpf').value      = c.cpf      || '';
+  document.getElementById('config-endereco').value = c.endereco || '';
+  document.getElementById('config-cidade').value   = c.cidade   || '';
   openModal('modal-config');
 }
-function salvarConfig() {
+
+async function salvarConfig() {
   var c = {
+    id:       1,
     nome:     document.getElementById('config-nome').value.trim(),
     cpf:      document.getElementById('config-cpf').value.trim(),
     endereco: document.getElementById('config-endereco').value.trim(),
     cidade:   document.getElementById('config-cidade').value.trim()
   };
   if (!c.nome || !c.cpf) { alert('Nome e CPF são obrigatórios.'); return; }
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(c));
+  var { error } = await db.from('config').upsert(c, { onConflict: 'id' });
+  if (error) { alert('Erro ao salvar: ' + error.message); return; }
+  _configCache = c;
   closeModal('modal-config');
   alert('Configurações salvas com sucesso!');
 }
@@ -352,10 +353,11 @@ document.addEventListener('click', function(e) {
 });
 
 // --- AUTH ---
-function showApp() {
+async function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-wrapper').style.display = 'block';
   history.replaceState({ section: 'dashboard' }, '', '#dashboard');
+  await loadConfig();
   renderDashboard();
   loadNotificacoes();
 }
