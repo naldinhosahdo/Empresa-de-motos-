@@ -1969,7 +1969,9 @@ async function submitDespesa(e) {
     ano:         document.getElementById('despesa-ano').value || null,
     valor:       document.getElementById('despesa-valor').value || null,
     vencimento:  document.getElementById('despesa-vencimento').value || null,
-    obs:         document.getElementById('despesa-obs').value.trim()
+    obs:         document.getElementById('despesa-obs').value.trim(),
+    programada:  false,
+    pago:        true
   };
   var result;
   if (id) {
