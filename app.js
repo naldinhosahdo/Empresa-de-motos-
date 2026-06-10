@@ -1591,7 +1591,8 @@ function _buildDespesaMotoBody(vei, motoDesp) {
     var safeVenc = x.vencimento || '';
     var acao = x.programada
       ? '<button class="btn btn-sm btn-danger" onclick="desfazerPagamentoProg(\'' + vei.id + '\',\'' + safeTipo + '\',\'' + safeVenc + '\',\'' + safeId + '\')">↩ Desfazer</button>'
-      : '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + safeId + '\')">Excluir</button>';
+      : '<button class="btn btn-sm btn-secondary" onclick="editDespesa(\'' + safeId + '\')">✎ Editar</button>' +
+        ' <button class="btn btn-sm btn-danger" onclick="confirmDelete(\'despesa\',\'' + safeId + '\')">Excluir</button>';
     return '<tr>' +
       '<td>' + (x.tipo || '—') + '</td>' +
       '<td>' + venc + '</td>' +
