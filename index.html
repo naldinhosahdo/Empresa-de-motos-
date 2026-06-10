@@ -319,13 +319,13 @@
         </div>
         <div class="form-group">
           <label>CPF</label>
-          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
-            <input type="text" id="cliente-cpf" placeholder="000.000.000-00" style="flex:1;min-width:140px">
-            <button type="button" class="btn btn-secondary" onclick="consultarCPF('pf')" title="Polícia Federal — Antecedentes Criminais">🚔 Antecedentes Criminais</button>
-            <button type="button" class="btn btn-secondary" onclick="consultarCPF('serasa')" title="Serasa — Consulta de CPF">💳 Consultar Serasa</button>
-            <button type="button" class="btn btn-secondary" onclick="consultarCPF('detran')" title="DETRAN-CE">🚗 Certidão Negativa de Débitos por CPF</button>
-            <button type="button" class="btn btn-secondary" onclick="consultarCPF('receita')" title="Receita Federal — Situação do CPF">🏛️ Situação CPF</button>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.25rem">
+            <input type="text" id="cliente-cpf" placeholder="000.000.000-00">
             <button type="button" class="btn btn-secondary" onclick="consultarCPF('senatran')" title="SENATRAN — Validação CNH">🪪 Validação CNH</button>
+            <button type="button" class="btn btn-secondary" onclick="consultarCPF('receita')" title="Receita Federal — Situação do CPF">🏛️ Situação CPF</button>
+            <button type="button" class="btn btn-secondary" onclick="consultarCPF('serasa')" title="Serasa — Consulta de CPF">💳 Consultar Serasa</button>
+            <button type="button" class="btn btn-secondary" onclick="consultarCPF('pf')" title="Polícia Federal — Antecedentes Criminais">🚔 Antecedentes Criminais</button>
+            <button type="button" class="btn btn-secondary" onclick="consultarCPF('detran')" title="DETRAN-CE">🚗 Certidão Negativa de Débitos por CPF</button>
           </div>
         </div>
       </div>
@@ -942,6 +942,6 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=178"></script>
+<script src="app.js?v=179"></script>
 </body>
 </html>
