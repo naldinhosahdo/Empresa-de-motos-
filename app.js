@@ -239,13 +239,30 @@ async function loadNotificacoes() {
         }
       }
     }
-    // Seguro + Rastreador — mensal, dia 10, avisa com 2 dias
+    // Seguro + Rastreador — avisa 2 dias antes e persiste até ser pago
     if (vei.seguro_rastreador_mensal) {
-      var dSeg = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
-      if (dSeg < hoje) dSeg = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
-      var dSegStr = dSeg.getFullYear() + '-' + p2(dSeg.getMonth() + 1) + '-10';
-      if (dSegStr >= hoje0Str && dSegStr <= em2Str) {
-        alertasRecorrentes.push({ key: 'seguro_' + vei.id + '_' + dSegStr, data: dSegStr,
+      var segOverride = (despesasData || []).find(function(d) {
+        return d.veiculo_id === vei.id && d.programada && !d.pago && d.tipo === 'Seguro + Rastreador';
+      });
+      var dSegFinal;
+      if (segOverride) {
+        dSegFinal = segOverride.vencimento;
+      } else {
+        var isPagoSeg = function(vencStr) {
+          return (despesasData || []).some(function(d) {
+            return d.veiculo_id === vei.id && d.programada && d.pago && d.tipo === 'Seguro + Rastreador' && d.vencimento === vencStr;
+          });
+        };
+        var dSegDate = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
+        var dSegDateStr = dSegDate.getFullYear() + '-' + p2(dSegDate.getMonth() + 1) + '-10';
+        while (isPagoSeg(dSegDateStr)) {
+          dSegDate = new Date(dSegDate.getFullYear(), dSegDate.getMonth() + 1, 10);
+          dSegDateStr = dSegDate.getFullYear() + '-' + p2(dSegDate.getMonth() + 1) + '-10';
+        }
+        dSegFinal = dSegDateStr;
+      }
+      if (dSegFinal <= em2Str) {
+        alertasRecorrentes.push({ key: 'seguro_' + vei.id + '_' + dSegFinal, data: dSegFinal,
           label: 'Seguro + Rastreador',
           veiculo: vl, valor: fmtBRL(vei.seguro_rastreador_mensal), tipo: 'recorrente', veiculoId: vei.id, tipoLabel: 'Seguro' });
       }
