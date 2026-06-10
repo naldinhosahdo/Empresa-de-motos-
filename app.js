@@ -708,7 +708,7 @@ function consultarCPF(tipo) {
   } else if (tipo === 'senatran') {
     window.open('https://portalservicos.senatran.serpro.gov.br/#/condutor/validar-cnh', '_blank');
   } else if (tipo === 'serasa') {
-    window.open('https://www.serasa.com.br/', '_blank');
+    window.open('https://www.serasa.com.br/voceconsulta/', '_blank');
   } else {
     window.open('https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais', '_blank');
   }
