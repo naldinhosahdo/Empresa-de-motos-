@@ -193,7 +193,7 @@ async function loadNotificacoes() {
     db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)')
   ]);
 
-  var alertasDespesas = (despesasData || []).filter(function(d) { return !d.pago; }).map(function(d) {
+  var alertasDespesas = (despesasData || []).filter(function(d) { return !d.pago && !d.programada; }).map(function(d) {
     return { key: 'despesa_' + d.id, data: d.vencimento, label: d.tipo, veiculo: d.veiculos, valor: fmtBRL(d.valor), tipo: 'despesa' };
   });
   var alertasManut = (manutData || []).map(function(m) {
@@ -239,12 +239,12 @@ async function loadNotificacoes() {
         }
       }
     }
-    // Seguro + Rastreador — mensal, dia 10, avisa com 7 dias
+    // Seguro + Rastreador — mensal, dia 10, avisa com 2 dias
     if (vei.seguro_rastreador_mensal) {
       var dSeg = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
       if (dSeg < hoje) dSeg = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
       var dSegStr = dSeg.getFullYear() + '-' + p2(dSeg.getMonth() + 1) + '-10';
-      if (dSegStr >= hoje0Str && dSegStr <= em7Str) {
+      if (dSegStr >= hoje0Str && dSegStr <= em2Str) {
         alertasRecorrentes.push({ key: 'seguro_' + vei.id + '_' + dSegStr, data: dSegStr,
           label: 'Seguro + Rastreador',
           veiculo: vl, valor: fmtBRL(vei.seguro_rastreador_mensal), tipo: 'recorrente', veiculoId: vei.id, tipoLabel: 'Seguro' });
