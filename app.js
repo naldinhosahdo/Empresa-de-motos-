@@ -723,13 +723,17 @@ function consultarCPF(tipo) {
   } else if (tipo === 'receita') {
     window.open('https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp', '_blank');
   } else if (tipo === 'senatran') {
-    window.open('https://portalservicos.senatran.serpro.gov.br/#/condutor/validar-cnh', '_blank');
+    window.open('https://play.google.com/store/apps/details?id=br.gov.serpro.lince', '_blank');
   } else if (tipo === 'serasa') {
     window.open('https://www.serasa.com.br/voceconsulta/', '_blank');
   } else {
     window.open('https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais', '_blank');
   }
-  alert('CPF ' + cpf + ' copiado! Cole no campo de busca do site que abriu.');
+  if (tipo === 'senatran') {
+    alert('Abra o app Vio e escaneie o QR Code da CNH do cliente.');
+  } else {
+    alert('CPF ' + cpf + ' copiado! Cole no campo de busca do site que abriu.');
+  }
 }
 
 function openNewCliente() {
