@@ -951,6 +951,7 @@ function _buildManutMotoBody(vei, motoProg, motoAvul) {
         '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
       '</div></td></tr>';
   }).join('') || '<tr class="empty-row"><td colspan="6">Nenhuma avulsa registrada.</td></tr>';
+  var totalManut = motoAvul.reduce(function(s, x) { return s + Number(x.custo || 0); }, 0);
   return subHdr('📅 Programadas') +
     '<div class="table-wrap" style="margin-bottom:0.5rem"><table>' +
       '<thead><tr><th>Item</th><th>Intervalo</th><th>Última troca</th><th>KM Atual</th><th>Situação</th><th>Ações</th></tr></thead>' +
@@ -958,7 +959,8 @@ function _buildManutMotoBody(vei, motoProg, motoAvul) {
     subHdr('🔧 Manutenções Avulsas') +
     '<div class="table-wrap"><table>' +
       '<thead><tr><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Data</th><th>Próx.</th><th>Ações</th></tr></thead>' +
-      '<tbody>' + avulRows + '</tbody></table></div>';
+      '<tbody>' + avulRows + '</tbody></table></div>' +
+    '<div style="text-align:right;padding:0.6rem 0.25rem;font-weight:700;font-size:0.9rem;border-top:1px solid var(--border);margin-top:0.25rem">Total gasto em manutenções: <span style="color:var(--red)">' + fmtBRL(totalManut) + '</span></div>';
 }
 
 async function renderManutencoesTab() {
@@ -1602,6 +1604,8 @@ function _buildDespesaMotoBody(vei, motoDesp) {
   }).join('');
   if (!avulsasRows) avulsasRows = '<tr class="empty-row"><td colspan="4">Nenhuma despesa avulsa registrada.</td></tr>';
 
+  var totalDesp = combined.reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+
   return subHdr('📅 Programadas (Recorrentes)') +
     '<div class="table-wrap"><table>' +
       '<thead><tr><th>Tipo</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th></th></tr></thead>' +
@@ -1609,7 +1613,8 @@ function _buildDespesaMotoBody(vei, motoDesp) {
     subHdr('🧾 Despesas Avulsas') +
     '<div class="table-wrap"><table>' +
       '<thead><tr><th>Tipo</th><th>Data</th><th>Valor</th><th>Ação</th></tr></thead>' +
-      '<tbody>' + avulsasRows + '</tbody></table></div>';
+      '<tbody>' + avulsasRows + '</tbody></table></div>' +
+    '<div style="text-align:right;padding:0.6rem 0.25rem;font-weight:700;font-size:0.9rem;border-top:1px solid var(--border);margin-top:0.25rem">Total em despesas: <span style="color:var(--red)">' + fmtBRL(totalDesp) + '</span></div>';
 }
 
 function abrirEditarSeguro(veiculoId, valorAtual, dataAtual, overrideId) {
