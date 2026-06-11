@@ -723,7 +723,7 @@ function consultarCPF(tipo) {
   } else if (tipo === 'receita') {
     window.open('https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp', '_blank');
   } else if (tipo === 'senatran') {
-    window.open('https://play.google.com/store/apps/details?id=br.gov.serpro.lince', '_blank');
+    window.location.href = 'intent://#Intent;package=br.gov.serpro.lince;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dbr.gov.serpro.lince;end';
   } else if (tipo === 'serasa') {
     window.open('https://www.serasa.com.br/voceconsulta/', '_blank');
   } else {
