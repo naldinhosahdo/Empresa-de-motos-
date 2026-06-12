@@ -927,7 +927,7 @@ async function extractCNHWithClaude(imageDataUrl, apiKey, pdfText) {
       max_tokens: 300,
       messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-        { type: 'text', text: 'Esta é uma CNH-e brasileira (Carteira Nacional de Habilitação Digital). Os campos são NUMERADOS. Extraia exatamente:\n1. NOME: campo "2 e 1 NOME E SOBRENOME" ou "2e1" — nome do titular no topo do cartão. IGNORE o campo "FILIAÇÃO" (pais).\n2. CPF: campo "4d CPF" — número no formato XXX.XXX.XXX-XX. NÃO use o campo 4c (DOC IDENTIDADE), nem o MRZ (linhas com <<<<<).\n3. REGISTRO: campo "5 Nº REGISTRO" ou "5 N° REGISTRO" — 11 dígitos.\nResponda APENAS com JSON puro sem markdown: {"nome":"...","cpf":"...","registro":"..."}' + textHint }
+        { type: 'text', text: 'Esta é uma CNH brasileira. Existem dois formatos:\n- FORMATO ANTIGO: campos sem número — "NOME", "CPF", "Nº Registro"\n- FORMATO NOVO (CNH-e PPD): campos com número — "2e1 NOME E SOBRENOME", "4d CPF", "5 Nº REGISTRO"\n\nExtraia:\n1. NOME: o nome do TITULAR (campo NOME ou 2e1). IGNORE o campo FILIAÇÃO (nomes dos pais).\n2. CPF: campo CPF ou 4d CPF — formato XXX.XXX.XXX-XX. NÃO use doc identidade, MRZ (linhas com <<<) ou qualquer outro número.\n3. REGISTRO: campo Nº Registro ou 5 Nº REGISTRO — 11 dígitos.\n\nResponda APENAS com JSON puro sem markdown: {"nome":"...","cpf":"...","registro":"..."}' + textHint }
       ]}]
     })
   });
