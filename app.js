@@ -783,72 +783,66 @@ function parseCNHText(rawText) {
   var text = rawText.replace(/[ \t]+/g, ' ');
   console.log('[CNH RAW]', text.substring(0, 800));
 
-  // Normaliza erros comuns de OCR: O→0, I/l→1
-  var norm = text
-    .replace(/[Oo]/g, '0')
-    .replace(/[Il\|]/g, '1');
+  // Texto normalizado para busca de números (O→0, I→1)
+  var numText = text.replace(/O/g, '0').replace(/[Il|]/g, '1');
 
-  // CPF: dígitos podem ter espaço entre eles pelo OCR
-  // Tenta XXX.XXX.XXX-XX com ou sem formatação e com possíveis espaços
-  var cpfRx = /(\d[\s]?\d[\s]?\d)[\s]?[.\s][\s]?(\d[\s]?\d[\s]?\d)[\s]?[.\s][\s]?(\d[\s]?\d[\s]?\d)[\s]?[-.\s][\s]?(\d[\s]?\d)/g;
-  var cm;
-  while ((cm = cpfRx.exec(norm)) !== null) {
-    var d = (cm[1]+cm[2]+cm[3]+cm[4]).replace(/\s/g, '');
-    if (d.length === 11 && !/^(\d)\1{10}$/.test(d)) {
-      result.cpf = d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-      break;
-    }
-  }
-  // Fallback: sequência de 11 dígitos sem espaço
-  if (!result.cpf) {
-    var cpfRx2 = /\b(\d{11})\b/g;
-    var c2;
-    while ((c2 = cpfRx2.exec(norm)) !== null) {
-      if (!/^(\d)\1{10}$/.test(c2[1])) {
-        var dd = c2[1];
-        result.cpf = dd.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  // CPF: tenta com formatação (XXX.XXX.XXX-XX), depois 11 dígitos seguidos, depois dígitos espaçados
+  var cpfPatterns = [
+    /(\d{1,3})\s*[.,]\s*(\d{3})\s*[.,]\s*(\d{3})\s*[-]\s*(\d{2})/g,
+    /\b(\d{11})\b/g,
+    /\b(\d\s){10}(\d)\b/g
+  ];
+  for (var pi = 0; pi < cpfPatterns.length && !result.cpf; pi++) {
+    var rx = cpfPatterns[pi]; rx.lastIndex = 0;
+    var cm;
+    while ((cm = rx.exec(numText)) !== null) {
+      var raw = cm[0].replace(/[^0-9]/g, '');
+      if (raw.length === 11 && !/^(\d)\1{10}$/.test(raw)) {
+        result.cpf = raw.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
         break;
       }
     }
   }
 
-  // Número de Registro CNH: outro grupo de 11 dígitos diferente do CPF
+  // Número de Registro CNH: 11 dígitos diferente do CPF
   var cpfDigits = result.cpf ? result.cpf.replace(/\D/g, '') : '';
-  // Tenta 11 dígitos possivelmente separados por espaços (OCR)
-  var regRx = /\b(\d(?:\s?\d){10})\b/g;
-  var rm;
-  while ((rm = regRx.exec(norm)) !== null) {
-    var d11 = rm[1].replace(/\s/g, '');
-    if (d11.length === 11 && d11 !== cpfDigits && !/^(\d)\1{10}$/.test(d11)) {
-      result.cnh = d11;
-      break;
+  var all11 = numText.match(/\b\d{11}\b/g) || [];
+  for (var j = 0; j < all11.length; j++) {
+    if (all11[j] !== cpfDigits && !/^(\d)\1{10}$/.test(all11[j])) {
+      result.cnh = all11[j]; break;
     }
   }
 
-  // Nome: busca após keyword NOME ou padrão de nome em maiúsculas
-  var nomeKw = text.match(/NOME\s+([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ][A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇa-záéíóúâêîôûãõàç ]{4,59}?)(?=\s{2,}|\n|CPF|FILIA|DATA|NASC|DOC|\d)/i);
+  // Nome: busca SOMENTE antes da seção FILIAÇÃO (onde ficam nomes dos pais)
+  var filiacaoIdx = text.search(/FILIA[ÇC]|\/PAI|\/M[AÃ]E|NOME\s+DA\s+M[AÃ]E|NOME\s+DO\s+PAI/i);
+  var textNome = filiacaoIdx > 50 ? text.substring(0, filiacaoIdx) : text;
+
+  // Tenta encontrar após keyword "NOME" (com possíveis espaços entre letras por OCR)
+  var nomeKw = textNome.match(/N\s*O\s*M\s*E\s+([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ][A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇa-záéíóúâêîôûãõàç ]{4,59}?)(?=\s{2,}|\n|CPF|FILIA|\d{3})/i);
   if (nomeKw) {
     result.nome = nomeKw[1].trim();
   } else {
+    // Busca candidatos de nome na parte do texto sem filiação
     var nomeRx = /\b([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ]{2,}(?:\s+(?:DA|DE|DO|DAS|DOS|[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ]{2,})){1,5})\b/g;
     var candidates = [];
     var nm;
-    while ((nm = nomeRx.exec(text)) !== null) {
+    while ((nm = nomeRx.exec(textNome)) !== null) {
       var words = nm[1].trim().split(/\s+/);
-      if (words.length >= 2 && nm[1].length >= 8) candidates.push(nm[1].trim());
+      if (words.length >= 2 && nm[1].length >= 8) candidates.push({ name: nm[1].trim(), idx: nm.index });
     }
     var ignore = /CARTEIRA|NACIONAL|HABILITAC|BRASIL|DETRAN|SENATRAN|REPUBLICA|FEDERATIVA|ESTADO|SECRETARIA|MINISTERIO/i;
-    candidates = candidates.filter(function(c) { return !ignore.test(c); });
+    candidates = candidates.filter(function(c) { return !ignore.test(c.name); });
     if (candidates.length) {
-      candidates.sort(function(a, b) { return b.length - a.length; });
-      result.nome = candidates[0];
+      // Pega o PRIMEIRO (pessoa vem antes de filiação no documento)
+      candidates.sort(function(a, b) { return a.idx - b.idx; });
+      result.nome = candidates[0].name;
     }
   }
 
   // Limpa artefatos de OCR no início do nome (ex: "EN A" antes de "ANTONIO")
   if (result.nome) {
     result.nome = result.nome.replace(/^([A-Z]{1,3}\s+){1,2}(?=[A-Z]{4,})/, '').trim();
-    result.nome = result.nome.replace(/^A(?=[A-Z]{4,})/, '').trim(); // remove "A" extra colado
+    result.nome = result.nome.replace(/^A(?=[A-Z]{4,})/, '').trim();
   }
 
   // Categoria
