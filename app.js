@@ -896,7 +896,7 @@ async function extractCNHWithClaude(imageDataUrl, apiKey) {
       max_tokens: 300,
       messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-        { type: 'text', text: 'Esta é uma CNH brasileira. Extraia exatamente 3 campos:\n1. NOME: o nome do TITULAR da CNH — está no campo "NOME" no topo do documento. IGNORE completamente o campo "FILIAÇÃO" (que contém nomes dos pais). Pegue SOMENTE o nome que está na linha do campo "NOME".\n2. CPF: o CPF do titular no formato XXX.XXX.XXX-XX, campo "CPF".\n3. REGISTRO: o número do campo "Nº Registro" ou "NÚMERO DE REGISTRO" — 11 dígitos, diferente do CPF.\nResponda APENAS com JSON puro sem markdown: {"nome":"...","cpf":"...","registro":"..."}' }
+        { type: 'text', text: 'Esta é uma CNH brasileira. Extraia exatamente 3 campos:\n1. NOME: nome do TITULAR — campo "NOME" no topo. IGNORE o campo "FILIAÇÃO" (nomes dos pais).\n2. CPF: leia o campo EXPLICITAMENTE rotulado "CPF" no documento. Retorne APENAS os 11 dígitos desse campo, sem pontos ou traço, ex: "05083112270". NÃO use nenhum outro número.\n3. REGISTRO: campo "Nº Registro" ou "NÚMERO DE REGISTRO" — 11 dígitos, diferente do CPF.\nResponda APENAS com JSON puro sem markdown: {"nome":"...","cpf":"...","registro":"..."}' }
       ]}]
     })
   });
@@ -906,7 +906,15 @@ async function extractCNHWithClaude(imageDataUrl, apiKey) {
   }
   var data = await resp.json();
   var txt = data.content[0].text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
-  return JSON.parse(txt);
+  var parsed = JSON.parse(txt);
+  // Normalize CPF: if returned as 11 digits, format as XXX.XXX.XXX-XX
+  if (parsed.cpf) {
+    var digits = parsed.cpf.replace(/\D/g, '');
+    if (digits.length === 11) {
+      parsed.cpf = digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    }
+  }
+  return parsed;
 }
 
 async function renderPDFToImage(file) {
