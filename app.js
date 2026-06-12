@@ -778,23 +778,62 @@ async function extractTextFromPDF(file) {
   });
 }
 
-function parseCNHText(text) {
+function parseCNHText(rawText) {
   var result = {};
-  var cpfMatch = text.match(/(\d{3}[\s.]?\d{3}[\s.]?\d{3}[\s.\-]\d{2})/);
-  if (cpfMatch) {
-    var d = cpfMatch[1].replace(/\D/g, '');
-    if (d.length === 11) result.cpf = d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  // Normaliza: colapsa espaços múltiplos mas preserva estrutura
+  var text = rawText.replace(/[ \t]+/g, ' ');
+  console.log('[CNH RAW]', text.substring(0, 600));
+
+  // CPF: busca padrão XXX.XXX.XXX-XX ou 11 dígitos agrupados
+  var cpfRx = /\b(\d{3})[.\s]?(\d{3})[.\s]?(\d{3})[-.\s]?(\d{2})\b/g;
+  var cm;
+  while ((cm = cpfRx.exec(text)) !== null) {
+    var d = cm[1]+cm[2]+cm[3]+cm[4];
+    if (!/^(\d)\1{10}$/.test(d) && d !== '00000000000') {
+      result.cpf = cm[1]+'.'+cm[2]+'.'+cm[3]+'-'+cm[4];
+      break;
+    }
   }
-  var nomeMatch = text.match(/NOME[:\s]+([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇa-záéíóúâêîôûãõç\s]{5,60}?)(?:\s{2,}|\n|CPF|FILIA|DATA)/i);
-  if (nomeMatch) result.nome = nomeMatch[1].trim();
-  var allEleven = text.match(/\d{11}/g) || [];
+
+  // Número de Registro CNH: 11 dígitos que não seja o CPF
   var cpfDigits = result.cpf ? result.cpf.replace(/\D/g, '') : '';
-  for (var i = 0; i < allEleven.length; i++) {
-    if (allEleven[i] !== cpfDigits) { result.cnh = allEleven[i]; break; }
+  var regRx = /\b(\d{11})\b/g;
+  var rm;
+  while ((rm = regRx.exec(text)) !== null) {
+    if (rm[1] !== cpfDigits && !/^(\d)\1{10}$/.test(rm[1])) {
+      result.cnh = rm[1];
+      break;
+    }
   }
-  var catMatch = text.match(/CATEGORI[A][\s:\n]+([ABCDE]{1,3})\b/i);
-  if (!catMatch) catMatch = text.match(/\bCAT[\s.:]+([ABCDE]{1,3})\b/i);
-  if (catMatch) result.categoria = catMatch[1].toUpperCase();
+
+  // Nome: tenta após palavra-chave NOME, depois tenta padrão de nome próprio
+  var nomeKw = text.match(/NOME\s+([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ][A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇa-záéíóúâêîôûãõàç ]{4,59}?)(?=\s{2,}|\n|CPF|FILIA|DATA|NASC|DOC|\d)/i);
+  if (nomeKw) {
+    result.nome = nomeKw[1].trim();
+  } else {
+    // Busca sequência de 2+ palavras em maiúsculo (nome completo em caixa alta)
+    var nomeRx = /\b([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ]{2,}(?:\s+(?:DA|DE|DO|DAS|DOS|[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ]{2,})){1,5})\b/g;
+    var candidates = [];
+    var nm;
+    while ((nm = nomeRx.exec(text)) !== null) {
+      var words = nm[1].trim().split(/\s+/);
+      if (words.length >= 2 && nm[1].length >= 8) candidates.push(nm[1].trim());
+    }
+    // Escolhe o candidato mais longo que não seja uma frase conhecida de documento
+    var ignore = /CARTEIRA|NACIONAL|HABILITACAO|HABILITAÇÃO|BRASIL|DETRAN|SENATRAN|REPUBLICA|FEDERATIVA|ESTADO/i;
+    candidates = candidates.filter(function(c) { return !ignore.test(c); });
+    if (candidates.length) {
+      candidates.sort(function(a,b) { return b.length - a.length; });
+      result.nome = candidates[0];
+    }
+  }
+
+  // Categoria
+  var catRx = /(?:CATEGORI[A]|CAT\.?)[:\s]+([ABCDE]{1,3})\b/i;
+  var catm = text.match(catRx);
+  if (!catm) catm = text.match(/\b(AB|AC|AD|AE|ACC|A|B|C|D|E)\b/);
+  if (catm) result.categoria = catm[1].toUpperCase();
+
   return result;
 }
 
@@ -811,12 +850,18 @@ async function handleCNHUpload(event) {
   try {
     var text = await extractTextFromPDF(file);
     var data = parseCNHText(text);
-    var ok = [];
-    if (data.nome) { document.getElementById('cliente-nome').value = data.nome; ok.push('Nome'); }
-    if (data.cpf)  { document.getElementById('cliente-cpf').value  = data.cpf;  ok.push('CPF'); }
-    if (data.cnh)  { document.getElementById('cliente-cnh').value  = data.cnh;  ok.push('CNH'); }
-    status.style.color = ok.length ? 'var(--green)' : 'orange';
-    status.textContent = ok.length ? '✓ Preenchido: ' + ok.join(', ') : '⚠ Não foi possível extrair. Preencha manualmente.';
+    console.log('[CNH PARSED]', data);
+    var ok = [], faltando = [];
+    if (data.nome) { document.getElementById('cliente-nome').value = data.nome; ok.push('Nome'); } else faltando.push('Nome');
+    if (data.cpf)  { document.getElementById('cliente-cpf').value  = data.cpf;  ok.push('CPF'); } else faltando.push('CPF');
+    if (data.cnh)  { document.getElementById('cliente-cnh').value  = data.cnh;  ok.push('CNH'); } else faltando.push('N° CNH');
+    if (ok.length) {
+      status.style.color = faltando.length ? 'orange' : 'var(--green)';
+      status.textContent = '✓ ' + ok.join(', ') + (faltando.length ? ' | Preencha manualmente: ' + faltando.join(', ') : '');
+    } else {
+      status.style.color = 'orange';
+      status.textContent = '⚠ PDF sem texto selecionável. Preencha manualmente.';
+    }
   } catch(err) { status.style.color = 'var(--red)'; status.textContent = '✗ Erro ao ler PDF.'; }
   event.target.value = '';
 }
