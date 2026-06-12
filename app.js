@@ -757,6 +757,88 @@ async function editCliente(id) {
   openModal('modal-cliente');
 }
 
+async function extractTextFromPDF(file) {
+  if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js não carregado');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(e.target.result) }).promise;
+        var text = '';
+        for (var i = 1; i <= pdf.numPages; i++) {
+          var page = await pdf.getPage(i);
+          var content = await page.getTextContent();
+          text += content.items.map(function(it) { return it.str; }).join(' ') + '\n';
+        }
+        resolve(text);
+      } catch(err) { reject(err); }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function parseCNHText(text) {
+  var result = {};
+  var cpfMatch = text.match(/(\d{3}[\s.]?\d{3}[\s.]?\d{3}[\s.\-]\d{2})/);
+  if (cpfMatch) {
+    var d = cpfMatch[1].replace(/\D/g, '');
+    if (d.length === 11) result.cpf = d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  }
+  var nomeMatch = text.match(/NOME[:\s]+([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇa-záéíóúâêîôûãõç\s]{5,60}?)(?:\s{2,}|\n|CPF|FILIA|DATA)/i);
+  if (nomeMatch) result.nome = nomeMatch[1].trim();
+  var allEleven = text.match(/\d{11}/g) || [];
+  var cpfDigits = result.cpf ? result.cpf.replace(/\D/g, '') : '';
+  for (var i = 0; i < allEleven.length; i++) {
+    if (allEleven[i] !== cpfDigits) { result.cnh = allEleven[i]; break; }
+  }
+  var catMatch = text.match(/CATEGORI[A][\s:\n]+([ABCDE]{1,3})\b/i);
+  if (!catMatch) catMatch = text.match(/\bCAT[\s.:]+([ABCDE]{1,3})\b/i);
+  if (catMatch) result.categoria = catMatch[1].toUpperCase();
+  return result;
+}
+
+function parseComprovanteText(text) {
+  var endMatch = text.match(/((?:Rua|Av\.|Avenida|Alameda|Travessa|Estrada|Praça|R\.|Al\.|Qd\.|Quadra)[^\n]{10,120})/i);
+  return endMatch ? { endereco: endMatch[1].replace(/\s+/g, ' ').trim() } : {};
+}
+
+async function handleCNHUpload(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var status = document.getElementById('cnh-upload-status');
+  status.style.color = '#2196F3'; status.textContent = 'Lendo PDF...';
+  try {
+    var text = await extractTextFromPDF(file);
+    var data = parseCNHText(text);
+    var ok = [];
+    if (data.nome) { document.getElementById('cliente-nome').value = data.nome; ok.push('Nome'); }
+    if (data.cpf)  { document.getElementById('cliente-cpf').value  = data.cpf;  ok.push('CPF'); }
+    if (data.cnh)  { document.getElementById('cliente-cnh').value  = data.cnh;  ok.push('CNH'); }
+    status.style.color = ok.length ? 'var(--green)' : 'orange';
+    status.textContent = ok.length ? '✓ Preenchido: ' + ok.join(', ') : '⚠ Não foi possível extrair. Preencha manualmente.';
+  } catch(err) { status.style.color = 'var(--red)'; status.textContent = '✗ Erro ao ler PDF.'; }
+  event.target.value = '';
+}
+
+async function handleComprovanteUpload(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var status = document.getElementById('comprovante-upload-status');
+  status.style.color = '#2196F3'; status.textContent = 'Lendo PDF...';
+  try {
+    var text = await extractTextFromPDF(file);
+    var data = parseComprovanteText(text);
+    if (data.endereco) {
+      document.getElementById('cliente-endereco').value = data.endereco;
+      status.style.color = 'var(--green)'; status.textContent = '✓ Endereço preenchido';
+    } else {
+      status.style.color = 'orange'; status.textContent = '⚠ Endereço não encontrado. Preencha manualmente.';
+    }
+  } catch(err) { status.style.color = 'var(--red)'; status.textContent = '✗ Erro ao ler PDF.'; }
+  event.target.value = '';
+}
+
 async function submitCliente(e) {
   e.preventDefault();
   const id = document.getElementById('cliente-id').value;

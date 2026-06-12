@@ -312,6 +312,18 @@
     </div>
     <form id="form-cliente" onsubmit="submitCliente(event)">
       <input type="hidden" id="cliente-id">
+      <input type="file" id="upload-cnh" accept=".pdf" style="display:none" onchange="handleCNHUpload(event)">
+      <input type="file" id="upload-comprovante" accept=".pdf" style="display:none" onchange="handleComprovanteUpload(event)">
+      <div class="form-row" style="margin-bottom:0.5rem">
+        <div class="form-group">
+          <button type="button" class="btn btn-primary" style="width:100%" onclick="document.getElementById('upload-cnh').click()">📄 Anexar CNH (PDF)</button>
+          <div id="cnh-upload-status" style="font-size:0.8rem;margin-top:0.25rem;min-height:1.1em"></div>
+        </div>
+        <div class="form-group">
+          <button type="button" class="btn btn-primary" style="width:100%" onclick="document.getElementById('upload-comprovante').click()">🏠 Anexar Comprovante (PDF)</button>
+          <div id="comprovante-upload-status" style="font-size:0.8rem;margin-top:0.25rem;min-height:1.1em"></div>
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label>Nome *</label>
@@ -942,6 +954,7 @@
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=187"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="app.js?v=188"></script>
 </body>
 </html>
