@@ -2409,7 +2409,7 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>6.4</strong> O caução será devolvido somente após <strong>30 dias</strong> do término do contrato, prazo necessário para verificação de multas de trânsito pendentes, danos e débitos. Conforme o art. 281, §1º, II do CTB, o órgão autuador tem até 30 dias para expedir notificações de infração. Identificada qualquer pendência, o valor correspondente será descontado do caução antes da devolução.</div>' +
 
     '<div class="sec">7. Cancelamento e Encerramento</div>' +
-    '<div class="cl"><strong>7.1</strong> Qualquer uma das partes pode encerrar o contrato avisando com <strong>24 horas de antecedência</strong>.</div>' +
+    '<div class="cl"><strong>7.1</strong> O contrato é firmado pelo prazo determinado na cláusula 1.1. O Locatário <strong>não pode cancelar antecipadamente</strong>, sendo responsável pelo pagamento de todos os dias contratados, independentemente da devolução da moto antes do prazo.</div>' +
     '<div class="cl"><strong>7.2</strong> Devolver a moto após o prazo combinado gera cobrança proporcional pelos dias extras.</div>' +
     '<div class="cl"><strong>7.3</strong> Se qualquer regra deste contrato for descumprida, o Locador poderá recolher a moto imediatamente.</div>' +
 
