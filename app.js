@@ -790,19 +790,23 @@ function parseCNHFromPDFText(text) {
   var result = {};
   if (!text || text.replace(/\s/g,'').length < 20) return result;
 
-  // CPF: label "CPF" followed by digits in XXX.XXX.XXX-XX or 11 raw digits
-  var cpfMatch = text.match(/\bCPF\b[\s:]*(\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[-\s]?\d{2})/i);
+  // CPF: campo "4d CPF" na CNH-e — vem logo após o label CPF
+  // Formato esperado: "4d CPF   106.569.903-41" ou "CPF\n106.569.903-41"
+  var cpfMatch = text.match(/\b(?:4d\s+)?CPF\b[\s:]*(\d{3}[.\s]?\d{3}[.\s]?\d{3}[-\s]?\d{2})/i);
   if (cpfMatch) {
     var d = cpfMatch[1].replace(/\D/g,'');
-    if (d.length === 11) result.cpf = d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    if (d.length === 11 && !/^(\d)\1{10}$/.test(d))
+      result.cpf = d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   }
 
-  // NOME: label "NOME" followed by uppercase words, stop before next label
-  var nomeMatch = text.match(/\bNOME\b[\s:]*([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ][A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇa-záéíóúâêîôûãõàç\s]{3,60})(?=\n|\bDATA\b|\bFILI|\bHABILI|\bCATEG|\bVAL|\bREGI)/i);
+  // NOME: campo "2e1 NOME E SOBRENOME" — vem antes de DATA/FILIAÇÃO
+  var nomeMatch = text.match(/(?:2\s*e\s*1\s+)?NOME\s+E\s+SOBRENOME[\s:]*([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ][^\n]{3,60})(?=\n)/i);
+  if (!nomeMatch) nomeMatch = text.match(/NOME\s+E\s+SOBRENOME[\s:]*([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ][^\n]{3,60})/i);
+  if (!nomeMatch) nomeMatch = text.match(/\bNOME\b[\s:]*([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ][A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇa-záéíóúâêîôûãõàç\s]{3,60})(?=\n|\bDATA\b|\bFILI)/i);
   if (nomeMatch) result.nome = nomeMatch[1].replace(/\s+/g,' ').trim();
 
-  // Nº REGISTRO: label followed by 9-11 digits
-  var regMatch = text.match(/N[°º]?\s*REGISTRO[\s:]*(\d[\d\s]{8,12})/i);
+  // Nº REGISTRO: campo "5 Nº REGISTRO" na CNH-e
+  var regMatch = text.match(/(?:5\s+)?N[°º]?\s*REGISTRO[\s:]*(\d[\d\s]{8,12})/i);
   if (!regMatch) regMatch = text.match(/REGISTRO[\s:]*(\d[\d\s]{8,12})/i);
   if (regMatch) {
     var r = regMatch[1].replace(/\D/g,'');
@@ -923,7 +927,7 @@ async function extractCNHWithClaude(imageDataUrl, apiKey, pdfText) {
       max_tokens: 300,
       messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-        { type: 'text', text: 'Esta é uma CNH brasileira. Extraia exatamente 3 campos:\n1. NOME: nome do TITULAR — campo "NOME" no topo. IGNORE o campo "FILIAÇÃO" (nomes dos pais).\n2. CPF: leia o campo EXPLICITAMENTE rotulado "CPF" no documento. Retorne APENAS os 11 dígitos desse campo, sem pontos ou traço, ex: "05083112270". NÃO use nenhum outro número.\n3. REGISTRO: campo "Nº Registro" ou "NÚMERO DE REGISTRO" — 11 dígitos, diferente do CPF.\nResponda APENAS com JSON puro sem markdown: {"nome":"...","cpf":"...","registro":"..."}' + textHint }
+        { type: 'text', text: 'Esta é uma CNH-e brasileira (Carteira Nacional de Habilitação Digital). Os campos são NUMERADOS. Extraia exatamente:\n1. NOME: campo "2 e 1 NOME E SOBRENOME" ou "2e1" — nome do titular no topo do cartão. IGNORE o campo "FILIAÇÃO" (pais).\n2. CPF: campo "4d CPF" — número no formato XXX.XXX.XXX-XX. NÃO use o campo 4c (DOC IDENTIDADE), nem o MRZ (linhas com <<<<<).\n3. REGISTRO: campo "5 Nº REGISTRO" ou "5 N° REGISTRO" — 11 dígitos.\nResponda APENAS com JSON puro sem markdown: {"nome":"...","cpf":"...","registro":"..."}' + textHint }
       ]}]
     })
   });
