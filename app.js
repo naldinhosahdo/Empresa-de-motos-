@@ -896,7 +896,7 @@ async function extractCNHWithClaude(imageDataUrl, apiKey) {
       max_tokens: 300,
       messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-        { type: 'text', text: 'Esta é uma CNH brasileira. Extraia: nome completo (campo NOME), CPF (campo CPF, formato XXX.XXX.XXX-XX), número de registro (campo NÚMERO DE REGISTRO, 11 dígitos). Responda APENAS com JSON puro sem markdown: {"nome":"...","cpf":"...","registro":"..."}' }
+        { type: 'text', text: 'Esta é uma CNH brasileira (Carteira Nacional de Habilitação). Extraia exatamente 3 campos:\n1. NOME: nome completo do condutor (campo "NOME" ou "Nome")\n2. CPF: CPF do condutor no formato XXX.XXX.XXX-XX (campo "CPF")\n3. REGISTRO: o NÚMERO DE REGISTRO da CNH (campo "Nº Registro", "N° Registro" ou "NÚMERO DE REGISTRO") — são 11 dígitos, é DIFERENTE do CPF e geralmente aparece próximo à foto ou no canto do documento. NÃO confunda com CPF, número do espelho, RENACH ou código de segurança.\nResponda APENAS com JSON puro sem markdown: {"nome":"...","cpf":"...","registro":"..."}' }
       ]}]
     })
   });
