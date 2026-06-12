@@ -7,7 +7,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 var _pendingNotifKey = null;
 
 // --- CONFIGURAÇÕES DO LOCADOR ---
-var _configCache = { nome: '', cpf: '', endereco: '', cidade: 'Fortaleza/CE' };
+var _configCache = { nome: '', cpf: '', endereco: '', cidade: 'Fortaleza/CE', anthropic_key: '' };
 
 async function loadConfig() {
   var { data } = await db.from('config').select('*').eq('id', 1).single();
@@ -23,17 +23,19 @@ function abrirConfig() {
   document.getElementById('config-nome').value     = c.nome     || '';
   document.getElementById('config-cpf').value      = c.cpf      || '';
   document.getElementById('config-endereco').value = c.endereco || '';
-  document.getElementById('config-cidade').value   = c.cidade   || '';
+  document.getElementById('config-cidade').value        = c.cidade        || '';
+  document.getElementById('config-anthropic-key').value = c.anthropic_key || '';
   openModal('modal-config');
 }
 
 async function salvarConfig() {
   var c = {
-    id:       1,
-    nome:     document.getElementById('config-nome').value.trim(),
-    cpf:      document.getElementById('config-cpf').value.trim(),
-    endereco: document.getElementById('config-endereco').value.trim(),
-    cidade:   document.getElementById('config-cidade').value.trim()
+    id:            1,
+    nome:          document.getElementById('config-nome').value.trim(),
+    cpf:           document.getElementById('config-cpf').value.trim(),
+    endereco:      document.getElementById('config-endereco').value.trim(),
+    cidade:        document.getElementById('config-cidade').value.trim(),
+    anthropic_key: document.getElementById('config-anthropic-key').value.trim()
   };
   if (!c.nome || !c.cpf) { alert('Nome e CPF são obrigatórios.'); return; }
   var { error } = await db.from('config').upsert(c, { onConflict: 'id' });
@@ -851,6 +853,36 @@ function parseComprovanteText(text) {
   return endMatch ? { endereco: endMatch[1].replace(/\s+/g, ' ').trim() } : {};
 }
 
+async function extractCNHWithClaude(imageDataUrl, apiKey) {
+  var parts = imageDataUrl.split(',');
+  var mediaType = parts[0].match(/:(.*?);/)[1];
+  var base64 = parts[1];
+  var resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      messages: [{ role: 'user', content: [
+        { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+        { type: 'text', text: 'Esta é uma CNH brasileira. Extraia: nome completo (campo NOME), CPF (campo CPF, formato XXX.XXX.XXX-XX), número de registro (campo NÚMERO DE REGISTRO, 11 dígitos). Responda APENAS com JSON puro sem markdown: {"nome":"...","cpf":"...","registro":"..."}' }
+      ]}]
+    })
+  });
+  if (!resp.ok) {
+    var err = await resp.json().catch(function() { return {}; });
+    throw new Error((err.error && err.error.message) || 'Erro ' + resp.status);
+  }
+  var data = await resp.json();
+  var txt = data.content[0].text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+  return JSON.parse(txt);
+}
+
 async function renderPDFToImage(file) {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   return new Promise(function(resolve, reject) {
@@ -898,37 +930,62 @@ async function handleCNHUpload(event) {
   if (!file) return;
   event.target.value = '';
   var status = document.getElementById('cnh-upload-status');
+  var dbg = document.getElementById('cnh-ocr-debug');
+  if (dbg) dbg.style.display = 'none';
   status.style.color = '#2196F3';
+
+  var apiKey = (_configCache && _configCache.anthropic_key) || '';
+
   try {
+    // === MODO CLAUDE API (preciso) ===
+    if (apiKey) {
+      status.textContent = 'Lendo CNH com IA...';
+      var imgData;
+      if (file.type === 'application/pdf') {
+        status.textContent = 'Convertendo PDF...';
+        imgData = await renderPDFToImage(file);
+      } else {
+        imgData = await fileToDataURL(file);
+      }
+      status.textContent = 'Analisando com Claude...';
+      var extracted = await extractCNHWithClaude(imgData, apiKey);
+      var ok = [], faltando = [];
+      if (extracted.nome)     { document.getElementById('cliente-nome').value = extracted.nome;     ok.push('Nome'); }     else faltando.push('Nome');
+      if (extracted.cpf)      { document.getElementById('cliente-cpf').value  = extracted.cpf;      ok.push('CPF'); }      else faltando.push('CPF');
+      if (extracted.registro) { document.getElementById('cliente-cnh').value  = extracted.registro; ok.push('N° CNH'); }   else faltando.push('N° CNH');
+      status.style.color = ok.length ? (faltando.length ? 'orange' : 'var(--green)') : 'orange';
+      status.textContent = ok.length
+        ? '✓ ' + ok.join(', ') + (faltando.length ? ' | Faltou: ' + faltando.join(', ') : '')
+        : '⚠ Não foi possível extrair. Preencha manualmente.';
+      return;
+    }
+
+    // === MODO OCR TESSERACT (fallback sem API key) ===
     var text;
     if (file.type === 'application/pdf') {
       status.textContent = 'Lendo PDF...';
-      var extracted = await extractTextFromPDF(file);
-      if (extracted.replace(/\s/g, '').length > 30) {
-        text = extracted;
+      var extracted2 = await extractTextFromPDF(file);
+      if (extracted2.replace(/\s/g, '').length > 30) {
+        text = extracted2;
       } else {
-        status.textContent = 'Renderizando PDF para OCR...';
-        var imgData = await renderPDFToImage(file);
-        text = await runOCR(imgData, status);
+        status.textContent = 'Renderizando PDF...';
+        var imgData2 = await renderPDFToImage(file);
+        text = await runOCR(imgData2, status);
       }
     } else {
-      var imgData2 = await fileToDataURL(file);
-      text = await runOCR(imgData2, status);
+      var imgData3 = await fileToDataURL(file);
+      text = await runOCR(imgData3, status);
     }
-    console.log('[CNH TEXT]', text.substring(0, 600));
-    // Exibe texto bruto para diagnóstico (escondido, expandível)
-    var dbg = document.getElementById('cnh-ocr-debug');
     if (dbg) { dbg.style.display = 'block'; dbg.value = text.substring(0, 1000); }
     var data = parseCNHText(text);
-    console.log('[CNH PARSED]', data);
-    var ok = [], faltando = [];
-    if (data.nome) { document.getElementById('cliente-nome').value = data.nome; ok.push('Nome'); } else faltando.push('Nome');
-    if (data.cpf)  { document.getElementById('cliente-cpf').value  = data.cpf;  ok.push('CPF'); } else faltando.push('CPF');
-    if (data.cnh)  { document.getElementById('cliente-cnh').value  = data.cnh;  ok.push('N° CNH'); } else faltando.push('N° CNH');
-    status.style.color = ok.length ? (faltando.length ? 'orange' : 'var(--green)') : 'orange';
-    status.textContent = ok.length
-      ? '✓ ' + ok.join(', ') + (faltando.length ? ' | Faltou: ' + faltando.join(', ') : '')
-      : '⚠ Não foi possível extrair. Preencha manualmente.';
+    var ok2 = [], faltando2 = [];
+    if (data.nome) { document.getElementById('cliente-nome').value = data.nome; ok2.push('Nome'); } else faltando2.push('Nome');
+    if (data.cpf)  { document.getElementById('cliente-cpf').value  = data.cpf;  ok2.push('CPF'); } else faltando2.push('CPF');
+    if (data.cnh)  { document.getElementById('cliente-cnh').value  = data.cnh;  ok2.push('N° CNH'); } else faltando2.push('N° CNH');
+    status.style.color = ok2.length ? (faltando2.length ? 'orange' : 'var(--green)') : 'orange';
+    status.textContent = ok2.length
+      ? '✓ ' + ok2.join(', ') + (faltando2.length ? ' | Faltou: ' + faltando2.join(', ') : '')
+      : '⚠ Configure a API Key nas ⚙️ Configurações para leitura completa.';
   } catch(err) {
     console.error(err);
     status.style.color = 'var(--red)';

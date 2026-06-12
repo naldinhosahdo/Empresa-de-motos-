@@ -944,6 +944,13 @@
         <label>Cidade (para o contrato)</label>
         <input type="text" id="config-cidade" placeholder="Fortaleza/CE">
       </div>
+      <hr style="border-color:var(--border);margin:1rem 0">
+      <p style="font-size:0.82rem;color:var(--text2);margin-bottom:0.5rem">🤖 Chave da API Claude (para leitura automática de CNH)</p>
+      <div class="form-group">
+        <label>API Key Anthropic</label>
+        <input type="password" id="config-anthropic-key" placeholder="sk-ant-...">
+        <small style="color:var(--text2);font-size:0.75rem">Obtenha em console.anthropic.com → API Keys</small>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-primary" onclick="salvarConfig()">Salvar</button>
@@ -957,6 +964,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=189"></script>
+<script src="app.js?v=190"></script>
 </body>
 </html>
