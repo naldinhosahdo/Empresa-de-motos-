@@ -812,7 +812,7 @@ function parseCNHFromPDFText(text) {
   return result;
 }
 
-
+function parseCNHText(rawText) {
   var result = {};
   var text = rawText.replace(/[ \t]+/g, ' ');
   var numT = text.replace(/O/g, '0').replace(/[Il|]/g, '1');
