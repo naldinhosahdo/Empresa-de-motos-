@@ -849,6 +849,26 @@ function parseCNHText(rawText) {
 }
 
 function parseComprovanteText(text) {
+  // Look for address that appears AFTER a CPF pattern (client address, not company header)
+  var afterCpf = text.match(/CPF[^:]*:?[^\n]*\n([^\n]{5,120})/i);
+  if (afterCpf) {
+    var candidate = afterCpf[1].replace(/\s+/g, ' ').trim();
+    if (/\d/.test(candidate) && candidate.length > 8) return { endereco: candidate };
+  }
+  // Look for address preceded by a CEP line (client block usually ends with CEP)
+  var blocks = text.split(/\n\s*\n/);
+  for (var i = 0; i < blocks.length; i++) {
+    var b = blocks[i];
+    if (/CEP[\s:]*\d{5}-?\d{3}/i.test(b) && /(?:Rua|Av\.|Avenida|Alameda|Travessa|Estrada|Praça|R\.|Al\.|Qd\.|Quadra)/i.test(b)) {
+      var lines = b.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+      for (var j = 0; j < lines.length; j++) {
+        if (/(?:Rua|Av\.|Avenida|Alameda|Travessa|Estrada|Praça|R\.|Al\.|Qd\.|Quadra)/i.test(lines[j])) {
+          return { endereco: lines[j] };
+        }
+      }
+    }
+  }
+  // Fallback: first address found
   var endMatch = text.match(/((?:Rua|Av\.|Avenida|Alameda|Travessa|Estrada|Praça|R\.|Al\.|Qd\.|Quadra)[^\n]{10,120})/i);
   return endMatch ? { endereco: endMatch[1].replace(/\s+/g, ' ').trim() } : {};
 }
@@ -993,34 +1013,82 @@ async function handleCNHUpload(event) {
   }
 }
 
+async function extractAddressWithClaude(imageDataUrl, apiKey) {
+  var parts = imageDataUrl.split(',');
+  var mediaType = parts[0].match(/:(.*?);/)[1];
+  var base64 = parts[1];
+  var resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 200,
+      messages: [{ role: 'user', content: [
+        { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+        { type: 'text', text: 'Este é um comprovante de endereço brasileiro (conta de luz, água, banco, etc.). Extraia o endereço RESIDENCIAL DO TITULAR (cliente/morador), NÃO o endereço da empresa emissora. O endereço do titular aparece geralmente abaixo do nome do cliente, próximo ao CPF dele. Inclua rua/avenida, número, complemento, bairro, cidade e CEP se disponíveis. Responda APENAS com JSON puro sem markdown: {"endereco":"..."}' }
+      ]}]
+    })
+  });
+  if (!resp.ok) {
+    var err = await resp.json().catch(function() { return {}; });
+    throw new Error((err.error && err.error.message) || 'Erro ' + resp.status);
+  }
+  var data = await resp.json();
+  var txt = data.content[0].text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+  return JSON.parse(txt);
+}
+
 async function handleComprovanteUpload(event) {
   var file = event.target.files[0];
   if (!file) return;
   event.target.value = '';
   var status = document.getElementById('comprovante-upload-status');
   status.style.color = '#2196F3';
+  var apiKey = (_configCache && _configCache.anthropic_key) || '';
   try {
-    var text;
-    if (file.type === 'application/pdf') {
-      status.textContent = 'Lendo PDF...';
-      var extracted = await extractTextFromPDF(file);
-      if (extracted.replace(/\s/g, '').length > 30) {
-        text = extracted;
+    if (apiKey) {
+      status.textContent = 'Analisando com IA...';
+      var imgDataUrl;
+      if (file.type === 'application/pdf') {
+        imgDataUrl = await renderPDFToImage(file);
       } else {
-        status.textContent = 'Renderizando PDF para OCR...';
-        var imgData = await renderPDFToImage(file);
-        text = await runOCR(imgData, status);
+        imgDataUrl = await fileToDataURL(file);
+      }
+      var result = await extractAddressWithClaude(imgDataUrl, apiKey);
+      if (result.endereco) {
+        document.getElementById('cliente-endereco').value = result.endereco;
+        status.style.color = 'var(--green)'; status.textContent = '✓ Endereço preenchido';
+      } else {
+        status.style.color = 'orange'; status.textContent = '⚠ Endereço não encontrado. Preencha manualmente.';
       }
     } else {
-      var imgData2 = await fileToDataURL(file);
-      text = await runOCR(imgData2, status);
-    }
-    var data = parseComprovanteText(text);
-    if (data.endereco) {
-      document.getElementById('cliente-endereco').value = data.endereco;
-      status.style.color = 'var(--green)'; status.textContent = '✓ Endereço preenchido';
-    } else {
-      status.style.color = 'orange'; status.textContent = '⚠ Endereço não encontrado. Preencha manualmente.';
+      var text;
+      if (file.type === 'application/pdf') {
+        status.textContent = 'Lendo PDF...';
+        var extracted = await extractTextFromPDF(file);
+        if (extracted.replace(/\s/g, '').length > 30) {
+          text = extracted;
+        } else {
+          status.textContent = 'Renderizando PDF para OCR...';
+          var imgData = await renderPDFToImage(file);
+          text = await runOCR(imgData, status);
+        }
+      } else {
+        var imgData2 = await fileToDataURL(file);
+        text = await runOCR(imgData2, status);
+      }
+      var data = parseComprovanteText(text);
+      if (data.endereco) {
+        document.getElementById('cliente-endereco').value = data.endereco;
+        status.style.color = 'var(--green)'; status.textContent = '✓ Endereço preenchido';
+      } else {
+        status.style.color = 'orange'; status.textContent = '⚠ Endereço não encontrado. Preencha manualmente.';
+      }
     }
   } catch(err) {
     status.style.color = 'var(--red)'; status.textContent = '✗ Erro: ' + err.message;
