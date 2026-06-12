@@ -865,10 +865,13 @@ async function renderPDFToImage(file) {
       try {
         var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(e.target.result) }).promise;
         var page = await pdf.getPage(1);
-        var vp = page.getViewport({ scale: 2.5 });
+        var vp = page.getViewport({ scale: 4.0 }); // Alta resolução para melhor OCR
         var canvas = document.createElement('canvas');
         canvas.width = vp.width; canvas.height = vp.height;
-        await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
         resolve(canvas.toDataURL('image/png'));
       } catch(err) { reject(err); }
     };
@@ -887,6 +890,7 @@ async function fileToDataURL(file) {
 async function runOCR(imageData, statusEl) {
   statusEl.textContent = 'Iniciando OCR... (1ª vez ~30s para baixar dados)';
   var result = await Tesseract.recognize(imageData, 'por', {
+    tessedit_pageseg_mode: '11', // Sparse text — melhor para documentos de identidade
     logger: function(m) {
       if (m.status === 'loading language traineddata') statusEl.textContent = 'Baixando dados OCR...';
       else if (m.status === 'recognizing text') statusEl.textContent = 'Lendo texto: ' + Math.round(m.progress * 100) + '%';
@@ -918,6 +922,9 @@ async function handleCNHUpload(event) {
       text = await runOCR(imgData2, status);
     }
     console.log('[CNH TEXT]', text.substring(0, 600));
+    // Exibe texto bruto para diagnóstico (escondido, expandível)
+    var dbg = document.getElementById('cnh-ocr-debug');
+    if (dbg) { dbg.style.display = 'block'; dbg.value = text.substring(0, 500); }
     var data = parseCNHText(text);
     console.log('[CNH PARSED]', data);
     var ok = [], faltando = [];
