@@ -1013,10 +1013,11 @@ async function handleCNHUpload(event) {
   }
 }
 
-async function extractAddressWithClaude(imageDataUrl, apiKey) {
+async function extractAddressWithClaude(imageDataUrl, apiKey, nomeCliente) {
   var parts = imageDataUrl.split(',');
   var mediaType = parts[0].match(/:(.*?);/)[1];
   var base64 = parts[1];
+  var nomeHint = nomeCliente ? ' O nome do titular é "' + nomeCliente + '". Procure o endereço associado a esse nome.' : '';
   var resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -1030,7 +1031,7 @@ async function extractAddressWithClaude(imageDataUrl, apiKey) {
       max_tokens: 200,
       messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-        { type: 'text', text: 'Este é um comprovante de endereço brasileiro (conta de luz, água, banco, etc.). Extraia o endereço RESIDENCIAL DO TITULAR (cliente/morador), NÃO o endereço da empresa emissora. O endereço do titular aparece geralmente abaixo do nome do cliente, próximo ao CPF dele. Inclua rua/avenida, número, complemento, bairro, cidade e CEP se disponíveis. Responda APENAS com JSON puro sem markdown: {"endereco":"..."}' }
+        { type: 'text', text: 'Este é um comprovante de endereço brasileiro (conta de luz, água, banco, extrato bancário, etc.).' + nomeHint + ' Extraia o endereço RESIDENCIAL DO TITULAR, NÃO o endereço da empresa emissora. O endereço do titular aparece próximo ao nome e CPF do cliente no documento. Inclua rua/avenida, número, complemento, bairro, cidade e CEP se disponíveis. Responda APENAS com JSON puro sem markdown: {"endereco":"..."}' }
       ]}]
     })
   });
@@ -1059,7 +1060,8 @@ async function handleComprovanteUpload(event) {
       } else {
         imgDataUrl = await fileToDataURL(file);
       }
-      var result = await extractAddressWithClaude(imgDataUrl, apiKey);
+      var nomeCliente = (document.getElementById('cliente-nome').value || '').trim();
+      var result = await extractAddressWithClaude(imgDataUrl, apiKey, nomeCliente);
       if (result.endereco) {
         document.getElementById('cliente-endereco').value = result.endereco;
         status.style.color = 'var(--green)'; status.textContent = '✓ Endereço preenchido';
