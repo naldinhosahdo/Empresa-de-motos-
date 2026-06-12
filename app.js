@@ -780,38 +780,56 @@ async function extractTextFromPDF(file) {
 
 function parseCNHText(rawText) {
   var result = {};
-  // Normaliza: colapsa espaços múltiplos mas preserva estrutura
   var text = rawText.replace(/[ \t]+/g, ' ');
-  console.log('[CNH RAW]', text.substring(0, 600));
+  console.log('[CNH RAW]', text.substring(0, 800));
 
-  // CPF: busca padrão XXX.XXX.XXX-XX ou 11 dígitos agrupados
-  var cpfRx = /\b(\d{3})[.\s]?(\d{3})[.\s]?(\d{3})[-.\s]?(\d{2})\b/g;
+  // Normaliza erros comuns de OCR: O→0, I/l→1
+  var norm = text
+    .replace(/[Oo]/g, '0')
+    .replace(/[Il\|]/g, '1');
+
+  // CPF: dígitos podem ter espaço entre eles pelo OCR
+  // Tenta XXX.XXX.XXX-XX com ou sem formatação e com possíveis espaços
+  var cpfRx = /(\d[\s]?\d[\s]?\d)[\s]?[.\s][\s]?(\d[\s]?\d[\s]?\d)[\s]?[.\s][\s]?(\d[\s]?\d[\s]?\d)[\s]?[-.\s][\s]?(\d[\s]?\d)/g;
   var cm;
-  while ((cm = cpfRx.exec(text)) !== null) {
-    var d = cm[1]+cm[2]+cm[3]+cm[4];
-    if (!/^(\d)\1{10}$/.test(d) && d !== '00000000000') {
-      result.cpf = cm[1]+'.'+cm[2]+'.'+cm[3]+'-'+cm[4];
+  while ((cm = cpfRx.exec(norm)) !== null) {
+    var d = (cm[1]+cm[2]+cm[3]+cm[4]).replace(/\s/g, '');
+    if (d.length === 11 && !/^(\d)\1{10}$/.test(d)) {
+      result.cpf = d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
       break;
     }
   }
+  // Fallback: sequência de 11 dígitos sem espaço
+  if (!result.cpf) {
+    var cpfRx2 = /\b(\d{11})\b/g;
+    var c2;
+    while ((c2 = cpfRx2.exec(norm)) !== null) {
+      if (!/^(\d)\1{10}$/.test(c2[1])) {
+        var dd = c2[1];
+        result.cpf = dd.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        break;
+      }
+    }
+  }
 
-  // Número de Registro CNH: 11 dígitos que não seja o CPF
+  // Número de Registro CNH: outro grupo de 11 dígitos diferente do CPF
   var cpfDigits = result.cpf ? result.cpf.replace(/\D/g, '') : '';
-  var regRx = /\b(\d{11})\b/g;
+  // Tenta 11 dígitos possivelmente separados por espaços (OCR)
+  var regRx = /\b(\d(?:\s?\d){10})\b/g;
   var rm;
-  while ((rm = regRx.exec(text)) !== null) {
-    if (rm[1] !== cpfDigits && !/^(\d)\1{10}$/.test(rm[1])) {
-      result.cnh = rm[1];
+  while ((rm = regRx.exec(norm)) !== null) {
+    var d11 = rm[1].replace(/\s/g, '');
+    if (d11.length === 11 && d11 !== cpfDigits && !/^(\d)\1{10}$/.test(d11)) {
+      result.cnh = d11;
       break;
     }
   }
 
-  // Nome: tenta após palavra-chave NOME, depois tenta padrão de nome próprio
+  // Nome: busca após keyword NOME ou padrão de nome em maiúsculas
   var nomeKw = text.match(/NOME\s+([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ][A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇa-záéíóúâêîôûãõàç ]{4,59}?)(?=\s{2,}|\n|CPF|FILIA|DATA|NASC|DOC|\d)/i);
   if (nomeKw) {
     result.nome = nomeKw[1].trim();
   } else {
-    // Busca sequência de 2+ palavras em maiúsculo (nome completo em caixa alta)
     var nomeRx = /\b([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ]{2,}(?:\s+(?:DA|DE|DO|DAS|DOS|[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ]{2,})){1,5})\b/g;
     var candidates = [];
     var nm;
@@ -819,13 +837,18 @@ function parseCNHText(rawText) {
       var words = nm[1].trim().split(/\s+/);
       if (words.length >= 2 && nm[1].length >= 8) candidates.push(nm[1].trim());
     }
-    // Escolhe o candidato mais longo que não seja uma frase conhecida de documento
-    var ignore = /CARTEIRA|NACIONAL|HABILITACAO|HABILITAÇÃO|BRASIL|DETRAN|SENATRAN|REPUBLICA|FEDERATIVA|ESTADO/i;
+    var ignore = /CARTEIRA|NACIONAL|HABILITAC|BRASIL|DETRAN|SENATRAN|REPUBLICA|FEDERATIVA|ESTADO|SECRETARIA|MINISTERIO/i;
     candidates = candidates.filter(function(c) { return !ignore.test(c); });
     if (candidates.length) {
-      candidates.sort(function(a,b) { return b.length - a.length; });
+      candidates.sort(function(a, b) { return b.length - a.length; });
       result.nome = candidates[0];
     }
+  }
+
+  // Limpa artefatos de OCR no início do nome (ex: "EN A" antes de "ANTONIO")
+  if (result.nome) {
+    result.nome = result.nome.replace(/^([A-Z]{1,3}\s+){1,2}(?=[A-Z]{4,})/, '').trim();
+    result.nome = result.nome.replace(/^A(?=[A-Z]{4,})/, '').trim(); // remove "A" extra colado
   }
 
   // Categoria
