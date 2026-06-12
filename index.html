@@ -312,8 +312,8 @@
     </div>
     <form id="form-cliente" onsubmit="submitCliente(event)">
       <input type="hidden" id="cliente-id">
-      <input type="file" id="upload-cnh" accept=".pdf" style="display:none" onchange="handleCNHUpload(event)">
-      <input type="file" id="upload-comprovante" accept=".pdf" style="display:none" onchange="handleComprovanteUpload(event)">
+      <input type="file" id="upload-cnh" accept=".pdf,image/*" style="display:none" onchange="handleCNHUpload(event)">
+      <input type="file" id="upload-comprovante" accept=".pdf,image/*" style="display:none" onchange="handleComprovanteUpload(event)">
       <div class="form-row" style="margin-bottom:0.5rem">
         <div class="form-group">
           <button type="button" class="btn btn-primary" style="width:100%" onclick="document.getElementById('upload-cnh').click()">📄 Anexar CNH (PDF)</button>
@@ -955,6 +955,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="app.js?v=188"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<script src="app.js?v=189"></script>
 </body>
 </html>

@@ -842,37 +842,106 @@ function parseComprovanteText(text) {
   return endMatch ? { endereco: endMatch[1].replace(/\s+/g, ' ').trim() } : {};
 }
 
+async function renderPDFToImage(file) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  return new Promise(function(resolve, reject) {
+    var fr = new FileReader();
+    fr.onload = async function(e) {
+      try {
+        var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(e.target.result) }).promise;
+        var page = await pdf.getPage(1);
+        var vp = page.getViewport({ scale: 2.5 });
+        var canvas = document.createElement('canvas');
+        canvas.width = vp.width; canvas.height = vp.height;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+        resolve(canvas.toDataURL('image/png'));
+      } catch(err) { reject(err); }
+    };
+    fr.readAsArrayBuffer(file);
+  });
+}
+
+async function fileToDataURL(file) {
+  return new Promise(function(resolve) {
+    var fr = new FileReader();
+    fr.onload = function(e) { resolve(e.target.result); };
+    fr.readAsDataURL(file);
+  });
+}
+
+async function runOCR(imageData, statusEl) {
+  statusEl.textContent = 'Iniciando OCR... (1ª vez ~30s para baixar dados)';
+  var result = await Tesseract.recognize(imageData, 'por', {
+    logger: function(m) {
+      if (m.status === 'loading language traineddata') statusEl.textContent = 'Baixando dados OCR...';
+      else if (m.status === 'recognizing text') statusEl.textContent = 'Lendo texto: ' + Math.round(m.progress * 100) + '%';
+    }
+  });
+  return result.data.text;
+}
+
 async function handleCNHUpload(event) {
   var file = event.target.files[0];
   if (!file) return;
+  event.target.value = '';
   var status = document.getElementById('cnh-upload-status');
-  status.style.color = '#2196F3'; status.textContent = 'Lendo PDF...';
+  status.style.color = '#2196F3';
   try {
-    var text = await extractTextFromPDF(file);
+    var text;
+    if (file.type === 'application/pdf') {
+      status.textContent = 'Lendo PDF...';
+      var extracted = await extractTextFromPDF(file);
+      if (extracted.replace(/\s/g, '').length > 30) {
+        text = extracted;
+      } else {
+        status.textContent = 'Renderizando PDF para OCR...';
+        var imgData = await renderPDFToImage(file);
+        text = await runOCR(imgData, status);
+      }
+    } else {
+      var imgData2 = await fileToDataURL(file);
+      text = await runOCR(imgData2, status);
+    }
+    console.log('[CNH TEXT]', text.substring(0, 600));
     var data = parseCNHText(text);
     console.log('[CNH PARSED]', data);
     var ok = [], faltando = [];
     if (data.nome) { document.getElementById('cliente-nome').value = data.nome; ok.push('Nome'); } else faltando.push('Nome');
     if (data.cpf)  { document.getElementById('cliente-cpf').value  = data.cpf;  ok.push('CPF'); } else faltando.push('CPF');
-    if (data.cnh)  { document.getElementById('cliente-cnh').value  = data.cnh;  ok.push('CNH'); } else faltando.push('N° CNH');
-    if (ok.length) {
-      status.style.color = faltando.length ? 'orange' : 'var(--green)';
-      status.textContent = '✓ ' + ok.join(', ') + (faltando.length ? ' | Preencha manualmente: ' + faltando.join(', ') : '');
-    } else {
-      status.style.color = 'orange';
-      status.textContent = '⚠ PDF sem texto selecionável. Preencha manualmente.';
-    }
-  } catch(err) { status.style.color = 'var(--red)'; status.textContent = '✗ Erro ao ler PDF.'; }
-  event.target.value = '';
+    if (data.cnh)  { document.getElementById('cliente-cnh').value  = data.cnh;  ok.push('N° CNH'); } else faltando.push('N° CNH');
+    status.style.color = ok.length ? (faltando.length ? 'orange' : 'var(--green)') : 'orange';
+    status.textContent = ok.length
+      ? '✓ ' + ok.join(', ') + (faltando.length ? ' | Faltou: ' + faltando.join(', ') : '')
+      : '⚠ Não foi possível extrair. Preencha manualmente.';
+  } catch(err) {
+    console.error(err);
+    status.style.color = 'var(--red)';
+    status.textContent = '✗ Erro: ' + err.message;
+  }
 }
 
 async function handleComprovanteUpload(event) {
   var file = event.target.files[0];
   if (!file) return;
+  event.target.value = '';
   var status = document.getElementById('comprovante-upload-status');
-  status.style.color = '#2196F3'; status.textContent = 'Lendo PDF...';
+  status.style.color = '#2196F3';
   try {
-    var text = await extractTextFromPDF(file);
+    var text;
+    if (file.type === 'application/pdf') {
+      status.textContent = 'Lendo PDF...';
+      var extracted = await extractTextFromPDF(file);
+      if (extracted.replace(/\s/g, '').length > 30) {
+        text = extracted;
+      } else {
+        status.textContent = 'Renderizando PDF para OCR...';
+        var imgData = await renderPDFToImage(file);
+        text = await runOCR(imgData, status);
+      }
+    } else {
+      var imgData2 = await fileToDataURL(file);
+      text = await runOCR(imgData2, status);
+    }
     var data = parseComprovanteText(text);
     if (data.endereco) {
       document.getElementById('cliente-endereco').value = data.endereco;
@@ -880,8 +949,9 @@ async function handleComprovanteUpload(event) {
     } else {
       status.style.color = 'orange'; status.textContent = '⚠ Endereço não encontrado. Preencha manualmente.';
     }
-  } catch(err) { status.style.color = 'var(--red)'; status.textContent = '✗ Erro ao ler PDF.'; }
-  event.target.value = '';
+  } catch(err) {
+    status.style.color = 'var(--red)'; status.textContent = '✗ Erro: ' + err.message;
+  }
 }
 
 async function submitCliente(e) {
