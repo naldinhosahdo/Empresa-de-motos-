@@ -781,73 +781,67 @@ async function extractTextFromPDF(file) {
 function parseCNHText(rawText) {
   var result = {};
   var text = rawText.replace(/[ \t]+/g, ' ');
-  // Versão normalizada para buscas numéricas (O→0, I→1)
   var numT = text.replace(/O/g, '0').replace(/[Il|]/g, '1');
   console.log('[CNH OCR]', text.substring(0, 600));
 
-  // === CPF: procura label "CPF" e pega o número logo depois ===
+  var ignoreDoc = /CARTEIRA|NACIONAL|HABILITAC|BRASIL|DETRAN|SENATRAN|REPUBLICA|FEDERATIVA|ESTADO|SECRETARIA|TRANSITO|DRIVER|LICENSE|PERMISO|MINISTERIO/i;
+
+  // === NOME: no CNH o nome aparece como "FULANO DE TAL, [data]" ===
+  // Busca uppercase seguido de vírgula (padrão confirmado no OCR)
+  var nomeCommaRx = /\b([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ]{3,}(?:\s+(?:DA|DE|DO|DAS|DOS|[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ]{2,})){1,6})\s*,/g;
+  var nc;
+  while ((nc = nomeCommaRx.exec(text)) !== null) {
+    if (!ignoreDoc.test(nc[1]) && nc[1].split(/\s+/).length >= 1 && nc[1].length >= 5) {
+      result.nome = nc[1].trim();
+      break;
+    }
+  }
+  // Fallback: após label NOME
+  if (!result.nome) {
+    var nomeAfter = text.match(/\bNOME\b\s*[:\-]?\s*([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ][A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇa-záéíóúâêîôûãõàç ]{3,59}?)(?=\n|\s{2,}|CPF\b|FILIA|DATA\b|\d{3})/i);
+    if (nomeAfter && !ignoreDoc.test(nomeAfter[1])) result.nome = nomeAfter[1].trim();
+  }
+  // Limpa artefato OCR no início do nome (ex: "EN A" antes do nome)
+  if (result.nome)
+    result.nome = result.nome.replace(/^([A-Z]{1,3}\s+){1,2}(?=[A-Z]{4,})/, '').trim();
+
+  // === CPF: label CPF seguido de número ===
   var cpfAfter = numT.match(/CPF\s*[:\-]?\s*([\d\s.,\-]{11,20})/i);
   if (cpfAfter) {
     var d = cpfAfter[1].replace(/\D/g, '');
     if (d.length === 11 && !/^(\d)\1{10}$/.test(d))
       result.cpf = d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   }
-  // Fallback: padrão XXX.XXX.XXX-XX em qualquer lugar
   if (!result.cpf) {
     var cpfFmt = numT.match(/\b(\d{3})[.\s](\d{3})[.\s](\d{3})[-.\s](\d{2})\b/);
     if (cpfFmt) {
       var d2 = cpfFmt[1]+cpfFmt[2]+cpfFmt[3]+cpfFmt[4];
-      if (!/^(\d)\1{10}$/.test(d2))
-        result.cpf = cpfFmt[1]+'.'+cpfFmt[2]+'.'+cpfFmt[3]+'-'+cpfFmt[4];
+      if (!/^(\d)\1{10}$/.test(d2)) result.cpf = cpfFmt[1]+'.'+cpfFmt[2]+'.'+cpfFmt[3]+'-'+cpfFmt[4];
     }
   }
-  // Último recurso: 11 dígitos consecutivos
   if (!result.cpf) {
     var m11 = numT.match(/\b(\d{11})\b/g) || [];
     for (var k = 0; k < m11.length; k++) {
       if (!/^(\d)\1{10}$/.test(m11[k])) {
-        result.cpf = m11[k].replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-        break;
+        result.cpf = m11[k].replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); break;
       }
     }
   }
   var cpfDigits = result.cpf ? result.cpf.replace(/\D/g, '') : '';
 
-  // === NÚMERO DE REGISTRO: procura label "REGISTRO" e pega os dígitos depois ===
-  var regAfter = numT.match(/REGISTRO\s*[:\-]?\s*(\d[\d\s]{10,13})/i);
+  // === REGISTRO: label Nº REGISTRO seguido de dígitos ===
+  var regAfter = numT.match(/N[°º]?\s*REGISTRO\s*[:\-]?\s*([\d\s]{9,15})/i);
+  if (!regAfter) regAfter = numT.match(/REGISTRO\s*[:\-]?\s*([\d\s]{9,15})/i);
   if (regAfter) {
     var r = regAfter[1].replace(/\D/g, '');
     if (r.length >= 9 && r !== cpfDigits) result.cnh = r.substring(0, 11);
   }
-  // Fallback: 11 dígitos que não seja o CPF
   if (!result.cnh) {
     var all11 = numT.match(/\b\d{11}\b/g) || [];
     for (var j = 0; j < all11.length; j++) {
-      if (all11[j] !== cpfDigits && !/^(\d)\1{10}$/.test(all11[j])) {
-        result.cnh = all11[j]; break;
-      }
+      if (all11[j] !== cpfDigits && !/^(\d)\1{10}$/.test(all11[j])) { result.cnh = all11[j]; break; }
     }
   }
-
-  // === NOME: procura label "NOME" e pega o texto logo depois (até o próximo label ou linha) ===
-  var nomeAfter = text.match(/\bNOME\b\s*[:\-]?\s*([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ][A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇa-záéíóúâêîôûãõàç ]{3,59}?)(?=\n|\s{2,}|CPF\b|FILIA|DATA\b|NASC|\d{3}|CATEG)/i);
-  if (nomeAfter) {
-    result.nome = nomeAfter[1].trim();
-  } else {
-    // Fallback: nome que aparece logo antes do CPF no texto
-    var cpfIdx = cpfDigits ? text.indexOf(result.cpf || cpfDigits) : -1;
-    var zona = cpfIdx > 10 ? text.substring(0, cpfIdx) : text;
-    var nRx = /\b([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ]{2,}(?:\s+(?:DA|DE|DO|DAS|DOS|[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ]{2,})){1,5})\b/g;
-    var nc, best = null;
-    while ((nc = nRx.exec(zona)) !== null) {
-      if (nc[1].split(/\s+/).length >= 2 && nc[1].length >= 8) best = nc[1].trim();
-    }
-    var ignoreDoc = /CARTEIRA|NACIONAL|HABILITAC|BRASIL|DETRAN|SENATRAN|REPUBLICA|FEDERATIVA|ESTADO|SECRETARIA|TRANSITO/i;
-    if (best && !ignoreDoc.test(best)) result.nome = best;
-  }
-  // Limpa artefato OCR no início do nome
-  if (result.nome)
-    result.nome = result.nome.replace(/^([A-Z]{1,3}\s+){1,2}(?=[A-Z]{4,})/, '').trim();
 
   return result;
 }
@@ -924,7 +918,7 @@ async function handleCNHUpload(event) {
     console.log('[CNH TEXT]', text.substring(0, 600));
     // Exibe texto bruto para diagnóstico (escondido, expandível)
     var dbg = document.getElementById('cnh-ocr-debug');
-    if (dbg) { dbg.style.display = 'block'; dbg.value = text.substring(0, 500); }
+    if (dbg) { dbg.style.display = 'block'; dbg.value = text.substring(0, 1000); }
     var data = parseCNHText(text);
     console.log('[CNH PARSED]', data);
     var ok = [], faltando = [];
