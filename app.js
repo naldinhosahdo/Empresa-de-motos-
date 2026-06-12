@@ -786,7 +786,33 @@ async function extractTextFromPDF(file) {
   });
 }
 
-function parseCNHText(rawText) {
+function parseCNHFromPDFText(text) {
+  var result = {};
+  if (!text || text.replace(/\s/g,'').length < 20) return result;
+
+  // CPF: label "CPF" followed by digits in XXX.XXX.XXX-XX or 11 raw digits
+  var cpfMatch = text.match(/\bCPF\b[\s:]*(\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[-\s]?\d{2})/i);
+  if (cpfMatch) {
+    var d = cpfMatch[1].replace(/\D/g,'');
+    if (d.length === 11) result.cpf = d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  }
+
+  // NOME: label "NOME" followed by uppercase words, stop before next label
+  var nomeMatch = text.match(/\bNOME\b[\s:]*([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ][A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇa-záéíóúâêîôûãõàç\s]{3,60})(?=\n|\bDATA\b|\bFILI|\bHABILI|\bCATEG|\bVAL|\bREGI)/i);
+  if (nomeMatch) result.nome = nomeMatch[1].replace(/\s+/g,' ').trim();
+
+  // Nº REGISTRO: label followed by 9-11 digits
+  var regMatch = text.match(/N[°º]?\s*REGISTRO[\s:]*(\d[\d\s]{8,12})/i);
+  if (!regMatch) regMatch = text.match(/REGISTRO[\s:]*(\d[\d\s]{8,12})/i);
+  if (regMatch) {
+    var r = regMatch[1].replace(/\D/g,'');
+    if (r.length >= 9) result.registro = r.substring(0,11);
+  }
+
+  return result;
+}
+
+
   var result = {};
   var text = rawText.replace(/[ \t]+/g, ' ');
   var numT = text.replace(/O/g, '0').replace(/[Il|]/g, '1');
@@ -995,22 +1021,32 @@ async function handleCNHUpload(event) {
       status.textContent = 'Lendo CNH com IA...';
       var imgData;
       var pdfText = '';
+      var textParsed = {};
       if (file.type === 'application/pdf') {
         status.textContent = 'Convertendo PDF...';
         imgData = await renderPDFToImage(file);
         var rawText = await extractTextFromPDF(file);
-        if (rawText && rawText.replace(/\s/g, '').length > 20) pdfText = rawText;
+        if (rawText && rawText.replace(/\s/g, '').length > 20) {
+          pdfText = rawText;
+          textParsed = parseCNHFromPDFText(rawText);
+        }
       } else {
         imgData = await fileToDataURL(file);
       }
       status.textContent = 'Analisando com Claude...';
       var qrResult = await extractQRFromImage(imgData);
       if (qrResult && qrResult.startsWith('http')) { _cnhQRUrl = qrResult; }
-      var extracted = await extractCNHWithClaude(imgData, apiKey, pdfText);
+      // Only call Claude for fields not found in text
+      var needsClaude = !textParsed.nome || !textParsed.cpf || !textParsed.registro;
+      var extracted = needsClaude ? await extractCNHWithClaude(imgData, apiKey, pdfText) : {};
+      // Prefer text-parsed values (more accurate for PDFs), fall back to Claude
+      var finalNome     = textParsed.nome     || extracted.nome;
+      var finalCpf      = textParsed.cpf      || extracted.cpf;
+      var finalRegistro = textParsed.registro || extracted.registro;
       var ok = [], faltando = [];
-      if (extracted.nome)     { document.getElementById('cliente-nome').value = extracted.nome;     ok.push('Nome'); }     else faltando.push('Nome');
-      if (extracted.cpf)      { document.getElementById('cliente-cpf').value  = extracted.cpf;      ok.push('CPF'); }      else faltando.push('CPF');
-      if (extracted.registro) { document.getElementById('cliente-cnh').value  = extracted.registro; ok.push('N° CNH'); }   else faltando.push('N° CNH');
+      if (finalNome)     { document.getElementById('cliente-nome').value = finalNome;     ok.push('Nome'); }     else faltando.push('Nome');
+      if (finalCpf)      { document.getElementById('cliente-cpf').value  = finalCpf;      ok.push('CPF'); }      else faltando.push('CPF');
+      if (finalRegistro) { document.getElementById('cliente-cnh').value  = finalRegistro; ok.push('N° CNH'); }   else faltando.push('N° CNH');
       status.style.color = ok.length ? (faltando.length ? 'orange' : 'var(--green)') : 'orange';
       status.textContent = ok.length
         ? '✓ ' + ok.join(', ') + (faltando.length ? ' | Faltou: ' + faltando.join(', ') : '') + (_cnhQRUrl ? ' | QR ✓' : '')
