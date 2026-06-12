@@ -879,10 +879,11 @@ function parseComprovanteText(text) {
   return endMatch ? { endereco: endMatch[1].replace(/\s+/g, ' ').trim() } : {};
 }
 
-async function extractCNHWithClaude(imageDataUrl, apiKey) {
+async function extractCNHWithClaude(imageDataUrl, apiKey, pdfText) {
   var parts = imageDataUrl.split(',');
   var mediaType = parts[0].match(/:(.*?);/)[1];
   var base64 = parts[1];
+  var textHint = pdfText ? '\n\nTexto extraído do PDF (use como referência para confirmar os números):\n' + pdfText.substring(0, 800) : '';
   var resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -896,7 +897,7 @@ async function extractCNHWithClaude(imageDataUrl, apiKey) {
       max_tokens: 300,
       messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-        { type: 'text', text: 'Esta é uma CNH brasileira. Extraia exatamente 3 campos:\n1. NOME: nome do TITULAR — campo "NOME" no topo. IGNORE o campo "FILIAÇÃO" (nomes dos pais).\n2. CPF: leia o campo EXPLICITAMENTE rotulado "CPF" no documento. Retorne APENAS os 11 dígitos desse campo, sem pontos ou traço, ex: "05083112270". NÃO use nenhum outro número.\n3. REGISTRO: campo "Nº Registro" ou "NÚMERO DE REGISTRO" — 11 dígitos, diferente do CPF.\nResponda APENAS com JSON puro sem markdown: {"nome":"...","cpf":"...","registro":"..."}' }
+        { type: 'text', text: 'Esta é uma CNH brasileira. Extraia exatamente 3 campos:\n1. NOME: nome do TITULAR — campo "NOME" no topo. IGNORE o campo "FILIAÇÃO" (nomes dos pais).\n2. CPF: leia o campo EXPLICITAMENTE rotulado "CPF" no documento. Retorne APENAS os 11 dígitos desse campo, sem pontos ou traço, ex: "05083112270". NÃO use nenhum outro número.\n3. REGISTRO: campo "Nº Registro" ou "NÚMERO DE REGISTRO" — 11 dígitos, diferente do CPF.\nResponda APENAS com JSON puro sem markdown: {"nome":"...","cpf":"...","registro":"..."}' + textHint }
       ]}]
     })
   });
@@ -993,16 +994,19 @@ async function handleCNHUpload(event) {
     if (apiKey) {
       status.textContent = 'Lendo CNH com IA...';
       var imgData;
+      var pdfText = '';
       if (file.type === 'application/pdf') {
         status.textContent = 'Convertendo PDF...';
         imgData = await renderPDFToImage(file);
+        var rawText = await extractTextFromPDF(file);
+        if (rawText && rawText.replace(/\s/g, '').length > 20) pdfText = rawText;
       } else {
         imgData = await fileToDataURL(file);
       }
       status.textContent = 'Analisando com Claude...';
       var qrResult = await extractQRFromImage(imgData);
       if (qrResult && qrResult.startsWith('http')) { _cnhQRUrl = qrResult; }
-      var extracted = await extractCNHWithClaude(imgData, apiKey);
+      var extracted = await extractCNHWithClaude(imgData, apiKey, pdfText);
       var ok = [], faltando = [];
       if (extracted.nome)     { document.getElementById('cliente-nome').value = extracted.nome;     ok.push('Nome'); }     else faltando.push('Nome');
       if (extracted.cpf)      { document.getElementById('cliente-cpf').value  = extracted.cpf;      ok.push('CPF'); }      else faltando.push('CPF');
