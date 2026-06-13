@@ -912,9 +912,11 @@ function parseComprovanteText(text) {
 async function extractCNHFromPDFText(pdfText, apiKey) {
   var result = {};
 
-  // Busca CPF próximo ao label "CPF" ou "4d CPF" (evita pegar assinaturas digitais ou outros campos)
-  var cpfMatch = pdfText.match(/\b(?:4d\s+)?CPF\b[\s\S]{0,300}?(\d{3}\.\d{3}\.\d{3}-\d{2})/i);
-  if (!cpfMatch) cpfMatch = pdfText.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})/); // fallback: primeiro encontrado
+  // Pula a seção de assinatura digital (início do PDF) e procura CPF só na área do cartão
+  var cardIdx = pdfText.search(/CARTEIRA\s+NACIONAL|NOME\s+E\s+SOBRENOME|4d\s+CPF/i);
+  var cardText = cardIdx >= 0 ? pdfText.substring(cardIdx) : pdfText;
+  var cpfMatch = cardText.match(/\b(?:4d\s+)?CPF\b[\s\S]{0,800}?(\d{3}[.\s]\d{3}[.\s]\d{3}[-\s]\d{2})/i);
+  if (!cpfMatch) cpfMatch = cardText.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})/);
   if (cpfMatch) {
     var cpfStr = cpfMatch[1].replace(/\D/g,'');
     if (cpfStr.length === 11 && !/^(\d)\1{10}$/.test(cpfStr))
