@@ -180,11 +180,12 @@ async function loadNotificacoes() {
   var em5Str = em5.toISOString().split('T')[0];
   var em2Str = new Date(hoje.getTime() + 2 * 86400000).toISOString().split('T')[0];
   var em7Str  = new Date(hoje.getTime() + 7 * 86400000).toISOString().split('T')[0];
+  var em10Str = new Date(hoje.getTime() + 10 * 86400000).toISOString().split('T')[0];
 
   var hoje0Str = hojeLocalStr();
   var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }, { data: veiculosData }, { data: progsData }] = await Promise.all([
     db.from('despesas').select('*, veiculos(modelo, placa)')
-      .lte('vencimento', em30Str).not('vencimento', 'is', null).order('vencimento'),
+      .lte('vencimento', em5Str).not('vencimento', 'is', null).order('vencimento'),
     db.from('manutencoes').select('*, veiculos(modelo, placa)')
       .lte('prox_data', em7Str).not('prox_data', 'is', null).order('prox_data'),
     db.from('alugueis').select('*, veiculos(modelo, placa)')
@@ -234,7 +235,7 @@ async function loadNotificacoes() {
         if (mesLic > 12) { mesLic -= 12; anoLic++; }
         var dLic = anoLic + '-' + p2(mesLic) + '-10';
         if (dLic < hoje0Str) dLic = (anoLic + 1) + '-' + p2(mesLic) + '-10';
-        if (dLic >= hoje0Str && dLic <= em30Str) {
+        if (dLic >= hoje0Str && dLic <= em10Str) {
           alertasRecorrentes.push({ key: 'lic_' + vei.id + '_' + dLic, data: dLic,
             label: 'Licenciamento vence',
             veiculo: vl, valor: '', tipo: 'recorrente', veiculoId: vei.id, tipoLabel: 'Licenciamento' });
