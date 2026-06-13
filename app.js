@@ -909,6 +909,35 @@ function parseComprovanteText(text) {
   return endMatch ? { endereco: endMatch[1].replace(/\s+/g, ' ').trim() } : {};
 }
 
+async function extractCNHFromPDFText(pdfText, apiKey) {
+  var resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 200,
+      messages: [{ role: 'user', content: 'Texto extraído de uma CNH brasileira (pode ser CNH Definitiva ou PPD):\n\n' + pdfText.substring(0, 1500) + '\n\nExtraia APENAS:\n1. nome: nome do TITULAR (campo NOME ou "2e1 NOME E SOBRENOME"). NUNCA use nomes do campo FILIAÇÃO.\n2. cpf: número do campo CPF ou "4d CPF". Retorne somente os 11 dígitos sem formatação.\n3. registro: número do campo "Nº Registro" ou "5 Nº REGISTRO". 11 dígitos.\nResponda APENAS JSON: {"nome":"...","cpf":"...","registro":"..."}' }]
+    })
+  });
+  if (!resp.ok) {
+    var err = await resp.json().catch(function() { return {}; });
+    throw new Error((err.error && err.error.message) || 'Erro ' + resp.status);
+  }
+  var data = await resp.json();
+  var txt = data.content[0].text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+  var parsed = JSON.parse(txt);
+  if (parsed.cpf) {
+    var d = parsed.cpf.replace(/\D/g, '');
+    if (d.length === 11) parsed.cpf = d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  }
+  return parsed;
+}
+
 async function extractCNHWithClaude(imageDataUrl, apiKey, pdfText) {
   var parts = imageDataUrl.split(',');
   var mediaType = parts[0].match(/:(.*?);/)[1];
@@ -1025,32 +1054,26 @@ async function handleCNHUpload(event) {
       status.textContent = 'Lendo CNH com IA...';
       var imgData;
       var pdfText = '';
-      var textParsed = {};
       if (file.type === 'application/pdf') {
         status.textContent = 'Convertendo PDF...';
         imgData = await renderPDFToImage(file);
         var rawText = await extractTextFromPDF(file);
-        if (rawText && rawText.replace(/\s/g, '').length > 20) {
-          pdfText = rawText;
-          textParsed = parseCNHFromPDFText(rawText);
-        }
+        if (rawText && rawText.replace(/\s/g, '').length > 100) pdfText = rawText;
       } else {
         imgData = await fileToDataURL(file);
       }
       status.textContent = 'Analisando com Claude...';
       var qrResult = await extractQRFromImage(imgData);
       if (qrResult && qrResult.startsWith('http')) { _cnhQRUrl = qrResult; }
-      // Only call Claude for fields not found in text
-      var needsClaude = !textParsed.nome || !textParsed.cpf || !textParsed.registro;
-      var extracted = needsClaude ? await extractCNHWithClaude(imgData, apiKey, pdfText) : {};
-      // Prefer text-parsed values (more accurate for PDFs), fall back to Claude
-      var finalNome     = textParsed.nome     || extracted.nome;
-      var finalCpf      = textParsed.cpf      || extracted.cpf;
-      var finalRegistro = textParsed.registro || extracted.registro;
+      // PDF com texto: Claude lê o texto direto (mais confiável que visão)
+      // PDF sem texto ou foto: Claude usa visão
+      var extracted = pdfText
+        ? await extractCNHFromPDFText(pdfText, apiKey)
+        : await extractCNHWithClaude(imgData, apiKey, '');
       var ok = [], faltando = [];
-      if (finalNome)     { document.getElementById('cliente-nome').value = finalNome;     ok.push('Nome'); }     else faltando.push('Nome');
-      if (finalCpf)      { document.getElementById('cliente-cpf').value  = finalCpf;      ok.push('CPF'); }      else faltando.push('CPF');
-      if (finalRegistro) { document.getElementById('cliente-cnh').value  = finalRegistro; ok.push('N° CNH'); }   else faltando.push('N° CNH');
+      if (extracted.nome)     { document.getElementById('cliente-nome').value = extracted.nome;     ok.push('Nome'); }     else faltando.push('Nome');
+      if (extracted.cpf)      { document.getElementById('cliente-cpf').value  = extracted.cpf;      ok.push('CPF'); }      else faltando.push('CPF');
+      if (extracted.registro) { document.getElementById('cliente-cnh').value  = extracted.registro; ok.push('N° CNH'); }   else faltando.push('N° CNH');
       status.style.color = ok.length ? (faltando.length ? 'orange' : 'var(--green)') : 'orange';
       status.textContent = ok.length
         ? '✓ ' + ok.join(', ') + (faltando.length ? ' | Faltou: ' + faltando.join(', ') : '') + (_cnhQRUrl ? ' | QR ✓' : '')
