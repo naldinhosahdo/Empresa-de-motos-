@@ -1065,11 +1065,13 @@ async function handleCNHUpload(event) {
       status.textContent = 'Analisando com Claude...';
       var qrResult = await extractQRFromImage(imgData);
       if (qrResult && qrResult.startsWith('http')) { _cnhQRUrl = qrResult; }
-      // PDF com texto: Claude lê o texto direto (mais confiável que visão)
-      // PDF sem texto ou foto: Claude usa visão
-      var extracted = pdfText
-        ? await extractCNHFromPDFText(pdfText, apiKey)
-        : await extractCNHWithClaude(imgData, apiKey, '');
+      var extracted = {};
+      if (pdfText) {
+        try { extracted = await extractCNHFromPDFText(pdfText, apiKey); } catch(e) {}
+      }
+      if (!extracted.nome && !extracted.cpf) {
+        extracted = await extractCNHWithClaude(imgData, apiKey, '');
+      }
       var ok = [], faltando = [];
       if (extracted.nome)     { document.getElementById('cliente-nome').value = extracted.nome;     ok.push('Nome'); }     else faltando.push('Nome');
       if (extracted.cpf)      { document.getElementById('cliente-cpf').value  = extracted.cpf;      ok.push('CPF'); }      else faltando.push('CPF');
