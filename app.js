@@ -1079,7 +1079,10 @@ async function handleCNHUpload(event) {
         status.textContent = 'Convertendo PDF...';
         imgData = await renderPDFToImage(file);
         var rawText = await extractTextFromPDF(file);
-        if (rawText && rawText.replace(/\s/g, '').length > 100) pdfText = rawText;
+        if (rawText && rawText.replace(/\s/g, '').length > 100) {
+          pdfText = rawText;
+          if (dbg) { dbg.style.display = 'block'; dbg.value = rawText.substring(0, 800); }
+        }
       } else {
         imgData = await fileToDataURL(file);
       }
