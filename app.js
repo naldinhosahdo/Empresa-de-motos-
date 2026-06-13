@@ -912,10 +912,13 @@ function parseComprovanteText(text) {
 async function extractCNHFromPDFText(pdfText, apiKey) {
   var result = {};
 
-  // CPF formatado XXX.XXX.XXX-XX SOMENTE aparece no campo CPF real (MRZ não usa pontos/traço)
-  var cpfMatch = pdfText.match(/\b(\d{3}\.\d{3}\.\d{3}-\d{2})\b/);
+  // Busca CPF próximo ao label "CPF" ou "4d CPF" (evita pegar assinaturas digitais ou outros campos)
+  var cpfMatch = pdfText.match(/\b(?:4d\s+)?CPF\b[\s\S]{0,300}?(\d{3}\.\d{3}\.\d{3}-\d{2})/i);
+  if (!cpfMatch) cpfMatch = pdfText.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})/); // fallback: primeiro encontrado
   if (cpfMatch) {
-    result.cpf = cpfMatch[1].replace(/\D/g,'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    var cpfStr = cpfMatch[1].replace(/\D/g,'');
+    if (cpfStr.length === 11 && !/^(\d)\1{10}$/.test(cpfStr))
+      result.cpf = cpfStr.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   }
 
   // Remover linhas MRZ (com ou sem espaços) para limpar o texto antes de enviar ao Claude
