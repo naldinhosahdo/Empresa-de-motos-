@@ -910,6 +910,16 @@ function parseComprovanteText(text) {
 }
 
 async function extractCNHFromPDFText(pdfText, apiKey) {
+  // Remove MRZ lines before sending to Claude
+  // MRZ lines: long strings of uppercase+digits with no spaces, or date+letter+date+country pattern
+  var cleanText = pdfText.split('\n').filter(function(line) {
+    var t = line.trim();
+    if (/^\d{6,7}[A-Z]\d{6,7}[A-Z]{2,3}/.test(t)) return false; // ex: 0508311M2706111BRA
+    if (/^[IP][A-Z]{2,3}\d{7,}/.test(t)) return false;           // ex: IBRA093462183170
+    if (/^[A-Z0-9]{25,}$/.test(t)) return false;                 // linha sem espaços longa
+    return true;
+  }).join('\n');
+
   var resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -921,7 +931,7 @@ async function extractCNHFromPDFText(pdfText, apiKey) {
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 200,
-      messages: [{ role: 'user', content: 'Texto extraído de uma CNH brasileira (pode ser CNH Definitiva ou PPD):\n\n' + pdfText.substring(0, 1500) + '\n\nIMPORTANTE: IGNORE completamente a zona MRZ (linhas que contêm "<" como "I<BRA...", "0508311M...", "LUIZ<<..."). Esses não são os dados reais.\n\nExtraia APENAS dos campos rotulados:\n1. nome: campo "NOME" ou "2e1 NOME E SOBRENOME". NUNCA use nomes do campo FILIAÇÃO.\n2. cpf: campo "CPF" ou "4d CPF" — o número formatado XXX.XXX.XXX-XX que aparece nesse campo. Retorne os 11 dígitos sem formatação.\n3. registro: campo "Nº Registro" ou "5 Nº REGISTRO" — 11 dígitos.\nResponda APENAS JSON: {"nome":"...","cpf":"...","registro":"..."}' }]
+      messages: [{ role: 'user', content: 'Texto extraído de uma CNH brasileira (CNH Definitiva ou PPD), com zona MRZ já removida:\n\n' + cleanText.substring(0, 1500) + '\n\nExtraia APENAS dos campos rotulados:\n1. nome: campo "NOME" ou "2e1 NOME E SOBRENOME". NUNCA use nomes do campo FILIAÇÃO.\n2. cpf: campo "CPF" ou "4d CPF" — número XXX.XXX.XXX-XX. Retorne os 11 dígitos sem formatação.\n3. registro: campo "Nº Registro" ou "5 Nº REGISTRO" — 11 dígitos.\nResponda APENAS JSON: {"nome":"...","cpf":"...","registro":"..."}' }]
     })
   });
   if (!resp.ok) {
