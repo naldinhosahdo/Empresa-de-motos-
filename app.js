@@ -5,7 +5,6 @@ const SUPABASE_URL = 'https://ohukqqyktkrvqedhozgk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9odWtxcXlrdGtydnFlZGhvemdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2ODkzMTQsImV4cCI6MjA5NTI2NTMxNH0.yKCkjINcQNcxiIqkfRUA507KlFymzTsInHTa6ObZzTM';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 var _pendingNotifKey = null;
-var _cnhQRUrl = null;
 
 // --- CONFIGURAÇÕES DO LOCADOR ---
 var _configCache = { nome: '', cpf: '', endereco: '', cidade: 'Fortaleza/CE', anthropic_key: '' };
@@ -726,10 +725,6 @@ function consultarCPF(tipo) {
   } else if (tipo === 'receita') {
     window.open('https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp', '_blank');
   } else if (tipo === 'senatran') {
-    if (_cnhQRUrl) {
-      window.open(_cnhQRUrl, '_blank');
-      return;
-    }
     window.location.href = 'intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=br.gov.serpro.lince;end';
   } else if (tipo === 'serasa') {
     window.open('https://www.serasa.com.br/voceconsulta/', '_blank');
@@ -738,7 +733,7 @@ function consultarCPF(tipo) {
   }
   if (tipo !== 'senatran') {
     alert('CPF ' + cpf + ' copiado! Cole no campo de busca do site que abriu.');
-  } else if (!_cnhQRUrl) {
+  } else {
     alert('Abra o app Vio e escaneie o QR Code da CNH do cliente.');
   }
 }
@@ -747,7 +742,6 @@ function openNewCliente() {
   document.getElementById('form-cliente').reset();
   document.getElementById('cliente-id').value = '';
   document.getElementById('modal-cliente-title').textContent = 'Novo Cliente';
-  _cnhQRUrl = null;
   openModal('modal-cliente');
 }
 
@@ -1042,23 +1036,6 @@ async function runOCR(imageData, statusEl) {
   return result.data.text;
 }
 
-function extractQRFromImage(imageDataUrl) {
-  return new Promise(function(resolve) {
-    var img = new Image();
-    img.onload = function() {
-      var canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      var ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      var code = (typeof jsQR !== 'undefined') ? jsQR(imageData.data, imageData.width, imageData.height) : null;
-      resolve(code && code.data ? code.data : null);
-    };
-    img.onerror = function() { resolve(null); };
-    img.src = imageDataUrl;
-  });
-}
 
 async function handleCNHUpload(event) {
   var file = event.target.files[0];
@@ -1089,8 +1066,6 @@ async function handleCNHUpload(event) {
         imgData = await fileToDataURL(file);
       }
       status.textContent = 'Analisando com Claude...';
-      var qrResult = await extractQRFromImage(imgData);
-      if (qrResult && qrResult.startsWith('http')) { _cnhQRUrl = qrResult; }
       var extracted = {};
       if (pdfText) {
         try { extracted = await extractCNHFromPDFText(pdfText, apiKey); } catch(e) {}
@@ -1104,7 +1079,7 @@ async function handleCNHUpload(event) {
       if (extracted.registro) { document.getElementById('cliente-cnh').value  = extracted.registro; ok.push('N° CNH'); }   else faltando.push('N° CNH');
       status.style.color = ok.length ? (faltando.length ? 'orange' : 'var(--green)') : 'orange';
       status.textContent = ok.length
-        ? '✓ ' + ok.join(', ') + (faltando.length ? ' | Faltou: ' + faltando.join(', ') : '') + (_cnhQRUrl ? ' | QR ✓' : '')
+        ? '✓ ' + ok.join(', ') + (faltando.length ? ' | Faltou: ' + faltando.join(', ') : '')
         : '⚠ Não foi possível extrair. Preencha manualmente.';
       return;
     }
