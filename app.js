@@ -1063,13 +1063,8 @@ async function handleCNHUpload(event) {
         imgData = await fileToDataURL(file);
       }
       status.textContent = 'Analisando com Claude...';
-      var extracted = {};
-      if (pdfText) {
-        try { extracted = await extractCNHFromPDFText(pdfText, apiKey); } catch(e) {}
-      }
-      if (!extracted.nome && !extracted.cpf) {
-        extracted = await extractCNHWithClaude(imgData, apiKey, '');
-      }
+      // Always use vision for PDFs — text extraction picks up CPF errado da seção de assinatura digital
+      var extracted = await extractCNHWithClaude(imgData, apiKey, '');
       var ok = [], faltando = [];
       if (extracted.nome)     { document.getElementById('cliente-nome').value = extracted.nome;     ok.push('Nome'); }     else faltando.push('Nome');
       if (extracted.cpf)      { document.getElementById('cliente-cpf').value  = extracted.cpf;      ok.push('CPF'); }      else faltando.push('CPF');
