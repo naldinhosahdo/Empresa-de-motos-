@@ -910,42 +910,50 @@ function parseComprovanteText(text) {
 }
 
 async function extractCNHFromPDFText(pdfText, apiKey) {
-  // Remove MRZ lines before sending to Claude
-  // MRZ lines: long strings of uppercase+digits with no spaces, or date+letter+date+country pattern
-  var cleanText = pdfText.split('\n').filter(function(line) {
-    var t = line.trim();
-    if (/^\d{6,7}[A-Z]\d{6,7}[A-Z]{2,3}/.test(t)) return false; // ex: 0508311M2706111BRA
-    if (/^[IP][A-Z]{2,3}\d{7,}/.test(t)) return false;           // ex: IBRA093462183170
-    if (/^[A-Z0-9]{25,}$/.test(t)) return false;                 // linha sem espaços longa
-    return true;
-  }).join('\n');
+  var result = {};
 
-  var resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 200,
-      messages: [{ role: 'user', content: 'Texto extraído de uma CNH brasileira (CNH Definitiva ou PPD), com zona MRZ já removida:\n\n' + cleanText.substring(0, 1500) + '\n\nExtraia APENAS dos campos rotulados:\n1. nome: campo "NOME" ou "2e1 NOME E SOBRENOME". NUNCA use nomes do campo FILIAÇÃO.\n2. cpf: campo "CPF" ou "4d CPF" — número XXX.XXX.XXX-XX. Retorne os 11 dígitos sem formatação.\n3. registro: campo "Nº Registro" ou "5 Nº REGISTRO" — 11 dígitos.\nResponda APENAS JSON: {"nome":"...","cpf":"...","registro":"..."}' }]
-    })
+  // CPF formatado XXX.XXX.XXX-XX SOMENTE aparece no campo CPF real (MRZ não usa pontos/traço)
+  var cpfMatch = pdfText.match(/\b(\d{3}\.\d{3}\.\d{3}-\d{2})\b/);
+  if (cpfMatch) {
+    result.cpf = cpfMatch[1].replace(/\D/g,'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  }
+
+  // Remover linhas MRZ (com ou sem espaços) para limpar o texto antes de enviar ao Claude
+  var cleanLines = pdfText.split('\n').filter(function(line) {
+    var t = line.trim().replace(/\s+/g,'');
+    if (/^\d{6,7}[MF]\d{6,7}[A-Z]{2,3}/.test(t)) return false; // 0508311M2706111BRA
+    if (/^[IP][A-Z]{2,3}\d{7,}/.test(t)) return false;          // IBRA093462183
+    if (/^[A-Z0-9]{25,}$/.test(t)) return false;                // string longa sem espaços
+    return true;
   });
-  if (!resp.ok) {
-    var err = await resp.json().catch(function() { return {}; });
-    throw new Error((err.error && err.error.message) || 'Erro ' + resp.status);
-  }
-  var data = await resp.json();
-  var txt = data.content[0].text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
-  var parsed = JSON.parse(txt);
-  if (parsed.cpf) {
-    var d = parsed.cpf.replace(/\D/g, '');
-    if (d.length === 11) parsed.cpf = d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  }
-  return parsed;
+  var cleanText = cleanLines.join('\n');
+
+  // Usar Claude para nome e registro (campos que precisam de contexto)
+  try {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 200,
+        messages: [{ role: 'user', content: 'Texto de uma CNH brasileira (MRZ removido):\n\n' + cleanText.substring(0, 1200) + '\n\nExtraia:\n1. nome: titular do campo NOME ou "2e1 NOME E SOBRENOME". NUNCA use nomes do campo FILIAÇÃO.\n2. registro: campo "Nº Registro" ou "5 Nº REGISTRO" — 11 dígitos.\nResponda APENAS JSON: {"nome":"...","registro":"..."}' }]
+      })
+    });
+    if (resp.ok) {
+      var data = await resp.json();
+      var txt = data.content[0].text.trim().replace(/^```json\s*/i,'').replace(/```\s*$/,'');
+      var parsed = JSON.parse(txt);
+      if (parsed.nome) result.nome = parsed.nome;
+      if (parsed.registro) result.registro = parsed.registro;
+    }
+  } catch(e) {}
+
+  return result;
 }
 
 async function extractCNHWithClaude(imageDataUrl, apiKey, pdfText) {
