@@ -955,11 +955,45 @@ async function extractCNHFromPDFText(pdfText, apiKey) {
   return result;
 }
 
+function isValidCPF(digits) {
+  if (!/^\d{11}$/.test(digits) || /^(\d)\1{10}$/.test(digits)) return false;
+  var s, r, i;
+  s = 0; for (i = 0; i < 9; i++) s += parseInt(digits[i], 10) * (10 - i);
+  r = (s * 10) % 11; if (r === 10) r = 0;
+  if (r !== parseInt(digits[9], 10)) return false;
+  s = 0; for (i = 0; i < 10; i++) s += parseInt(digits[i], 10) * (11 - i);
+  r = (s * 10) % 11; if (r === 10) r = 0;
+  return r === parseInt(digits[10], 10);
+}
+
 async function extractCNHWithClaude(imageDataUrl, apiKey, pdfText) {
   var parts = imageDataUrl.split(',');
   var mediaType = parts[0].match(/:(.*?);/)[1];
   var base64 = parts[1];
   var textHint = pdfText ? '\n\nTexto extraído do PDF (use como referência para confirmar os números):\n' + pdfText.substring(0, 800) : '';
+  var prompt = [
+    'Você é um leitor especialista de CNH (Carteira Nacional de Habilitação) brasileira.',
+    'Analise a imagem com MUITA atenção e extraia EXATAMENTE três informações do documento:',
+    '',
+    '1. NOME E SOBRENOME do titular — é o nome da própria pessoa dona da CNH.',
+    '   - No formato antigo aparece sob o rótulo "NOME".',
+    '   - No formato novo (CNH-e/PPD) aparece sob o rótulo "2e1 NOME E SOBRENOME".',
+    '   - ATENÇÃO: NUNCA pegue os nomes do campo "FILIAÇÃO" (são os nomes do pai e da mãe). O nome do titular fica separado, geralmente acima da filiação.',
+    '',
+    '2. CPF — número de 11 dígitos no formato XXX.XXX.XXX-XX.',
+    '   - No formato antigo aparece sob "CPF". No formato novo sob "4d CPF".',
+    '   - NÃO confunda com: nº do documento de identidade (RG), nº de registro, datas, ou os números da zona MRZ no rodapé (linhas cheias de "<<<").',
+    '   - Leia dígito por dígito com cuidado.',
+    '',
+    '3. Nº DE REGISTRO — número de 11 dígitos.',
+    '   - No formato antigo aparece sob "Nº REGISTRO". No formato novo sob "5 Nº REGISTRO".',
+    '   - NÃO confunda com o número de série/segurança do cartão (que às vezes aparece girado na lateral) nem com o CPF.',
+    '   - Leia dígito por dígito com cuidado.',
+    '',
+    'Confira cada número relendo dígito a dígito antes de responder.',
+    'Responda APENAS com JSON puro, sem markdown, sem explicação:',
+    '{"nome":"...","cpf":"...","registro":"..."}'
+  ].join('\n');
   var resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -969,11 +1003,11 @@ async function extractCNHWithClaude(imageDataUrl, apiKey, pdfText) {
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 300,
+      model: 'claude-sonnet-4-6',
+      max_tokens: 400,
       messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-        { type: 'text', text: 'Esta é uma CNH brasileira. Existem dois formatos:\n- FORMATO ANTIGO: campos sem número — "NOME", "CPF", "Nº Registro"\n- FORMATO NOVO (CNH-e PPD): campos com número — "2e1 NOME E SOBRENOME", "4d CPF", "5 Nº REGISTRO"\n\nExtraia:\n1. NOME: o nome do TITULAR (campo NOME ou 2e1). IGNORE o campo FILIAÇÃO (nomes dos pais).\n2. CPF: campo CPF ou 4d CPF — formato XXX.XXX.XXX-XX. NÃO use doc identidade, MRZ (linhas com <<<) ou qualquer outro número.\n3. REGISTRO: campo Nº Registro ou 5 Nº REGISTRO — 11 dígitos.\n\nResponda APENAS com JSON puro sem markdown: {"nome":"...","cpf":"...","registro":"..."}' + textHint }
+        { type: 'text', text: prompt + textHint }
       ]}]
     })
   });
@@ -989,8 +1023,11 @@ async function extractCNHWithClaude(imageDataUrl, apiKey, pdfText) {
     var digits = parsed.cpf.replace(/\D/g, '');
     if (digits.length === 11) {
       parsed.cpf = digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      parsed.cpfValido = isValidCPF(digits);
     }
   }
+  // Registro: manter apenas dígitos
+  if (parsed.registro) parsed.registro = parsed.registro.replace(/\D/g, '');
   return parsed;
 }
 
@@ -1065,13 +1102,13 @@ async function handleCNHUpload(event) {
       status.textContent = 'Analisando com Claude...';
       // Always use vision for PDFs — text extraction picks up CPF errado da seção de assinatura digital
       var extracted = await extractCNHWithClaude(imgData, apiKey, '');
-      var ok = [], faltando = [];
+      var ok = [], faltando = [], avisos = [];
       if (extracted.nome)     { document.getElementById('cliente-nome').value = extracted.nome;     ok.push('Nome'); }     else faltando.push('Nome');
-      if (extracted.cpf)      { document.getElementById('cliente-cpf').value  = extracted.cpf;      ok.push('CPF'); }      else faltando.push('CPF');
+      if (extracted.cpf)      { document.getElementById('cliente-cpf').value  = extracted.cpf;      ok.push('CPF'); if (extracted.cpfValido === false) avisos.push('confira o CPF'); } else faltando.push('CPF');
       if (extracted.registro) { document.getElementById('cliente-cnh').value  = extracted.registro; ok.push('N° CNH'); }   else faltando.push('N° CNH');
-      status.style.color = ok.length ? (faltando.length ? 'orange' : 'var(--green)') : 'orange';
+      status.style.color = ok.length ? ((faltando.length || avisos.length) ? 'orange' : 'var(--green)') : 'orange';
       status.textContent = ok.length
-        ? '✓ ' + ok.join(', ') + (faltando.length ? ' | Faltou: ' + faltando.join(', ') : '')
+        ? '✓ ' + ok.join(', ') + (faltando.length ? ' | Faltou: ' + faltando.join(', ') : '') + (avisos.length ? ' | ⚠ ' + avisos.join(', ') : '')
         : '⚠ Não foi possível extrair. Preencha manualmente.';
       return;
     }
