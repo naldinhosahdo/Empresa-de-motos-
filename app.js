@@ -1016,8 +1016,11 @@ async function extractCNHWithClaude(imageDataUrl, apiKey, pdfText) {
     throw new Error((err.error && err.error.message) || 'Erro ' + resp.status);
   }
   var data = await resp.json();
-  var txt = data.content[0].text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
-  var parsed = JSON.parse(txt);
+  var txt = data.content[0].text.trim();
+  // Pega apenas o bloco JSON {...}, ignorando qualquer texto antes/depois
+  var jsonMatch = txt.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('Resposta da IA sem JSON. Tente novamente.');
+  var parsed = JSON.parse(jsonMatch[0]);
   // Normalize CPF: if returned as 11 digits, format as XXX.XXX.XXX-XX
   if (parsed.cpf) {
     var digits = parsed.cpf.replace(/\D/g, '');
