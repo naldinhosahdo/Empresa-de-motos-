@@ -921,7 +921,7 @@ async function extractCNHFromPDFText(pdfText, apiKey) {
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 200,
-      messages: [{ role: 'user', content: 'Texto extraído de uma CNH brasileira (pode ser CNH Definitiva ou PPD):\n\n' + pdfText.substring(0, 1500) + '\n\nExtraia APENAS:\n1. nome: nome do TITULAR (campo NOME ou "2e1 NOME E SOBRENOME"). NUNCA use nomes do campo FILIAÇÃO.\n2. cpf: número do campo CPF ou "4d CPF". Retorne somente os 11 dígitos sem formatação.\n3. registro: número do campo "Nº Registro" ou "5 Nº REGISTRO". 11 dígitos.\nResponda APENAS JSON: {"nome":"...","cpf":"...","registro":"..."}' }]
+      messages: [{ role: 'user', content: 'Texto extraído de uma CNH brasileira (pode ser CNH Definitiva ou PPD):\n\n' + pdfText.substring(0, 1500) + '\n\nIMPORTANTE: IGNORE completamente a zona MRZ (linhas que contêm "<" como "I<BRA...", "0508311M...", "LUIZ<<..."). Esses não são os dados reais.\n\nExtraia APENAS dos campos rotulados:\n1. nome: campo "NOME" ou "2e1 NOME E SOBRENOME". NUNCA use nomes do campo FILIAÇÃO.\n2. cpf: campo "CPF" ou "4d CPF" — o número formatado XXX.XXX.XXX-XX que aparece nesse campo. Retorne os 11 dígitos sem formatação.\n3. registro: campo "Nº Registro" ou "5 Nº REGISTRO" — 11 dígitos.\nResponda APENAS JSON: {"nome":"...","cpf":"...","registro":"..."}' }]
     })
   });
   if (!resp.ok) {
