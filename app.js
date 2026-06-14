@@ -688,13 +688,12 @@ async function pagarParcelaDash(parcelaId, aluguelId) {
 }
 
 // --- CLIENTES ---
-async function renderClientes() {
-  showLoading('clientes-tbody', 6);
-  const { data } = await db.from('clientes').select('*').order('nome');
-  const c = data || [];
-  document.getElementById('clientes-count').textContent = c.length;
-  document.getElementById('clientes-tbody').innerHTML = c.length
-    ? c.map(function(cl) {
+var _clientesCache = [];
+
+function renderClientesTabela(lista) {
+  document.getElementById('clientes-count').textContent = lista.length;
+  document.getElementById('clientes-tbody').innerHTML = lista.length
+    ? lista.map(function(cl) {
         var cat = cl.cnh_categoria || '';
         var catBadge = cat
           ? (cat.indexOf('A') !== -1
@@ -714,7 +713,27 @@ async function renderClientes() {
             '</div>' +
           '</td></tr>';
       }).join('')
-    : '<tr class="empty-row"><td colspan="6">Nenhum cliente cadastrado</td></tr>';
+    : '<tr class="empty-row"><td colspan="6">Nenhum cliente encontrado</td></tr>';
+}
+
+function filtrarClientes() {
+  var q = (document.getElementById('clientes-busca').value || '').toLowerCase().trim();
+  if (!q) { renderClientesTabela(_clientesCache); return; }
+  var filtrados = _clientesCache.filter(function(cl) {
+    return (cl.nome || '').toLowerCase().includes(q)
+        || (cl.cpf || '').toLowerCase().includes(q)
+        || (cl.telefone || '').toLowerCase().includes(q);
+  });
+  renderClientesTabela(filtrados);
+}
+
+async function renderClientes() {
+  showLoading('clientes-tbody', 6);
+  var busca = document.getElementById('clientes-busca');
+  if (busca) busca.value = '';
+  const { data } = await db.from('clientes').select('*').order('nome');
+  _clientesCache = data || [];
+  renderClientesTabela(_clientesCache);
 }
 
 function consultarCPF(tipo) {

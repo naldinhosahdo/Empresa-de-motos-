@@ -193,6 +193,9 @@
       <h2 class="section-title">Clientes <span class="section-count" id="clientes-count"></span></h2>
       <button class="btn btn-primary" onclick="openNewCliente()">+ Novo Cliente</button>
     </div>
+    <div style="margin-bottom:0.75rem">
+      <input type="search" id="clientes-busca" placeholder="Buscar por nome, CPF ou telefone..." oninput="filtrarClientes()" style="width:100%;padding:0.55rem 0.75rem;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:0.95rem">
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -970,7 +973,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=215"></script>
+<script src="app.js?v=216"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');
