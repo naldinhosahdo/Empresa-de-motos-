@@ -1298,13 +1298,12 @@ function preencherCliente() {
 }
 
 // --- VEÍCULOS ---
-async function renderVeiculos() {
-  showLoading('motos-tbody', 7);
-  const { data } = await db.from('veiculos').select('*').order('created_at', { ascending: false });
-  const v = data || [];
-  document.getElementById('veiculos-count').textContent = v.length;
-  document.getElementById('motos-tbody').innerHTML = v.length
-    ? v.map(function(vei) {
+var _veiculosCache = [];
+
+function renderVeiculosTabela(lista) {
+  document.getElementById('veiculos-count').textContent = lista.length;
+  document.getElementById('motos-tbody').innerHTML = lista.length
+    ? lista.map(function(vei) {
         return '<tr>' +
           '<td>' + vei.modelo + '</td>' +
           '<td>' + (vei.placa || '-') + '</td>' +
@@ -1319,7 +1318,27 @@ async function renderVeiculos() {
             '</div>' +
           '</td></tr>';
       }).join('')
-    : '<tr class="empty-row"><td colspan="7">Nenhum veículo cadastrado</td></tr>';
+    : '<tr class="empty-row"><td colspan="7">Nenhum veículo encontrado</td></tr>';
+}
+
+function filtrarVeiculos() {
+  var q = (document.getElementById('veiculos-busca').value || '').toLowerCase().trim();
+  if (!q) { renderVeiculosTabela(_veiculosCache); return; }
+  var filtrados = _veiculosCache.filter(function(vei) {
+    return (vei.modelo || '').toLowerCase().includes(q)
+        || (vei.placa  || '').toLowerCase().includes(q)
+        || (vei.cor    || '').toLowerCase().includes(q);
+  });
+  renderVeiculosTabela(filtrados);
+}
+
+async function renderVeiculos() {
+  showLoading('motos-tbody', 7);
+  var busca = document.getElementById('veiculos-busca');
+  if (busca) busca.value = '';
+  const { data } = await db.from('veiculos').select('*').order('created_at', { ascending: false });
+  _veiculosCache = data || [];
+  renderVeiculosTabela(_veiculosCache);
 }
 
 function openNewMoto() {
