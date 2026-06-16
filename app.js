@@ -741,24 +741,34 @@ async function renderClientes() {
   renderClientesTabela(_clientesCache);
 }
 
+function abrirUrl(url) {
+  var a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 function consultarCPF(tipo) {
   var cpf = document.getElementById('cliente-cpf').value.replace(/\D/g, '');
   if (!cpf) { alert('Preencha o CPF antes de consultar.'); return; }
   navigator.clipboard.writeText(cpf).catch(function() {});
   if (tipo === 'detran') {
-    window.open('https://sistemas.detran.ce.gov.br/central', '_blank');
+    abrirUrl('https://sistemas.detran.ce.gov.br/central');
   } else if (tipo === 'receita') {
-    window.open('https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp', '_blank');
+    abrirUrl('https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp');
   } else if (tipo === 'senatran') {
     window.location.href = 'intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=br.gov.serpro.lince;end';
   } else if (tipo === 'serasa') {
-    window.open('https://www.serasa.com.br/voceconsulta/', '_blank');
+    abrirUrl('https://www.serasa.com.br/voceconsulta/');
   } else if (tipo === 'tjce') {
-    window.open('https://esaj.tjce.jus.br/cpopg/open.do', '_blank');
+    abrirUrl('https://esaj.tjce.jus.br/cpopg/open.do');
   } else if (tipo === 'jfce') {
-    window.open('https://pje.jfce.jus.br/pje/ConsultaPublica/listView.seam', '_blank');
+    abrirUrl('https://pje.jfce.jus.br/pje/ConsultaPublica/listView.seam');
   } else {
-    window.open('https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais', '_blank');
+    abrirUrl('https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais');
   }
   if (tipo !== 'senatran') {
     alert('CPF ' + cpf + ' copiado! Cole no campo de busca do site que abriu.');
