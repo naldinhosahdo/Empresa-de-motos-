@@ -508,7 +508,7 @@ async function renderDashboard() {
     db.from('alugueis').select('*'),
     db.from('manutencoes').select('*'),
     db.from('despesas').select('*'),
-    db.from('parcelas').select('*, alugueis(veiculo_id)').eq('pago', true),
+    db.from('parcelas').select('*, alugueis(veiculo_id, caucao)').eq('pago', true),
     db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))').eq('pago', false).order('vencimento'),
     db.from('clientes').select('id')
   ]);
@@ -521,10 +521,15 @@ async function renderDashboard() {
 
   var aNaoCancelado = a.filter(function(x) { return x.status !== 'cancelado'; });
 
-  // Receita = apenas parcelas efetivamente pagas
-  var receitaTotal = pp.reduce(function(s, x) { return s + Number(x.valor_pago || x.valor || 0); }, 0);
+  // Receita = parcelas pagas excluindo o caução (que fica no card próprio)
+  function valorSemCaucao(p) {
+    var v = Number(p.valor_pago || p.valor || 0);
+    if (p.numero === 1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
+    return v;
+  }
+  var receitaTotal = pp.reduce(function(s, x) { return s + valorSemCaucao(x); }, 0);
   var receitaMes   = pp.filter(function(x) { return x.data_pagamento && x.data_pagamento.startsWith(anoMes); })
-                       .reduce(function(s, x) { return s + Number(x.valor_pago || x.valor || 0); }, 0);
+                       .reduce(function(s, x) { return s + valorSemCaucao(x); }, 0);
 
   // Apenas despesas efetivamente pagas (programadas quitadas)
   var dPago = d.filter(function(x) { return x.pago; });
@@ -635,11 +640,11 @@ async function renderDashboard() {
     }).join('');
   }
 
-  // Moto mais rentável (baseado em parcelas pagas)
+  // Moto mais rentável (baseado em parcelas pagas, sem caução)
   var motoReceita = {};
   pp.forEach(function(p) {
     var vid = p.alugueis && p.alugueis.veiculo_id;
-    if (vid) motoReceita[vid] = (motoReceita[vid] || 0) + Number(p.valor || 0);
+    if (vid) motoReceita[vid] = (motoReceita[vid] || 0) + valorSemCaucao(p);
   });
   var motoIds = Object.keys(motoReceita);
   var rentavelEl = document.getElementById('dash-moto-rentavel');
@@ -2545,7 +2550,7 @@ async function renderRelatorios() {
     db.from('alugueis').select('*').neq('status', 'cancelado'),
     db.from('manutencoes').select('*'),
     db.from('despesas').select('*'),
-    db.from('parcelas').select('*, alugueis(veiculo_id)').eq('pago', true)
+    db.from('parcelas').select('*, alugueis(veiculo_id, caucao)').eq('pago', true)
   ]);
 
   var v = veiculos || [];
@@ -2559,11 +2564,16 @@ async function renderRelatorios() {
     pp = pp.filter(function(x) { return x.data_pagamento && x.data_pagamento.startsWith(filtroMes); });
   }
 
-  // Mapa: veiculo_id → receita de parcelas pagas
+  // Mapa: veiculo_id → receita de parcelas pagas (sem caução)
+  function valorSemCaucaoRel(p) {
+    var v = Number(p.valor_pago || p.valor || 0);
+    if (p.numero === 1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
+    return v;
+  }
   var receitaPorVeiculo = {};
   pp.forEach(function(p) {
     var vid = p.alugueis && p.alugueis.veiculo_id;
-    if (vid) receitaPorVeiculo[vid] = (receitaPorVeiculo[vid] || 0) + Number(p.valor || 0);
+    if (vid) receitaPorVeiculo[vid] = (receitaPorVeiculo[vid] || 0) + valorSemCaucaoRel(p);
   });
 
   var totalReceita = 0, totalCustos = 0, totalAlugueis = 0;
