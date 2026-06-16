@@ -756,7 +756,7 @@ function consultarCPF(tipo) {
   } else if (tipo === 'tjce') {
     window.open('https://esaj.tjce.jus.br/cpopg/open.do', '_blank');
   } else if (tipo === 'jfce') {
-    window.open('https://www2.jfce.jus.br/consultaProcessual/', '_blank');
+    window.open('https://pje.jfce.jus.br/pje/ConsultaPublica/listView.seam', '_blank');
   } else {
     window.open('https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais', '_blank');
   }
