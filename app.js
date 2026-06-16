@@ -1795,6 +1795,10 @@ async function submitAluguel() {
     return;
   }
   var savedId = id || (result.data && result.data[0] ? result.data[0].id : null);
+  // Novo aluguel: marca a moto como alugada automaticamente
+  if (!id && aluguel.veiculo_id) {
+    await db.from('veiculos').update({ status: 'alugada' }).eq('id', aluguel.veiculo_id);
+  }
   if (!id && savedId) await gerarParcelas(savedId, aluguel);
   closeModal('modal-aluguel');
   renderAlugueis();
