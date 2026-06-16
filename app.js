@@ -764,7 +764,7 @@ function consultarCPF(tipo) {
   } else if (tipo === 'serasa') {
     abrirUrl('https://www.serasa.com.br/voceconsulta/');
   } else if (tipo === 'tjce') {
-    abrirUrl('https://esaj.tjce.jus.br/cpopg/open.do');
+    abrirUrl('https://pje-consulta.tjce.jus.br/pje1grau/ConsultaPublica/listView.seam');
   } else if (tipo === 'jfce') {
     abrirUrl('https://pje.jfce.jus.br/pje/ConsultaPublica/listView.seam');
   } else {
