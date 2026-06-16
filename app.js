@@ -1811,7 +1811,8 @@ async function gerarParcelas(aluguelId, aluguel) {
   var descP1 = aluguel.caucao
     ? 'Parcela 1 — ' + (aluguel.periodo === 'mes' ? 'Mês' : 'Semana') + ' 1 + Caução'
     : 'Parcela 1 — ' + (aluguel.periodo === 'mes' ? 'Mês' : 'Semana') + ' 1';
-  parcelas.push({ aluguel_id: aluguelId, numero: num, descricao: descP1, valor: valorP1, vencimento: aluguel.inicio, pago: false });
+  var inicioStr = venc.getFullYear() + '-' + String(venc.getMonth() + 1).padStart(2, '0') + '-' + String(venc.getDate()).padStart(2, '0');
+  parcelas.push({ aluguel_id: aluguelId, numero: num, descricao: descP1, valor: valorP1, vencimento: inicioStr, pago: false });
   num++;
   venc.setDate(venc.getDate() + diasPeriodo);
 
