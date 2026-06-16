@@ -753,6 +753,10 @@ function consultarCPF(tipo) {
     window.location.href = 'intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=br.gov.serpro.lince;end';
   } else if (tipo === 'serasa') {
     window.open('https://www.serasa.com.br/voceconsulta/', '_blank');
+  } else if (tipo === 'tjce') {
+    window.open('https://esaj.tjce.jus.br/cpopg/open.do', '_blank');
+  } else if (tipo === 'jfce') {
+    window.open('https://www2.jfce.jus.br/consultaProcessual/', '_blank');
   } else {
     window.open('https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais', '_blank');
   }
