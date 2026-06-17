@@ -1,4 +1,4 @@
-// GereMoto — Gestão de Aluguel de Veículos
+// Vrunn — Gestão de Aluguel de Veículos
 // Backend: Supabase
 
 const SUPABASE_URL = 'https://ohukqqyktkrvqedhozgk.supabase.co';

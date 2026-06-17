@@ -1,4 +1,4 @@
-var CACHE = 'geremoto-v1';
+var CACHE = 'vrunn-v1';
 var ASSETS = [
   '/Empresa-de-motos-/',
   '/Empresa-de-motos-/index.html',
