@@ -5,6 +5,9 @@ const SUPABASE_URL = 'https://ohukqqyktkrvqedhozgk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9odWtxcXlrdGtydnFlZGhvemdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2ODkzMTQsImV4cCI6MjA5NTI2NTMxNH0.yKCkjINcQNcxiIqkfRUA507KlFymzTsInHTa6ObZzTM';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 var _pendingNotifKey = null;
+var _chartEvolucao = null;
+var _chartPorMoto = null;
+var _chartDistribuicao = null;
 
 // --- CONFIGURAÇÕES DO LOCADOR ---
 var _configCache = { nome: '', cpf: '', endereco: '', cidade: 'Fortaleza/CE', anthropic_key: '' };
@@ -2563,6 +2566,7 @@ function resetFiltroMes() {
 
 async function renderRelatorios() {
   var filtroMes = document.getElementById('filtro-mes').value;
+
   const [{ data: veiculos }, { data: alugueis }, { data: manutencoes }, { data: despesas }, { data: parcelasPagas }] = await Promise.all([
     db.from('veiculos').select('*'),
     db.from('alugueis').select('*').neq('status', 'cancelado'),
@@ -2572,30 +2576,27 @@ async function renderRelatorios() {
   ]);
 
   var v = veiculos || [];
-  var a = alugueis || [], m = manutencoes || [], d = despesas || [];
-  var pp = parcelasPagas || [];
+  var allA = alugueis || [], allM = manutencoes || [], allD = despesas || [], allPP = parcelasPagas || [];
+  var a = allA, m = allM, d = allD, pp = allPP;
 
   if (filtroMes) {
-    a = a.filter(function(x) { return x.inicio && x.inicio.startsWith(filtroMes); });
-    m = m.filter(function(x) { return x.data && x.data.startsWith(filtroMes); });
-    d = d.filter(function(x) { return x.vencimento && x.vencimento.startsWith(filtroMes); });
-    pp = pp.filter(function(x) { return x.data_pagamento && x.data_pagamento.startsWith(filtroMes); });
+    a  = allA.filter(function(x) { return x.inicio && x.inicio.startsWith(filtroMes); });
+    m  = allM.filter(function(x) { return x.data && x.data.startsWith(filtroMes); });
+    d  = allD.filter(function(x) { return x.vencimento && x.vencimento.startsWith(filtroMes); });
+    pp = allPP.filter(function(x) { return x.data_pagamento && x.data_pagamento.startsWith(filtroMes); });
   }
 
-  // Mapa: veiculo_id → receita de parcelas pagas (sem caução)
   function valorSemCaucaoRel(p) {
-    var v = Number(p.valor_pago || p.valor || 0);
-    if (p.numero === 1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
-    return v;
+    var val = Number(p.valor_pago || p.valor || 0);
+    if (p.numero === 1 && p.alugueis && p.alugueis.caucao) val = Math.max(0, val - Number(p.alugueis.caucao));
+    return val;
   }
+
   var receitaPorVeiculo = {};
   pp.forEach(function(p) {
     var vid = p.alugueis && p.alugueis.veiculo_id;
     if (vid) receitaPorVeiculo[vid] = (receitaPorVeiculo[vid] || 0) + valorSemCaucaoRel(p);
   });
-
-  var totalReceita = 0, totalCustos = 0, totalAlugueis = 0;
-  var todosAlugueis = alugueis || [];
 
   var rows = v.map(function(vei) {
     var receita = receitaPorVeiculo[vei.id] || 0;
@@ -2603,14 +2604,10 @@ async function renderRelatorios() {
                   .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
                 + d.filter(function(x) { return x.veiculo_id === vei.id && x.pago; })
                   .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
-    var qtd = a.filter(function(x) { return x.veiculo_id === vei.id; }).length;
+    var qtd   = a.filter(function(x) { return x.veiculo_id === vei.id; }).length;
     var lucro = receita - custos;
-    totalReceita  += receita;
-    totalCustos   += custos;
-    totalAlugueis += qtd;
-
-    // Payback
     var valorCompra = Number(vei.valor_compra || 0);
+
     var paybackTxt = '';
     if (!valorCompra) {
       paybackTxt = 'Informe o valor de compra';
@@ -2619,7 +2616,7 @@ async function renderRelatorios() {
       if (filtroMes) {
         lucroMensal = lucro;
       } else {
-        var alugsVei = todosAlugueis.filter(function(x) { return x.veiculo_id === vei.id; });
+        var alugsVei = allA.filter(function(x) { return x.veiculo_id === vei.id; });
         var datas = alugsVei.map(function(x) { return x.inicio; }).filter(Boolean).sort();
         if (datas.length > 0) {
           var mesesDecorridos = Math.max(1, Math.ceil((new Date(hojeLocalStr()) - new Date(datas[0] + 'T00:00:00')) / (30 * 86400000)));
@@ -2635,47 +2632,131 @@ async function renderRelatorios() {
         paybackTxt = 'Sem lucro positivo';
       }
     }
-
     return { vei: vei, receita: receita, custos: custos, lucro: lucro, qtd: qtd, valorCompra: valorCompra, paybackTxt: paybackTxt };
   });
 
+  var totalReceita  = rows.reduce(function(s, r) { return s + r.receita; }, 0);
+  var totalCustos   = rows.reduce(function(s, r) { return s + r.custos; }, 0);
+  var totalLucro    = totalReceita - totalCustos;
+  var totalAlugueis = rows.reduce(function(s, r) { return s + r.qtd; }, 0);
+
+  // === KPIs ===
+  var lucroKpiColor = totalLucro >= 0 ? '#22c55e' : '#ef4444';
+  document.getElementById('chart-kpis').innerHTML =
+    '<div class="chart-kpi"><div class="chart-kpi-label">Receita</div><div class="chart-kpi-value" style="color:#22c55e">' + fmtBRL(totalReceita) + '</div></div>' +
+    '<div class="chart-kpi"><div class="chart-kpi-label">Custos</div><div class="chart-kpi-value" style="color:#ef4444">' + fmtBRL(totalCustos) + '</div></div>' +
+    '<div class="chart-kpi"><div class="chart-kpi-label">Lucro</div><div class="chart-kpi-value" style="color:' + lucroKpiColor + '">' + fmtBRL(totalLucro) + '</div></div>' +
+    '<div class="chart-kpi"><div class="chart-kpi-label">Aluguéis</div><div class="chart-kpi-value" style="color:#3b82f6">' + totalAlugueis + '</div></div>';
+
+  // === EVOLUÇÃO MENSAL — últimos 12 meses (sempre sem filtroMes) ===
+  var hoje = new Date();
+  var mesesKeys = [], mesesLabels = [];
+  for (var i = 11; i >= 0; i--) {
+    var md = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+    mesesKeys.push(md.getFullYear() + '-' + String(md.getMonth() + 1).padStart(2, '0'));
+    mesesLabels.push(md.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }));
+  }
+  var receitaMensal = mesesKeys.map(function(mk) {
+    return allPP.filter(function(p) { return p.data_pagamento && p.data_pagamento.startsWith(mk); })
+                .reduce(function(s, p) { return s + valorSemCaucaoRel(p); }, 0);
+  });
+  var custosMensal = mesesKeys.map(function(mk) {
+    return allM.filter(function(x) { return x.data && x.data.startsWith(mk); })
+               .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
+             + allD.filter(function(x) { return x.pago && x.vencimento && x.vencimento.startsWith(mk); })
+               .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+  });
+  var lucroMensal = mesesKeys.map(function(mk, idx) { return receitaMensal[idx] - custosMensal[idx]; });
+
+  if (_chartEvolucao) { _chartEvolucao.destroy(); _chartEvolucao = null; }
+  _chartEvolucao = new Chart(document.getElementById('chart-evolucao').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: mesesLabels,
+      datasets: [
+        { label: 'Receita', data: receitaMensal, backgroundColor: 'rgba(34,197,94,0.65)', borderColor: '#22c55e', borderWidth: 1.5, borderRadius: 5, order: 2 },
+        { label: 'Custos',  data: custosMensal,  backgroundColor: 'rgba(239,68,68,0.6)',  borderColor: '#ef4444', borderWidth: 1.5, borderRadius: 5, order: 2 },
+        { label: 'Lucro', data: lucroMensal, type: 'line', borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#3b82f6', tension: 0.3, fill: true, order: 1 }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: '#7a93b8', font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#7a93b8', font: { size: 11 } }, grid: { color: 'rgba(99,130,190,0.08)' } },
+        y: { ticks: { color: '#7a93b8', font: { size: 11 }, callback: function(v) { return 'R$' + v.toLocaleString('pt-BR'); } }, grid: { color: 'rgba(99,130,190,0.08)' } }
+      }
+    }
+  });
+
+  // === RESULTADO POR MOTO ===
+  var motoLabels = rows.map(function(r) { return veiculoLabel(r.vei); });
+  if (_chartPorMoto) { _chartPorMoto.destroy(); _chartPorMoto = null; }
+  _chartPorMoto = new Chart(document.getElementById('chart-por-moto').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: motoLabels,
+      datasets: [
+        { label: 'Receita', data: rows.map(function(r) { return r.receita; }), backgroundColor: 'rgba(34,197,94,0.7)', borderColor: '#22c55e', borderWidth: 1.5, borderRadius: 6 },
+        { label: 'Custos',  data: rows.map(function(r) { return r.custos; }),  backgroundColor: 'rgba(239,68,68,0.65)', borderColor: '#ef4444', borderWidth: 1.5, borderRadius: 6 },
+        { label: 'Lucro',   data: rows.map(function(r) { return r.lucro; }),
+          backgroundColor: rows.map(function(r) { return r.lucro >= 0 ? 'rgba(59,130,246,0.7)' : 'rgba(239,68,68,0.35)'; }),
+          borderColor:     rows.map(function(r) { return r.lucro >= 0 ? '#3b82f6' : '#ef4444'; }),
+          borderWidth: 1.5, borderRadius: 6 }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: '#7a93b8', font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#7a93b8', font: { size: 11 } }, grid: { color: 'rgba(99,130,190,0.08)' } },
+        y: { ticks: { color: '#7a93b8', font: { size: 11 }, callback: function(v) { return 'R$' + v.toLocaleString('pt-BR'); } }, grid: { color: 'rgba(99,130,190,0.08)' } }
+      }
+    }
+  });
+
+  // === DISTRIBUIÇÃO DE RECEITA ===
+  var chartColors = ['#3b82f6','#22c55e','#a855f7','#f59e0b','#ef4444','#06b6d4','#f97316'];
+  if (_chartDistribuicao) { _chartDistribuicao.destroy(); _chartDistribuicao = null; }
+  _chartDistribuicao = new Chart(document.getElementById('chart-distribuicao').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: motoLabels,
+      datasets: [{
+        data: rows.map(function(r) { return Math.max(0, r.receita); }),
+        backgroundColor: chartColors.slice(0, rows.length),
+        borderColor: '#0d1526',
+        borderWidth: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#7a93b8', font: { size: 11 }, padding: 14 } },
+        tooltip: { callbacks: { label: function(ctx) { return ' ' + fmtBRL(ctx.parsed); } } }
+      }
+    }
+  });
+
+  // === PAYBACK CARDS ===
+  var paybackLabel = filtroMes ? 'Payback (neste ritmo)' : 'Payback (média histórica)';
   var grid = document.getElementById('relatorio-motos-grid');
   grid.innerHTML = rows.length
     ? rows.map(function(r) {
-        var lc = r.lucro >= 0 ? 'text-green' : 'text-red';
-        var paybackLabel = filtroMes ? 'Payback (neste ritmo)' : 'Payback (média histórica)';
+        var lc = r.lucro >= 0 ? '#22c55e' : '#ef4444';
         return '<div class="relatorio-card">' +
           '<h4>' + veiculoLabel(r.vei) + '</h4>' +
-          '<div class="rel-row"><span>Receita</span><span class="text-green">' + fmtBRL(r.receita) + '</span></div>' +
-          '<div class="rel-row"><span>Custos</span><span class="text-red">' + fmtBRL(r.custos) + '</span></div>' +
+          '<div class="rel-row"><span>Receita</span><span style="color:#22c55e">' + fmtBRL(r.receita) + '</span></div>' +
+          '<div class="rel-row"><span>Custos</span><span style="color:#ef4444">' + fmtBRL(r.custos) + '</span></div>' +
           '<div class="rel-row"><span>Aluguéis</span><span>' + r.qtd + '</span></div>' +
-          '<div class="rel-row"><span>Lucro/Prejuízo</span><span class="' + lc + '">' + fmtBRL(r.lucro) + '</span></div>' +
+          '<div class="rel-row"><span>Lucro/Prejuízo</span><span style="color:' + lc + ';font-weight:700">' + fmtBRL(r.lucro) + '</span></div>' +
           (r.valorCompra ? '<div class="rel-row"><span>Investimento</span><span>' + fmtBRL(r.valorCompra) + '</span></div>' : '') +
-          '<div class="rel-row"><span>' + paybackLabel + '</span><span style="color:var(--yellow);font-weight:600">' + r.paybackTxt + '</span></div>' +
+          '<div class="rel-row"><span>' + paybackLabel + '</span><span style="color:#f59e0b;font-weight:600">' + r.paybackTxt + '</span></div>' +
           '</div>';
       }).join('')
     : '<p style="color:var(--text2)">Nenhum veículo cadastrado.</p>';
-
-  var tbody = document.getElementById('relatorio-tbody');
-  tbody.innerHTML = rows.length
-    ? rows.map(function(r) {
-        var lc = r.lucro >= 0 ? 'text-green' : 'text-red';
-        return '<tr>' +
-          '<td>' + veiculoLabel(r.vei) + '</td>' +
-          '<td class="text-green">' + fmtBRL(r.receita) + '</td>' +
-          '<td class="text-red">'   + fmtBRL(r.custos)  + '</td>' +
-          '<td class="' + lc + '"><strong>' + fmtBRL(r.lucro) + '</strong></td>' +
-          '<td>' + r.qtd + '</td></tr>';
-      }).join('')
-    : '<tr class="empty-row"><td colspan="5">Nenhum dado encontrado</td></tr>';
-
-  var lucroTotal = totalReceita - totalCustos;
-  document.getElementById('relatorio-tfoot').innerHTML =
-    '<td><strong>TOTAL</strong></td>' +
-    '<td class="text-green"><strong>' + fmtBRL(totalReceita) + '</strong></td>' +
-    '<td class="text-red"><strong>'   + fmtBRL(totalCustos)  + '</strong></td>' +
-    '<td class="' + (lucroTotal >= 0 ? 'text-green' : 'text-red') + '"><strong>' + fmtBRL(lucroTotal) + '</strong></td>' +
-    '<td><strong>' + totalAlugueis + '</strong></td>';
 }
 
 // --- DELETE ---

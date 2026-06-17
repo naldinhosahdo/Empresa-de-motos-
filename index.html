@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Vrunn">
   <meta name="theme-color" content="#2563eb">
-  <link rel="stylesheet" href="style.css?v=35">
+  <link rel="stylesheet" href="style.css?v=36">
 </head>
 <body>
 
@@ -297,21 +297,31 @@
 
   <!-- RELATÓRIOS -->
   <section id="relatorios" class="section">
-    <h2 class="section-title">Relatórios</h2>
+    <h2 class="section-title">Análise de Lucro</h2>
     <div class="filter-bar">
       <label>Mês/Ano: <input type="month" id="filtro-mes" onchange="renderRelatorios()"></label>
       <button class="btn btn-secondary" onclick="resetFiltroMes()">Ver Tudo</button>
     </div>
-    <h3 style="margin: 1.25rem 0 0.75rem">Resultado por Moto</h3>
-    <div id="relatorio-motos-grid" class="relatorio-grid"></div>
-    <h3 style="margin: 1.5rem 0 0.75rem">Resumo Geral</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Moto</th><th>Receita</th><th>Manutenções</th><th>Lucro/Prejuízo</th><th>Aluguéis</th></tr></thead>
-        <tbody id="relatorio-tbody"></tbody>
-        <tfoot><tr id="relatorio-tfoot"></tr></tfoot>
-      </table>
+
+    <div class="chart-kpis" id="chart-kpis"></div>
+
+    <div class="charts-grid">
+      <div class="chart-card chart-full">
+        <h4>Evolução Mensal — Últimos 12 Meses</h4>
+        <canvas id="chart-evolucao" height="75"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>Resultado por Moto</h4>
+        <canvas id="chart-por-moto"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>Distribuição de Receita</h4>
+        <canvas id="chart-distribuicao"></canvas>
+      </div>
     </div>
+
+    <h3 style="margin: 0.25rem 0 0.75rem">Payback por Moto</h3>
+    <div id="relatorio-motos-grid" class="relatorio-grid"></div>
   </section>
 
 </main>
@@ -978,7 +988,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=222"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="app.js?v=223"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');
