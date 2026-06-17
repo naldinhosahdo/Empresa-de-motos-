@@ -2564,6 +2564,14 @@ function resetFiltroMes() {
   renderRelatorios();
 }
 
+function _kpiCard(label, value, color, sub) {
+  return '<div class="chart-kpi">' +
+    '<div class="chart-kpi-label">' + label + '</div>' +
+    '<div class="chart-kpi-value" style="color:' + color + '">' + value + '</div>' +
+    (sub ? '<div class="chart-kpi-sub">' + sub + '</div>' : '') +
+    '</div>';
+}
+
 async function renderRelatorios() {
   var filtroMes = document.getElementById('filtro-mes').value;
 
@@ -2599,13 +2607,14 @@ async function renderRelatorios() {
   });
 
   var rows = v.map(function(vei) {
-    var receita = receitaPorVeiculo[vei.id] || 0;
-    var custos  = m.filter(function(x) { return x.veiculo_id === vei.id; })
-                  .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
-                + d.filter(function(x) { return x.veiculo_id === vei.id && x.pago; })
-                  .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
-    var qtd   = a.filter(function(x) { return x.veiculo_id === vei.id; }).length;
-    var lucro = receita - custos;
+    var receita    = receitaPorVeiculo[vei.id] || 0;
+    var custoManut = m.filter(function(x) { return x.veiculo_id === vei.id; })
+                     .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0);
+    var custoDesp  = d.filter(function(x) { return x.veiculo_id === vei.id && x.pago; })
+                     .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+    var custos = custoManut + custoDesp;
+    var qtd    = a.filter(function(x) { return x.veiculo_id === vei.id; }).length;
+    var lucro  = receita - custos;
     var valorCompra = Number(vei.valor_compra || 0);
 
     var paybackTxt = '';
@@ -2632,26 +2641,42 @@ async function renderRelatorios() {
         paybackTxt = 'Sem lucro positivo';
       }
     }
-    return { vei: vei, receita: receita, custos: custos, lucro: lucro, qtd: qtd, valorCompra: valorCompra, paybackTxt: paybackTxt };
+    return { vei: vei, receita: receita, custoManut: custoManut, custoDesp: custoDesp, custos: custos, lucro: lucro, qtd: qtd, valorCompra: valorCompra, paybackTxt: paybackTxt };
   });
 
   var totalReceita  = rows.reduce(function(s, r) { return s + r.receita; }, 0);
   var totalCustos   = rows.reduce(function(s, r) { return s + r.custos; }, 0);
   var totalLucro    = totalReceita - totalCustos;
   var totalAlugueis = rows.reduce(function(s, r) { return s + r.qtd; }, 0);
+  var ticketMedio   = totalAlugueis > 0 ? totalReceita / totalAlugueis : 0;
+  var motosAlugadas = v.filter(function(x) { return x.status === 'alugada'; }).length;
+  var ocupacao      = v.length > 0 ? Math.round(motosAlugadas / v.length * 100) : 0;
+  var margemPct     = totalReceita > 0 ? (totalLucro / totalReceita * 100).toFixed(1) : '0.0';
 
   // === KPIs ===
-  var lucroKpiColor = totalLucro >= 0 ? '#22c55e' : '#ef4444';
+  var lucroColor = totalLucro >= 0 ? '#22c55e' : '#ef4444';
+  var ocupColor  = ocupacao >= 70 ? '#22c55e' : (ocupacao >= 40 ? '#f59e0b' : '#ef4444');
   document.getElementById('chart-kpis').innerHTML =
-    '<div class="chart-kpi"><div class="chart-kpi-label">Receita</div><div class="chart-kpi-value" style="color:#22c55e">' + fmtBRL(totalReceita) + '</div></div>' +
-    '<div class="chart-kpi"><div class="chart-kpi-label">Custos</div><div class="chart-kpi-value" style="color:#ef4444">' + fmtBRL(totalCustos) + '</div></div>' +
-    '<div class="chart-kpi"><div class="chart-kpi-label">Lucro</div><div class="chart-kpi-value" style="color:' + lucroKpiColor + '">' + fmtBRL(totalLucro) + '</div></div>' +
-    '<div class="chart-kpi"><div class="chart-kpi-label">Aluguéis</div><div class="chart-kpi-value" style="color:#3b82f6">' + totalAlugueis + '</div></div>';
+    _kpiCard(filtroMes ? 'Receita (mês)' : 'Receita Total', fmtBRL(totalReceita), '#22c55e', null) +
+    _kpiCard(filtroMes ? 'Lucro (mês)' : 'Lucro Total', fmtBRL(totalLucro), lucroColor, 'margem ' + margemPct + '%') +
+    _kpiCard('Frota Ocupada', ocupacao + '%', ocupColor, motosAlugadas + ' de ' + v.length + ' motos') +
+    _kpiCard('Ticket Médio', fmtBRL(ticketMedio), '#3b82f6', totalAlugueis + ' aluguéis');
 
-  // === EVOLUÇÃO MENSAL — últimos 12 meses (sempre sem filtroMes) ===
+  // Tooltip padrão para todos os gráficos
+  var tooltipDefaults = {
+    backgroundColor: '#1a2d45',
+    borderColor: 'rgba(99,130,190,0.3)',
+    borderWidth: 1,
+    titleColor: '#e8edf8',
+    bodyColor: '#94a3b8',
+    padding: 12,
+    cornerRadius: 8
+  };
+
+  // === EVOLUÇÃO — últimos 6 meses (sempre unfiltered) ===
   var hoje = new Date();
   var mesesKeys = [], mesesLabels = [];
-  for (var i = 11; i >= 0; i--) {
+  for (var i = 5; i >= 0; i--) {
     var md = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
     mesesKeys.push(md.getFullYear() + '-' + String(md.getMonth() + 1).padStart(2, '0'));
     mesesLabels.push(md.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }));
@@ -2666,93 +2691,161 @@ async function renderRelatorios() {
              + allD.filter(function(x) { return x.pago && x.vencimento && x.vencimento.startsWith(mk); })
                .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
   });
-  var lucroMensal = mesesKeys.map(function(mk, idx) { return receitaMensal[idx] - custosMensal[idx]; });
+  var lucroMensalArr = mesesKeys.map(function(mk, idx) { return receitaMensal[idx] - custosMensal[idx]; });
 
   if (_chartEvolucao) { _chartEvolucao.destroy(); _chartEvolucao = null; }
-  _chartEvolucao = new Chart(document.getElementById('chart-evolucao').getContext('2d'), {
-    type: 'bar',
+  var ctxEv = document.getElementById('chart-evolucao').getContext('2d');
+  var gradLucro = ctxEv.createLinearGradient(0, 0, 0, 240);
+  gradLucro.addColorStop(0, 'rgba(59,130,246,0.2)');
+  gradLucro.addColorStop(1, 'rgba(59,130,246,0.01)');
+
+  _chartEvolucao = new Chart(ctxEv, {
     data: {
       labels: mesesLabels,
       datasets: [
-        { label: 'Receita', data: receitaMensal, backgroundColor: 'rgba(34,197,94,0.65)', borderColor: '#22c55e', borderWidth: 1.5, borderRadius: 5, order: 2 },
-        { label: 'Custos',  data: custosMensal,  backgroundColor: 'rgba(239,68,68,0.6)',  borderColor: '#ef4444', borderWidth: 1.5, borderRadius: 5, order: 2 },
-        { label: 'Lucro', data: lucroMensal, type: 'line', borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#3b82f6', tension: 0.3, fill: true, order: 1 }
+        {
+          type: 'bar', label: 'Receita', data: receitaMensal,
+          backgroundColor: 'rgba(34,197,94,0.68)', borderColor: '#22c55e', borderWidth: 1.5, borderRadius: 6, order: 2
+        },
+        {
+          type: 'bar', label: 'Custos', data: custosMensal,
+          backgroundColor: 'rgba(239,68,68,0.62)', borderColor: '#ef4444', borderWidth: 1.5, borderRadius: 6, order: 2
+        },
+        {
+          type: 'line', label: 'Lucro', data: lucroMensalArr,
+          borderColor: '#3b82f6', backgroundColor: gradLucro, borderWidth: 2.5,
+          pointRadius: 5, pointBackgroundColor: lucroMensalArr.map(function(val) { return val >= 0 ? '#3b82f6' : '#ef4444'; }),
+          pointBorderColor: '#0a1628', pointBorderWidth: 2,
+          tension: 0.35, fill: true, order: 1
+        }
       ]
     },
     options: {
       responsive: true,
       interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { labels: { color: '#7a93b8', font: { size: 11 } } } },
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: { size: 12 }, usePointStyle: true, pointStyleWidth: 10 } },
+        tooltip: Object.assign({}, tooltipDefaults, {
+          callbacks: { label: function(ctx) { return '  ' + ctx.dataset.label + ': ' + fmtBRL(ctx.parsed.y); } }
+        })
+      },
       scales: {
-        x: { ticks: { color: '#7a93b8', font: { size: 11 } }, grid: { color: 'rgba(99,130,190,0.08)' } },
-        y: { ticks: { color: '#7a93b8', font: { size: 11 }, callback: function(v) { return 'R$' + v.toLocaleString('pt-BR'); } }, grid: { color: 'rgba(99,130,190,0.08)' } }
+        x: { ticks: { color: '#7a93b8', font: { size: 12 } }, grid: { color: 'rgba(99,130,190,0.06)' } },
+        y: { ticks: { color: '#7a93b8', font: { size: 11 }, callback: function(v) { return 'R$ ' + v.toLocaleString('pt-BR'); } }, grid: { color: 'rgba(99,130,190,0.06)' } }
       }
     }
   });
 
-  // === RESULTADO POR MOTO ===
-  var motoLabels = rows.map(function(r) { return veiculoLabel(r.vei); });
+  // === LUCRO POR MOTO — barra horizontal, ordenado do maior pro menor ===
+  var rowsSorted = rows.slice().sort(function(a, b) { return b.lucro - a.lucro; });
   if (_chartPorMoto) { _chartPorMoto.destroy(); _chartPorMoto = null; }
   _chartPorMoto = new Chart(document.getElementById('chart-por-moto').getContext('2d'), {
     type: 'bar',
     data: {
-      labels: motoLabels,
-      datasets: [
-        { label: 'Receita', data: rows.map(function(r) { return r.receita; }), backgroundColor: 'rgba(34,197,94,0.7)', borderColor: '#22c55e', borderWidth: 1.5, borderRadius: 6 },
-        { label: 'Custos',  data: rows.map(function(r) { return r.custos; }),  backgroundColor: 'rgba(239,68,68,0.65)', borderColor: '#ef4444', borderWidth: 1.5, borderRadius: 6 },
-        { label: 'Lucro',   data: rows.map(function(r) { return r.lucro; }),
-          backgroundColor: rows.map(function(r) { return r.lucro >= 0 ? 'rgba(59,130,246,0.7)' : 'rgba(239,68,68,0.35)'; }),
-          borderColor:     rows.map(function(r) { return r.lucro >= 0 ? '#3b82f6' : '#ef4444'; }),
-          borderWidth: 1.5, borderRadius: 6 }
-      ]
-    },
-    options: {
-      responsive: true,
-      interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { labels: { color: '#7a93b8', font: { size: 11 } } } },
-      scales: {
-        x: { ticks: { color: '#7a93b8', font: { size: 11 } }, grid: { color: 'rgba(99,130,190,0.08)' } },
-        y: { ticks: { color: '#7a93b8', font: { size: 11 }, callback: function(v) { return 'R$' + v.toLocaleString('pt-BR'); } }, grid: { color: 'rgba(99,130,190,0.08)' } }
-      }
-    }
-  });
-
-  // === DISTRIBUIÇÃO DE RECEITA ===
-  var chartColors = ['#3b82f6','#22c55e','#a855f7','#f59e0b','#ef4444','#06b6d4','#f97316'];
-  if (_chartDistribuicao) { _chartDistribuicao.destroy(); _chartDistribuicao = null; }
-  _chartDistribuicao = new Chart(document.getElementById('chart-distribuicao').getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels: motoLabels,
+      labels: rowsSorted.map(function(r) { return veiculoLabel(r.vei); }),
       datasets: [{
-        data: rows.map(function(r) { return Math.max(0, r.receita); }),
-        backgroundColor: chartColors.slice(0, rows.length),
-        borderColor: '#0d1526',
-        borderWidth: 3
+        label: 'Lucro / Prejuízo',
+        data: rowsSorted.map(function(r) { return r.lucro; }),
+        backgroundColor: rowsSorted.map(function(r) { return r.lucro >= 0 ? 'rgba(34,197,94,0.78)' : 'rgba(239,68,68,0.72)'; }),
+        borderColor:     rowsSorted.map(function(r) { return r.lucro >= 0 ? '#22c55e' : '#ef4444'; }),
+        borderWidth: 1.5, borderRadius: 6
       }]
     },
     options: {
+      indexAxis: 'y',
       responsive: true,
       plugins: {
-        legend: { position: 'bottom', labels: { color: '#7a93b8', font: { size: 11 }, padding: 14 } },
-        tooltip: { callbacks: { label: function(ctx) { return ' ' + fmtBRL(ctx.parsed); } } }
+        legend: { display: false },
+        tooltip: Object.assign({}, tooltipDefaults, {
+          callbacks: {
+            label: function(ctx) {
+              var r = rowsSorted[ctx.dataIndex];
+              return [
+                '  Lucro: ' + fmtBRL(ctx.parsed.x),
+                '  Receita: ' + fmtBRL(r.receita),
+                '  Custos: ' + fmtBRL(r.custos)
+              ];
+            }
+          }
+        })
+      },
+      scales: {
+        x: {
+          ticks: { color: '#7a93b8', font: { size: 11 }, callback: function(v) { return 'R$' + v.toLocaleString('pt-BR'); } },
+          grid: { color: 'rgba(99,130,190,0.06)' }
+        },
+        y: { ticks: { color: '#e2e8f0', font: { size: 12, weight: '600' } }, grid: { display: false } }
       }
     }
   });
 
-  // === PAYBACK CARDS ===
+  // === ONDE VAI O DINHEIRO — composição de custos ===
+  var custoManutTotal = m.reduce(function(s, x) { return s + Number(x.custo || 0); }, 0);
+  var dPago = d.filter(function(x) { return x.pago; });
+  var custosPorTipo = {};
+  dPago.forEach(function(x) {
+    var tipo = x.tipo ? (x.tipo.charAt(0).toUpperCase() + x.tipo.slice(1).toLowerCase()) : 'Outros';
+    custosPorTipo[tipo] = (custosPorTipo[tipo] || 0) + Number(x.valor || 0);
+  });
+  var custoCats = [];
+  if (custoManutTotal > 0) custoCats.push({ label: 'Manutenção', valor: custoManutTotal });
+  var tiposKeys = Object.keys(custosPorTipo);
+  for (var ti = 0; ti < tiposKeys.length; ti++) {
+    if (custosPorTipo[tiposKeys[ti]] > 0) custoCats.push({ label: tiposKeys[ti], valor: custosPorTipo[tiposKeys[ti]] });
+  }
+  custoCats.sort(function(a, b) { return b.valor - a.valor; });
+  var totalCustosCats = custoCats.reduce(function(s, c) { return s + c.valor; }, 0);
+  var chartColors = ['#3b82f6','#22c55e','#a855f7','#f59e0b','#06b6d4','#f97316','#ec4899','#84cc16'];
+
+  if (_chartDistribuicao) { _chartDistribuicao.destroy(); _chartDistribuicao = null; }
+  var ctxDist = document.getElementById('chart-distribuicao');
+  if (custoCats.length > 0) {
+    _chartDistribuicao = new Chart(ctxDist.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: custoCats.map(function(c) { return c.label; }),
+        datasets: [{
+          data: custoCats.map(function(c) { return c.valor; }),
+          backgroundColor: chartColors.slice(0, custoCats.length),
+          borderColor: '#0a1628', borderWidth: 3, hoverOffset: 10
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '62%',
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 }, padding: 12, usePointStyle: true } },
+          tooltip: Object.assign({}, tooltipDefaults, {
+            callbacks: {
+              label: function(ctx) {
+                var pct = totalCustosCats > 0 ? Math.round(ctx.parsed / totalCustosCats * 100) : 0;
+                return '  ' + fmtBRL(ctx.parsed) + ' — ' + pct + '%';
+              }
+            }
+          })
+        }
+      }
+    });
+  } else {
+    var p = document.createElement('p');
+    p.style.cssText = 'color:var(--text2);text-align:center;margin-top:3rem;font-size:0.85rem';
+    p.textContent = 'Sem custos registrados';
+    ctxDist.parentNode.appendChild(p);
+  }
+
+  // === CARDS DE DETALHE POR MOTO ===
   var paybackLabel = filtroMes ? 'Payback (neste ritmo)' : 'Payback (média histórica)';
-  var grid = document.getElementById('relatorio-motos-grid');
-  grid.innerHTML = rows.length
+  document.getElementById('relatorio-motos-grid').innerHTML = rows.length
     ? rows.map(function(r) {
         var lc = r.lucro >= 0 ? '#22c55e' : '#ef4444';
+        var roiStr = r.valorCompra > 0 ? (r.lucro / r.valorCompra * 100).toFixed(1) + '%' : '—';
         return '<div class="relatorio-card">' +
           '<h4>' + veiculoLabel(r.vei) + '</h4>' +
           '<div class="rel-row"><span>Receita</span><span style="color:#22c55e">' + fmtBRL(r.receita) + '</span></div>' +
-          '<div class="rel-row"><span>Custos</span><span style="color:#ef4444">' + fmtBRL(r.custos) + '</span></div>' +
-          '<div class="rel-row"><span>Aluguéis</span><span>' + r.qtd + '</span></div>' +
-          '<div class="rel-row"><span>Lucro/Prejuízo</span><span style="color:' + lc + ';font-weight:700">' + fmtBRL(r.lucro) + '</span></div>' +
-          (r.valorCompra ? '<div class="rel-row"><span>Investimento</span><span>' + fmtBRL(r.valorCompra) + '</span></div>' : '') +
+          '<div class="rel-row"><span>Manutenção</span><span style="color:#f59e0b">' + fmtBRL(r.custoManut) + '</span></div>' +
+          '<div class="rel-row"><span>Despesas fixas</span><span style="color:#f97316">' + fmtBRL(r.custoDesp) + '</span></div>' +
+          '<div class="rel-row"><span>Lucro</span><span style="color:' + lc + ';font-weight:700">' + fmtBRL(r.lucro) + '</span></div>' +
+          (r.valorCompra ? '<div class="rel-row"><span>ROI s/ investimento</span><span style="color:#a855f7;font-weight:600">' + roiStr + '</span></div>' : '') +
           '<div class="rel-row"><span>' + paybackLabel + '</span><span style="color:#f59e0b;font-weight:600">' + r.paybackTxt + '</span></div>' +
           '</div>';
       }).join('')

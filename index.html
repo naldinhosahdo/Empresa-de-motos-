@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Vrunn">
   <meta name="theme-color" content="#2563eb">
-  <link rel="stylesheet" href="style.css?v=36">
+  <link rel="stylesheet" href="style.css?v=37">
 </head>
 <body>
 
@@ -307,15 +307,15 @@
 
     <div class="charts-grid">
       <div class="chart-card chart-full">
-        <h4>Evolução Mensal — Últimos 12 Meses</h4>
-        <canvas id="chart-evolucao" height="75"></canvas>
+        <h4>Receita vs Custos — Últimos 6 Meses</h4>
+        <canvas id="chart-evolucao" height="80"></canvas>
       </div>
       <div class="chart-card">
-        <h4>Resultado por Moto</h4>
+        <h4>Lucro por Moto <span style="font-weight:400;font-size:0.65rem;color:#475569">(melhor → pior)</span></h4>
         <canvas id="chart-por-moto"></canvas>
       </div>
       <div class="chart-card">
-        <h4>Distribuição de Receita</h4>
+        <h4>Onde Vai o Dinheiro</h4>
         <canvas id="chart-distribuicao"></canvas>
       </div>
     </div>
@@ -989,7 +989,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="app.js?v=223"></script>
+<script src="app.js?v=224"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');

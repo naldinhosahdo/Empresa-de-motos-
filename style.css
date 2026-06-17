@@ -1150,6 +1150,11 @@ tr.row-vencido:hover td { background: rgba(239,68,68,0.13); }
   font-size: 1.05rem;
   font-weight: 700;
 }
+.chart-kpi-sub {
+  font-size: 0.68rem;
+  color: var(--text2);
+  margin-top: 0.2rem;
+}
 .charts-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
