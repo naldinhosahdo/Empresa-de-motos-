@@ -2985,7 +2985,7 @@ function gerarPixEMV(chave) {
   var mai = campo('00', 'BR.GOV.BCB.PIX') + campo('01', chave);
   var emv = campo('00', '01') + campo('26', mai) + campo('52', '0000') + campo('53', '986') +
     campo('58', 'BR') + campo('59', 'Vrunn') + campo('60', 'Fortaleza') +
-    campo('62', campo('05', '***')) + '6304';
+    campo('62', campo('05', '0001')) + '6304';
   var crc = 0xFFFF;
   for (var i = 0; i < emv.length; i++) {
     crc ^= emv.charCodeAt(i) << 8;
