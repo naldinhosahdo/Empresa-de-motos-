@@ -3022,8 +3022,7 @@ async function renderCobrancas() {
 
   var pixCode = gerarPixEMV('aba0d81b-5cb4-446f-bd89-e444f266d103');
 
-  container.innerHTML = parcelas.map(function(p) {
-    var alu    = p.alugueis || {};
+  container.innerHTML = parcelas.map(function(p) {    var alu    = p.alugueis || {};
     var vei    = alu.veiculos;
     var nome   = (alu.cliente || 'Cliente').toUpperCase();
     var fone   = (alu.telefone || '').replace(/\D/g, '');
@@ -3053,7 +3052,7 @@ async function renderCobrancas() {
       msg += ' no valor de *' + fmtBRL(p.valor) + '* vence ' + (hoje0 ? '*hoje*' : 'em *' + fmtDate(p.vencimento) + '*') + '.';
       msg += '\n\n💡 Pague antes do vencimento e ganhe *5% de desconto* — fica *' + fmtBRL(valorDesc) + '*!';
     }
-    msg += '\n\n💳 *PIX copia e cola:*\n' + pixCode + '\n\nCole o código no app do seu banco para pagar.\n\nAtt, Vrunn 🏍️';
+    msg += '\n\n💳 *Chave PIX:* aba0d81b-5cb4-446f-bd89-e444f266d103\n_(Selecione "Chave aleatória" no seu banco)_\n\nAtt, Vrunn 🏍️';
 
     var encodedMsg = encodeURIComponent(msg);
     var url = fone
