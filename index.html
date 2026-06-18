@@ -302,7 +302,16 @@
       <h2 class="section-title">Cobranças <span class="section-count" id="cobrancas-count"></span></h2>
       <button class="btn btn-secondary" onclick="renderCobrancas()">🔄 Atualizar</button>
     </div>
-    <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.25rem">Parcelas em atraso e vencendo nos próximos 2 dias. Clique em <strong>Enviar lembrete</strong> para abrir o WhatsApp com a mensagem já pronta — é só enviar.</p>
+    <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.25rem">Parcelas em atraso e vencendo nos próximos dias. Clique em <strong>Enviar lembrete</strong> para abrir o WhatsApp com a mensagem já pronta — é só enviar.</p>
+    <div style="margin-bottom:1.25rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+      <label style="font-size:0.85rem;color:var(--text2)">Mostrar cobranças dos próximos:</label>
+      <select id="cobrancas-dias" onchange="renderCobrancas()" style="padding:0.35rem 0.6rem;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:0.85rem">
+        <option value="2">2 dias</option>
+        <option value="7">7 dias</option>
+        <option value="15">15 dias</option>
+        <option value="30">30 dias</option>
+      </select>
+    </div>
     <div id="cobrancas-lista"></div>
   </section>
 
@@ -989,7 +998,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=223"></script>
+<script src="app.js?v=224"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');

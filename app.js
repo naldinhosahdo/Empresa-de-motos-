@@ -2987,13 +2987,14 @@ async function renderCobrancas() {
   container.innerHTML = '<div style="color:var(--text2);padding:1rem">Carregando...</div>';
 
   var hojeStr = hojeLocalStr();
-  var em2Str  = new Date(new Date(hojeStr).getTime() + 2 * 86400000).toISOString().split('T')[0];
+  var dias    = parseInt((document.getElementById('cobrancas-dias') || {}).value || '2', 10);
+  var emNStr  = new Date(new Date(hojeStr).getTime() + dias * 86400000).toISOString().split('T')[0];
 
   var { data: parcelas } = await db
     .from('parcelas')
     .select('*, alugueis(cliente, telefone, veiculos(modelo, placa))')
     .eq('pago', false)
-    .lte('vencimento', em2Str)
+    .lte('vencimento', emNStr)
     .order('vencimento');
 
   parcelas = (parcelas || []).filter(function(p) { return p.alugueis; });
