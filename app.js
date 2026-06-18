@@ -451,6 +451,7 @@ function showSection(name, addHistory, renderOpts) {
   if (name === 'custos-geral') { showCustosTab('manutencoes'); }
   if (name === 'relatorios') renderRelatorios();
   if (name === 'checklist')  buildChecklist();
+  if (name === 'cobrancas')  renderCobrancas();
 
   if (addHistory !== false) {
     history.pushState({ section: name }, '', '#' + name);
@@ -2976,6 +2977,80 @@ async function gerarContrato(id, win) {
   var w = win || window.open('', '_blank', 'width=920,height=750,scrollbars=yes');
   w.document.write(html);
   w.document.close();
+}
+
+// --- COBRANÇAS ---
+async function renderCobrancas() {
+  var container = document.getElementById('cobrancas-lista');
+  var countEl   = document.getElementById('cobrancas-count');
+  if (!container) return;
+  container.innerHTML = '<div style="color:var(--text2);padding:1rem">Carregando...</div>';
+
+  var hojeStr = hojeLocalStr();
+  var em2Str  = new Date(new Date(hojeStr).getTime() + 2 * 86400000).toISOString().split('T')[0];
+
+  var { data: parcelas } = await db
+    .from('parcelas')
+    .select('*, alugueis(cliente, telefone, veiculos(modelo, placa))')
+    .eq('pago', false)
+    .lte('vencimento', em2Str)
+    .order('vencimento');
+
+  parcelas = (parcelas || []).filter(function(p) { return p.alugueis; });
+
+  if (countEl) countEl.textContent = parcelas.length || '';
+
+  if (!parcelas.length) {
+    container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text2)">✅ Nenhuma cobrança pendente nos próximos 2 dias</div>';
+    return;
+  }
+
+  container.innerHTML = parcelas.map(function(p) {
+    var alu    = p.alugueis || {};
+    var vei    = alu.veiculos;
+    var nome   = (alu.cliente || 'Cliente').toUpperCase();
+    var fone   = (alu.telefone || '').replace(/\D/g, '');
+    var atrasada = p.vencimento < hojeStr;
+    var hoje0    = p.vencimento === hojeStr;
+
+    var statusLabel = atrasada
+      ? '⚠️ Atrasada desde ' + fmtDate(p.vencimento)
+      : hoje0
+        ? '🔴 Vence hoje!'
+        : '📅 Vence em ' + fmtDate(p.vencimento);
+    var corStatus = atrasada ? 'var(--red)' : hoje0 ? 'var(--yellow)' : 'var(--blue2)';
+    var bordaCard = atrasada ? 'var(--red)' : hoje0 ? 'var(--yellow)' : 'var(--blue)';
+
+    var nomeDisplay = nome.charAt(0) + nome.slice(1).toLowerCase();
+    var motoLabel   = vei ? vei.modelo + (vei.placa ? ' · ' + vei.placa : '') : '';
+
+    var msg = 'Olá ' + nomeDisplay + '! 😊\n\n';
+    if (atrasada) {
+      msg += 'Passando para informar que seu pagamento de aluguel';
+      if (vei) msg += ' da ' + vei.modelo;
+      msg += ' no valor de *' + fmtBRL(p.valor) + '* está em atraso (venceu em ' + fmtDate(p.vencimento) + ').\n\nPor favor, regularize assim que possível.';
+    } else {
+      msg += 'Lembrete: seu pagamento de aluguel';
+      if (vei) msg += ' da ' + vei.modelo;
+      msg += ' no valor de *' + fmtBRL(p.valor) + '* vence ' + (hoje0 ? '*hoje*' : 'em *' + fmtDate(p.vencimento) + '*') + '.';
+    }
+    msg += '\n\n💳 *Chave PIX:* 85996384758\n\nAtt, Vrunn 🏍️';
+
+    var url = fone ? 'https://wa.me/55' + fone + '?text=' + encodeURIComponent(msg) : null;
+
+    var btnHtml = url
+      ? '<a href="' + url + '" target="_blank" rel="noopener" class="btn btn-primary" style="text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:0.4rem;font-size:0.85rem">📱 Enviar lembrete</a>'
+      : '<span style="font-size:0.78rem;color:var(--red)">Sem telefone</span>';
+
+    return '<div class="cobranca-card" style="border-left-color:' + bordaCard + '">' +
+      '<div class="cobranca-info">' +
+        '<div class="cobranca-nome">' + nome + (motoLabel ? '<span class="cobranca-moto"> · ' + motoLabel + '</span>' : '') + '</div>' +
+        '<div class="cobranca-status" style="color:' + corStatus + '">' + statusLabel + '</div>' +
+        '<div class="cobranca-valor">' + fmtBRL(p.valor) + '</div>' +
+      '</div>' +
+      '<div class="cobranca-acao">' + btnHtml + '</div>' +
+    '</div>';
+  }).join('');
 }
 
 // --- INIT ---

@@ -1124,3 +1124,25 @@ tr.row-vencido:hover td { background: rgba(239,68,68,0.13); }
 .custos-tab:hover { color: var(--text); }
 .custos-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
 .badge-gray { background: var(--bg2); color: var(--text2); }
+
+/* ── COBRANÇAS ── */
+.cobranca-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--blue);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+}
+.cobranca-info { flex: 1; min-width: 0; }
+.cobranca-nome { font-size: 0.95rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cobranca-moto { font-size: 0.82rem; font-weight: 400; color: var(--text2); }
+.cobranca-status { font-size: 0.8rem; font-weight: 600; margin-top: 0.2rem; }
+.cobranca-valor { font-size: 1rem; font-weight: 800; color: var(--green); margin-top: 0.2rem; }
+.cobranca-acao { flex-shrink: 0; }

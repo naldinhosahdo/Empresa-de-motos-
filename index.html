@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Vrunn">
   <meta name="theme-color" content="#2563eb">
-  <link rel="stylesheet" href="style.css?v=35">
+  <link rel="stylesheet" href="style.css?v=36">
 </head>
 <body>
 
@@ -58,6 +58,7 @@
     <li><a href="#" class="nav-item" onclick="abrirContratosVencer();document.getElementById('navLinks').classList.remove('open')">Contratos a Vencer</a></li>
     <li><a href="#" class="nav-item" data-section="clientes">Clientes</a></li>
     <li><a href="#" class="nav-item" data-section="checklist">Checklist de Compra</a></li>
+    <li><a href="#" class="nav-item" data-section="cobrancas">Cobranças</a></li>
   </ul>
   <button class="hamburger" id="hamburger">&#9776;</button>
   <div class="notif-wrapper">
@@ -293,6 +294,16 @@
     </div>
     <div id="checklist-score" class="checklist-score"></div>
     <div id="checklist-body"></div>
+  </section>
+
+  <!-- COBRANÇAS -->
+  <section id="cobrancas" class="section">
+    <div class="section-header">
+      <h2 class="section-title">Cobranças <span class="section-count" id="cobrancas-count"></span></h2>
+      <button class="btn btn-secondary" onclick="renderCobrancas()">🔄 Atualizar</button>
+    </div>
+    <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.25rem">Parcelas em atraso e vencendo nos próximos 2 dias. Clique em <strong>Enviar lembrete</strong> para abrir o WhatsApp com a mensagem já pronta — é só enviar.</p>
+    <div id="cobrancas-lista"></div>
   </section>
 
   <!-- RELATÓRIOS -->
@@ -978,7 +989,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=222"></script>
+<script src="app.js?v=223"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');
