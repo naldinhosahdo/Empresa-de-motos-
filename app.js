@@ -3037,7 +3037,10 @@ async function renderCobrancas() {
     }
     msg += '\n\n💳 *Chave PIX:* 85996384758\n\nAtt, Vrunn 🏍️';
 
-    var url = fone ? 'https://wa.me/55' + fone + '?text=' + encodeURIComponent(msg) : null;
+    var encodedMsg = encodeURIComponent(msg);
+    var url = fone
+      ? 'intent://send?phone=55' + fone + '&text=' + encodedMsg + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end'
+      : null;
 
     var btnHtml = url
       ? '<a href="' + url + '" target="_blank" rel="noopener" class="btn btn-primary" style="text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:0.4rem;font-size:0.85rem">📱 Enviar lembrete</a>'
