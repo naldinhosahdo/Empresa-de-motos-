@@ -2980,6 +2980,20 @@ async function gerarContrato(id, win) {
 }
 
 // --- COBRANÇAS ---
+function gerarPixEMV(chave) {
+  function campo(id, val) { return id + String(val.length).padStart(2, '0') + val; }
+  var mai = campo('00', 'BR.GOV.BCB.PIX') + campo('01', chave);
+  var emv = campo('00', '01') + campo('26', mai) + campo('52', '0000') + campo('53', '986') +
+    campo('58', 'BR') + campo('59', 'Vrunn') + campo('60', 'Fortaleza') +
+    campo('62', campo('05', '***')) + '6304';
+  var crc = 0xFFFF;
+  for (var i = 0; i < emv.length; i++) {
+    crc ^= emv.charCodeAt(i) << 8;
+    for (var j = 0; j < 8; j++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+  }
+  return emv + crc.toString(16).toUpperCase().padStart(4, '0');
+}
+
 async function renderCobrancas() {
   var container = document.getElementById('cobrancas-lista');
   var countEl   = document.getElementById('cobrancas-count');
@@ -3002,9 +3016,11 @@ async function renderCobrancas() {
   if (countEl) countEl.textContent = parcelas.length || '';
 
   if (!parcelas.length) {
-    container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text2)">✅ Nenhuma cobrança pendente nos próximos 2 dias</div>';
+    container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text2)">✅ Nenhuma cobrança pendente nos próximos ' + dias + ' dias</div>';
     return;
   }
+
+  var pixCode = gerarPixEMV('aba0d81b-5cb4-446f-bd89-e444f266d103');
 
   container.innerHTML = parcelas.map(function(p) {
     var alu    = p.alugueis || {};
@@ -3013,6 +3029,7 @@ async function renderCobrancas() {
     var fone   = (alu.telefone || '').replace(/\D/g, '');
     var atrasada = p.vencimento < hojeStr;
     var hoje0    = p.vencimento === hojeStr;
+    var valorDesc = Math.round(p.valor * 0.95 * 100) / 100;
 
     var statusLabel = atrasada
       ? '⚠️ Atrasada desde ' + fmtDate(p.vencimento)
@@ -3027,15 +3044,16 @@ async function renderCobrancas() {
 
     var msg = 'Olá ' + nomeDisplay + '! 😊\n\n';
     if (atrasada) {
-      msg += 'Passando para informar que seu pagamento de aluguel';
+      msg += 'Seu pagamento de aluguel';
       if (vei) msg += ' da ' + vei.modelo;
       msg += ' no valor de *' + fmtBRL(p.valor) + '* está em atraso (venceu em ' + fmtDate(p.vencimento) + ').\n\nPor favor, regularize assim que possível.';
     } else {
       msg += 'Lembrete: seu pagamento de aluguel';
       if (vei) msg += ' da ' + vei.modelo;
       msg += ' no valor de *' + fmtBRL(p.valor) + '* vence ' + (hoje0 ? '*hoje*' : 'em *' + fmtDate(p.vencimento) + '*') + '.';
+      msg += '\n\n💡 Pague antes do vencimento e ganhe *5% de desconto* — fica *' + fmtBRL(valorDesc) + '*!';
     }
-    msg += '\n\n💳 *Chave PIX:* 85996384758\n\nAtt, Vrunn 🏍️';
+    msg += '\n\n💳 *PIX copia e cola:*\n' + pixCode + '\n\nCole o código no app do seu banco para pagar.\n\nAtt, Vrunn 🏍️';
 
     var encodedMsg = encodeURIComponent(msg);
     var url = fone
