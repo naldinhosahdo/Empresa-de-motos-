@@ -1043,6 +1043,10 @@ form { padding: 1.4rem 1.5rem; }
 .btn-actions .btn { text-align: center; }
 
 /* ── RESPONSIVE ── */
+@media (max-width: 1024px) {
+  .dash-tables { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 768px) {
   .hamburger { display: block; }
 
@@ -1060,7 +1064,7 @@ form { padding: 1.4rem 1.5rem; }
   }
   .nav-links.open { display: flex; }
 
-  .dash-tables { grid-template-columns: 1fr; }
+  .navbar { padding: 0 1rem; }
   .form-row { grid-template-columns: 1fr; }
   .cards-grid { grid-template-columns: 1fr 1fr; }
   .section-header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
