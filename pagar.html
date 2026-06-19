@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Pagamento · Vrunn</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+    .card {
+      background: #1a1f2e;
+      border-radius: 20px;
+      padding: 2rem 1.5rem 1.5rem;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    }
+    .logo { font-size: 2.2rem; }
+    .empresa { font-weight: 800; font-size: 1.3rem; color: #a78bfa; letter-spacing: -0.01em; margin-top: 0.15rem; }
+    .divider { border: none; border-top: 1px solid #2d3748; margin: 1.25rem 0; }
+    .saudacao { font-size: 0.82rem; color: #64748b; }
+    .cliente-nome { font-size: 1.2rem; font-weight: 700; margin-top: 0.2rem; }
+    .valor-box {
+      background: #0f1117;
+      border-radius: 14px;
+      padding: 1rem;
+      margin: 1.25rem 0;
+      border: 1px solid #2d3748;
+    }
+    .valor-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; }
+    .valor { font-size: 2.2rem; font-weight: 900; color: #4ade80; line-height: 1.1; margin-top: 0.2rem; }
+    .vencimento { font-size: 0.78rem; color: #94a3b8; margin-top: 0.35rem; }
+    .qr-title { font-size: 0.82rem; color: #94a3b8; margin-bottom: 0.75rem; }
+    .qr-box {
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px;
+      display: inline-block;
+    }
+    #qr-canvas { display: block; }
+    .qr-hint { font-size: 0.72rem; color: #475569; margin-top: 0.5rem; }
+    .pix-alt { margin-top: 1.25rem; }
+    .pix-alt-label { font-size: 0.72rem; color: #64748b; margin-bottom: 0.4rem; }
+    .pix-key-box {
+      background: #0f1117;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 0.6rem 0.85rem;
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: #a78bfa;
+      word-break: break-all;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      user-select: all;
+    }
+    .pix-key-box:active { border-color: #a78bfa; }
+    .copy-hint { font-size: 0.7rem; color: #475569; margin-top: 0.3rem; transition: color 0.2s; }
+    .copy-hint.ok { color: #4ade80; }
+    .footer { font-size: 0.68rem; color: #334155; margin-top: 1.25rem; }
+    .err { padding: 2rem 1rem; color: #f87171; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🏍️</div>
+    <div class="empresa">Vrunn</div>
+
+    <hr class="divider">
+
+    <div class="saudacao">Olá,</div>
+    <div class="cliente-nome" id="cliente-nome">—</div>
+
+    <div class="valor-box">
+      <div class="valor-label">Valor do aluguel</div>
+      <div class="valor" id="valor">—</div>
+      <div class="vencimento" id="vencimento"></div>
+    </div>
+
+    <div class="qr-title">📷 Escaneie o QR Code com o seu banco:</div>
+    <div class="qr-box">
+      <canvas id="qr-canvas"></canvas>
+    </div>
+    <div class="qr-hint">O valor já fica preenchido automaticamente</div>
+
+    <div class="pix-alt">
+      <hr class="divider">
+      <div class="pix-alt-label">Ou copie a chave PIX (aleatória):</div>
+      <div class="pix-key-box" id="pix-key" onclick="copiarChave()">
+        aba0d81b-5cb4-446f-bd89-e444f266d103
+      </div>
+      <div class="copy-hint" id="copy-hint">👆 Toque na chave para copiar</div>
+    </div>
+
+    <div class="footer">Pagamento via PIX · Vrunn Aluguel de Motos</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script>
+    var PIX_KEY = 'aba0d81b-5cb4-446f-bd89-e444f266d103';
+
+    function campo(id, val) { return id + String(val.length).padStart(2, '0') + val; }
+
+    function gerarPixEMV(chave, valor) {
+      var mai = campo('00', 'BR.GOV.BCB.PIX') + campo('01', chave);
+      var emv = campo('00', '01') + campo('26', mai) + campo('52', '0000') + campo('53', '986');
+      if (valor) emv += campo('54', parseFloat(valor).toFixed(2));
+      emv += campo('58', 'BR') + campo('59', 'Vrunn') + campo('60', 'Fortaleza') +
+             campo('62', campo('05', '0001')) + '6304';
+      var crc = 0xFFFF;
+      for (var i = 0; i < emv.length; i++) {
+        crc ^= emv.charCodeAt(i) << 8;
+        for (var j = 0; j < 8; j++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+      }
+      return emv + crc.toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    function fmtBRL(v) {
+      return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function fmtDate(s) {
+      if (!s) return '';
+      var p = s.split('-');
+      return p[2] + '/' + p[1] + '/' + p[0];
+    }
+
+    function copiarChave() {
+      var hint = document.getElementById('copy-hint');
+      navigator.clipboard.writeText(PIX_KEY).then(function () {
+        hint.textContent = '✅ Chave copiada!';
+        hint.classList.add('ok');
+        setTimeout(function () {
+          hint.textContent = '👆 Toque na chave para copiar';
+          hint.classList.remove('ok');
+        }, 3000);
+      }).catch(function () {
+        document.getElementById('pix-key').focus();
+        document.execCommand('selectAll');
+      });
+    }
+
+    (function init() {
+      var params = new URLSearchParams(location.search);
+      var valor = params.get('v');
+      var nome  = decodeURIComponent(params.get('n') || '');
+      var venc  = params.get('d') || '';
+
+      if (nome) document.getElementById('cliente-nome').textContent = nome;
+      if (valor) document.getElementById('valor').textContent = fmtBRL(valor);
+      if (venc) {
+        var el = document.getElementById('vencimento');
+        var hoje = new Date().toISOString().split('T')[0];
+        var atrasada = venc < hoje;
+        el.textContent = atrasada
+          ? '⚠️ Venceu em ' + fmtDate(venc)
+          : '📅 Vence em ' + fmtDate(venc);
+        el.style.color = atrasada ? '#f87171' : '#94a3b8';
+      }
+
+      var emv = gerarPixEMV(PIX_KEY, valor);
+      QRCode.toCanvas(document.getElementById('qr-canvas'), emv, {
+        width: 200,
+        margin: 1,
+        color: { dark: '#000000', light: '#ffffff' }
+      }, function (err) {
+        if (err) document.getElementById('qr-canvas').parentNode.innerHTML =
+          '<div class="err">Erro ao gerar QR Code.<br>Use a chave PIX abaixo.</div>';
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -3052,7 +3052,10 @@ async function renderCobrancas() {
       msg += ' no valor de *' + fmtBRL(p.valor) + '* vence ' + (hoje0 ? '*hoje*' : 'em *' + fmtDate(p.vencimento) + '*') + '.';
       msg += '\n\n💡 Pague antes do vencimento e ganhe *5% de desconto* — fica *' + fmtBRL(valorDesc) + '*!';
     }
-    msg += '\n\n💳 *Chave PIX:* aba0d81b-5cb4-446f-bd89-e444f266d103\n_(Selecione "Chave aleatória" no seu banco)_\n\nAtt, Vrunn 🏍️';
+    var pagarLink = 'https://naldinhosahdo.github.io/Empresa-de-motos-/pagar.html?v=' +
+      encodeURIComponent(String(p.valor)) + '&n=' + encodeURIComponent(nomeDisplay) +
+      '&d=' + encodeURIComponent(p.vencimento);
+    msg += '\n\n📲 *Pagar agora:* ' + pagarLink + '\n_(Abre a página com QR Code já pronto)_\n\nAtt, Vrunn 🏍️';
 
     var encodedMsg = encodeURIComponent(msg);
     var url = fone
