@@ -3005,9 +3005,10 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>6.4</strong> O caução será devolvido somente após <strong>30 dias</strong> do término do contrato, prazo necessário para verificação de multas de trânsito pendentes, danos e débitos. Conforme o art. 281, §1º, II do CTB, o órgão autuador tem até 30 dias para expedir notificações de infração. Identificada qualquer pendência, o valor correspondente será descontado do caução antes da devolução.</div>' +
 
     '<div class="sec">7. Cancelamento e Encerramento</div>' +
-    '<div class="cl"><strong>7.1</strong> O contrato é firmado pelo prazo determinado na cláusula 1.1. O Locatário <strong>não pode cancelar antecipadamente</strong>, sendo responsável pelo pagamento de todos os dias contratados, independentemente da devolução da moto antes do prazo.</div>' +
-    '<div class="cl"><strong>7.2</strong> Devolver a moto após o prazo combinado gera cobrança proporcional pelos dias extras.</div>' +
-    '<div class="cl"><strong>7.3</strong> Se qualquer regra deste contrato for descumprida, o Locador poderá recolher a moto imediatamente.</div>' +
+    '<div class="cl"><strong>7.1</strong> O Locatário <strong>não pode cancelar antecipadamente</strong>, sendo responsável pelo pagamento de todos os dias contratados, independentemente da devolução da moto antes do prazo. A devolução antecipada do veículo não gera qualquer direito a desconto ou restituição dos valores já acordados.</div>' +
+    '<div class="cl"><strong>7.2</strong> Nos contratos com prazo igual ou superior a <strong>30 (trinta) dias</strong>, o Locatário poderá solicitar a rescisão antecipada, desde que comunique o Locador com antecedência mínima de <strong>5 (cinco) dias úteis</strong>. Nesse caso, será devida <strong>multa compensatória de 20% (vinte por cento)</strong> sobre o valor total dos dias restantes do contrato, nos termos do art. 473, parágrafo único, do Código Civil. O valor da multa poderá ser descontado do caução, caso haja saldo suficiente, sendo o restante, se houver, cobrado separadamente.</div>' +
+    '<div class="cl"><strong>7.3</strong> Devolver a moto após o prazo combinado gera cobrança proporcional pelos dias extras, independentemente de aviso prévio.</div>' +
+    '<div class="cl"><strong>7.4</strong> Se qualquer regra deste contrato for descumprida, o Locador poderá recolher a moto imediatamente, sem prejuízo da cobrança dos valores devidos.</div>' +
 
     '<div class="sec">8. Em caso de conflito</div>' +
     '<div class="cl"><strong>8.1</strong> Qualquer problema que não seja resolvido entre as partes será tratado no foro da Comarca de Fortaleza/CE.</div>' +
