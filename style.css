@@ -27,6 +27,8 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html { overflow-x: hidden; }
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -229,6 +231,8 @@ body {
   padding: 1.25rem;
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
+  overflow: hidden;
+  min-width: 0;
 }
 
 .dash-block h3 {
