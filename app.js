@@ -3124,21 +3124,25 @@ async function renderMultas() {
       : '';
 
     var btnPagar = !pago
-      ? '<button class="btn btn-sm btn-secondary" style="font-size:0.72rem;margin-top:0.3rem" onclick="marcarMultaPaga(\'' + m.id + '\')">Pagar</button>'
+      ? '<button class="btn btn-sm btn-secondary" style="font-size:0.78rem" onclick="marcarMultaPaga(\'' + m.id + '\')">Pagar</button>'
       : '';
 
     return '<div class="multa-card">' +
-      '<div class="multa-info">' +
-        '<div class="multa-veiculo">' + (vei ? vei.modelo + ' · ' + vei.placa : '—') + '</div>' +
-        '<div class="multa-data">📅 ' + fmtDate(m.data_infracao) + (m.descricao ? ' · ' + m.descricao : '') + '</div>' +
-        '<div class="multa-responsavel">' + (alu ? '👤 ' + alu.cliente : '🏠 Sem aluguel nessa data') + '</div>' +
-        btnCobrar +
+      '<div class="multa-card-top">' +
+        '<div class="multa-info">' +
+          '<div class="multa-veiculo">' + (vei ? vei.modelo + ' · ' + vei.placa : '—') + '</div>' +
+          '<div class="multa-data">📅 ' + fmtDate(m.data_infracao) + (m.descricao ? ' · ' + m.descricao : '') + '</div>' +
+          '<div class="multa-responsavel">' + (alu ? '👤 ' + alu.cliente : '🏠 Sem aluguel nessa data') + '</div>' +
+        '</div>' +
+        '<div class="multa-direita">' +
+          '<div class="multa-valor">' + fmtBRL(m.valor) + '</div>' +
+          '<div style="font-size:0.72rem;font-weight:700;color:' + statusColor + '">' + statusLabel + '</div>' +
+        '</div>' +
       '</div>' +
-      '<div class="multa-direita">' +
-        '<div class="multa-valor">' + fmtBRL(m.valor) + '</div>' +
-        '<div style="font-size:0.72rem;font-weight:700;color:' + statusColor + '">' + statusLabel + '</div>' +
+      '<div class="multa-card-btns">' +
+        btnCobrar +
         btnPagar +
-        '<button class="btn btn-sm" style="font-size:0.72rem;margin-top:0.3rem;display:block" onclick="deletarMulta(\'' + m.id + '\')">🗑️ Excluir</button>' +
+        '<button class="btn btn-sm" style="font-size:0.78rem" onclick="deletarMulta(\'' + m.id + '\')">🗑️ Excluir</button>' +
       '</div>' +
     '</div>';
   }).join('');
