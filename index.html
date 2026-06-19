@@ -149,7 +149,7 @@
           <span style="font-size:0.7rem;color:var(--text2)">cadastrados</span>
         </div>
       </div>
-      <div class="card card-yellow" onclick="abrirModalCaucao()" style="cursor:pointer">
+      <div class="card card-yellow" onclick="showSection('caucao')" style="cursor:pointer">
         <div class="card-icon">&#128176;</div>
         <div class="card-info">
           <span class="card-label">Caução Pendente</span>
@@ -314,6 +314,16 @@
       </select>
     </div>
     <div id="cobrancas-lista"></div>
+  </section>
+
+  <!-- CAUÇÃO -->
+  <section id="caucao" class="section">
+    <div class="section-header">
+      <h2 class="section-title">Cauções Pendentes <span class="section-count" id="caucao-count"></span></h2>
+      <button class="btn btn-secondary" onclick="renderCaucao()">🔄 Atualizar</button>
+    </div>
+    <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.25rem">Aluguéis com caução a devolver ao cliente. Clique em <strong>Devolver</strong> quando entregar o valor.</p>
+    <div id="caucao-lista"></div>
   </section>
 
   <!-- MULTAS -->
@@ -1004,20 +1014,6 @@
   </div>
 </div>
 
-<!-- MODAL CAUÇÃO -->
-<div class="modal-overlay" id="modal-caucao">
-  <div class="modal" style="max-width:520px">
-    <div class="modal-header">
-      <h3>💰 Cauções Pendentes</h3>
-      <button class="modal-close" onclick="closeModal('modal-caucao')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:0.82rem;color:var(--text2);margin-bottom:1rem">Aluguéis com caução a devolver ao cliente. Clique em <strong>Devolver</strong> quando entregar o valor.</p>
-      <div id="modal-caucao-lista"></div>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL MULTA -->
 <div class="modal-overlay" id="modal-multa">
   <div class="modal" style="max-width:480px">
@@ -1058,7 +1054,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=236"></script>
+<script src="app.js?v=237"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');
