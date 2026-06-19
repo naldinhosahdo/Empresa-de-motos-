@@ -41,13 +41,16 @@
     .valor { font-size: 2.2rem; font-weight: 900; color: #4ade80; line-height: 1.1; margin-top: 0.2rem; }
     .vencimento { font-size: 0.78rem; color: #94a3b8; margin-top: 0.35rem; }
     .qr-title { font-size: 0.82rem; color: #94a3b8; margin-bottom: 0.75rem; }
+    .qr-wrap { display: flex; justify-content: center; }
     .qr-box {
       background: #fff;
       border-radius: 14px;
-      padding: 14px;
-      display: inline-block;
+      padding: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
-    #qr-canvas { display: block; }
+    .qr-box img, .qr-box canvas { display: block; }
     .qr-hint { font-size: 0.72rem; color: #475569; margin-top: 0.5rem; }
     .pix-alt { margin-top: 1.25rem; }
     .pix-alt-label { font-size: 0.72rem; color: #64748b; margin-bottom: 0.4rem; }
@@ -90,8 +93,8 @@
     </div>
 
     <div class="qr-title">📷 Escaneie o QR Code com o seu banco:</div>
-    <div class="qr-box">
-      <canvas id="qr-canvas"></canvas>
+    <div class="qr-wrap">
+      <div class="qr-box" id="qr-container"></div>
     </div>
     <div class="qr-hint">O valor já fica preenchido automaticamente</div>
 
@@ -107,7 +110,7 @@
     <div class="footer">Pagamento via PIX · Vrunn Aluguel de Motos</div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     var PIX_KEY = 'aba0d81b-5cb4-446f-bd89-e444f266d103';
 
@@ -187,14 +190,19 @@
       }
 
       var emv = gerarPixEMV(PIX_KEY, valorFinal);
-      QRCode.toCanvas(document.getElementById('qr-canvas'), emv, {
-        width: 200,
-        margin: 1,
-        color: { dark: '#000000', light: '#ffffff' }
-      }, function (err) {
-        if (err) document.getElementById('qr-canvas').parentNode.innerHTML =
+      try {
+        new QRCode(document.getElementById('qr-container'), {
+          text: emv,
+          width: 210,
+          height: 210,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (e) {
+        document.getElementById('qr-container').innerHTML =
           '<div class="err">Erro ao gerar QR Code.<br>Use a chave PIX abaixo.</div>';
-      });
+      }
     })();
   </script>
 </body>
