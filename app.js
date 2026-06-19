@@ -80,11 +80,16 @@ function getNotifDismissed() {
   try { return JSON.parse(localStorage.getItem('notif_dismissed') || '[]'); } catch(e) { return []; }
 }
 function setNotifDismissed(arr) {
-  localStorage.setItem('notif_dismissed', JSON.stringify(arr));
+  // Descarta entradas de dias anteriores para não acumular no localStorage
+  var today = hojeLocalStr();
+  localStorage.setItem('notif_dismissed', JSON.stringify(
+    arr.filter(function(k) { return k.endsWith('|' + today); })
+  ));
 }
 function dismissNotif(key) {
   var dismissed = getNotifDismissed();
-  if (!dismissed.includes(key)) dismissed.push(key);
+  var dated = key + '|' + hojeLocalStr();
+  if (!dismissed.includes(dated)) dismissed.push(dated);
   setNotifDismissed(dismissed);
   loadNotificacoes();
 }
@@ -92,9 +97,11 @@ function dismissAllNotif() {
   if (!confirm('Tem certeza que deseja limpar todas as notificações?')) return;
   var items = document.querySelectorAll('#notif-list [data-key]');
   var dismissed = getNotifDismissed();
+  var today = hojeLocalStr();
   items.forEach(function(el) {
     var k = el.getAttribute('data-key');
-    if (k && !dismissed.includes(k)) dismissed.push(k);
+    var dated = k + '|' + today;
+    if (k && !dismissed.includes(dated)) dismissed.push(dated);
   });
   setNotifDismissed(dismissed);
   loadNotificacoes();
@@ -295,7 +302,7 @@ async function loadNotificacoes() {
   });
 
   var dismissed = getNotifDismissed();
-  var alertas = todosAlertas.filter(function(a) { return !dismissed.includes(a.key); });
+  var alertas = todosAlertas.filter(function(a) { return !dismissed.includes(a.key + '|' + hoje0Str); });
 
   var badge = document.getElementById('notif-badge');
   var list  = document.getElementById('notif-list');
