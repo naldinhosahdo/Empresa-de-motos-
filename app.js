@@ -3087,7 +3087,7 @@ async function renderMultas() {
 
   var { data: multas } = await db
     .from('multas')
-    .select('*, veiculos(modelo, placa), alugueis(cliente)')
+    .select('*, veiculos(modelo, placa), alugueis(cliente, telefone)')
     .order('data_infracao', { ascending: false });
 
   multas = multas || [];
@@ -3101,25 +3101,44 @@ async function renderMultas() {
   container.innerHTML = multas.map(function(m) {
     var vei = m.veiculos;
     var alu = m.alugueis;
-    var statusColor = m.status === 'pago' ? 'var(--green)' : m.status === 'cobrado' ? 'var(--blue2)' : 'var(--red)';
-    var statusLabel = m.status === 'pago' ? '✅ Pago' : m.status === 'cobrado' ? '💬 Cobrado' : '⚠️ Pendente';
-    var btnStatus = m.status === 'pendente'
-      ? '<button class="btn btn-sm btn-secondary" style="font-size:0.72rem;margin-top:0.3rem" onclick="marcarMultaCobrada(' + m.id + ')">Marcar cobrado</button>'
-      : m.status === 'cobrado'
-        ? '<button class="btn btn-sm btn-secondary" style="font-size:0.72rem;margin-top:0.3rem" onclick="marcarMultaPaga(' + m.id + ')">Marcar pago</button>'
-        : '';
+    var pago = m.status === 'pago';
+    var statusColor = pago ? 'var(--green)' : 'var(--red)';
+    var statusLabel = pago ? '✅ Pago' : '⚠️ Pendente';
+
+    var fone = alu ? (alu.telefone || '').replace(/\D/g, '') : '';
+    var nomeDisplay = alu ? alu.cliente : '';
+    var msg = 'Olá ' + nomeDisplay + '! 😊\n\n';
+    msg += 'Identificamos uma multa de trânsito';
+    if (vei) msg += ' na ' + vei.modelo + ' · ' + vei.placa;
+    msg += ', com data de ' + fmtDate(m.data_infracao) + '.\n\n';
+    msg += '*Valor da multa:* ' + fmtBRL(m.valor);
+    if (m.descricao) msg += '\n*Infração:* ' + m.descricao;
+    msg += '\n\nPor favor, entre em contato para regularizar.\n\nAtt, Vrunn 🏍️';
+
+    var whatsUrl = fone
+      ? 'intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end'
+      : null;
+
+    var btnCobrar = (alu && whatsUrl)
+      ? '<a href="' + whatsUrl + '" target="_blank" rel="noopener" class="btn btn-primary" style="text-decoration:none;font-size:0.75rem;padding:0.25rem 0.6rem;display:inline-flex;align-items:center;gap:0.3rem;margin-top:0.3rem">📱 Cobrar multa</a>'
+      : '';
+
+    var btnPagar = !pago
+      ? '<button class="btn btn-sm btn-secondary" style="font-size:0.72rem;margin-top:0.3rem" onclick="marcarMultaPaga(\'' + m.id + '\')">Pagar</button>'
+      : '';
 
     return '<div class="multa-card">' +
       '<div class="multa-info">' +
         '<div class="multa-veiculo">' + (vei ? vei.modelo + ' · ' + vei.placa : '—') + '</div>' +
         '<div class="multa-data">📅 ' + fmtDate(m.data_infracao) + (m.descricao ? ' · ' + m.descricao : '') + '</div>' +
         '<div class="multa-responsavel">' + (alu ? '👤 ' + alu.cliente : '🏠 Sem aluguel nessa data') + '</div>' +
+        btnCobrar +
       '</div>' +
       '<div class="multa-direita">' +
         '<div class="multa-valor">' + fmtBRL(m.valor) + '</div>' +
         '<div style="font-size:0.72rem;font-weight:700;color:' + statusColor + '">' + statusLabel + '</div>' +
-        btnStatus +
-        '<button class="btn btn-sm" style="font-size:0.72rem;margin-top:0.3rem;display:block" onclick="deletarMulta(' + m.id + ')">🗑️ Excluir</button>' +
+        btnPagar +
+        '<button class="btn btn-sm" style="font-size:0.72rem;margin-top:0.3rem;display:block" onclick="deletarMulta(\'' + m.id + '\')">🗑️ Excluir</button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -3190,11 +3209,6 @@ async function salvarMulta() {
   });
   if (error) { alert('Erro ao salvar: ' + error.message); return; }
   closeModal('modal-multa');
-  renderMultas();
-}
-
-async function marcarMultaCobrada(id) {
-  await db.from('multas').update({ status: 'cobrado' }).eq('id', id);
   renderMultas();
 }
 
