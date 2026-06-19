@@ -176,20 +176,19 @@ async function loadNotificacoes() {
   hoje.setHours(0,0,0,0);
   var em30 = new Date(hoje.getTime() + 30 * 86400000);
   var em30Str = em30.toISOString().split('T')[0];
-  var em5 = new Date(hoje.getTime() + 5 * 86400000);
-  var em5Str = em5.toISOString().split('T')[0];
-  var em2Str = new Date(hoje.getTime() + 2 * 86400000).toISOString().split('T')[0];
-  var em7Str  = new Date(hoje.getTime() + 7 * 86400000).toISOString().split('T')[0];
   var em10Str = new Date(hoje.getTime() + 10 * 86400000).toISOString().split('T')[0];
+  var em5Str  = new Date(hoje.getTime() + 5  * 86400000).toISOString().split('T')[0];
+  var em2Str  = new Date(hoje.getTime() + 2  * 86400000).toISOString().split('T')[0];
+  var em7Str  = em10Str;
 
   var hoje0Str = hojeLocalStr();
   var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }, { data: veiculosData }, { data: progsData }] = await Promise.all([
     db.from('despesas').select('*, veiculos(modelo, placa)')
-      .lte('vencimento', em5Str).not('vencimento', 'is', null).order('vencimento'),
+      .lte('vencimento', em10Str).not('vencimento', 'is', null).order('vencimento'),
     db.from('manutencoes').select('*, veiculos(modelo, placa)')
       .lte('prox_data', em7Str).not('prox_data', 'is', null).order('prox_data'),
     db.from('alugueis').select('*, veiculos(modelo, placa)')
-      .eq('status', 'ativo').lte('fim', em5Str).not('fim', 'is', null).order('fim'),
+      .eq('status', 'ativo').lte('fim', em10Str).not('fim', 'is', null).order('fim'),
     db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))')
       .eq('pago', false).lte('vencimento', em2Str).order('vencimento'),
     db.from('veiculos').select('id, modelo, placa, km_atual, seguro_rastreador_mensal'),
@@ -203,7 +202,7 @@ async function loadNotificacoes() {
     return { key: 'manut_' + m.id, data: m.prox_data, label: 'Manutenção: ' + (m.descricao || 'sem descrição'), veiculo: m.veiculos, valor: m.prox_km ? m.prox_km + ' km' : '', tipo: 'manut' };
   });
   var alertasAlug = (alugData || []).map(function(x) {
-    return { key: 'aluguel_' + x.id, data: x.fim, label: 'Contrato vence — ' + (x.cliente || '-'), veiculo: x.veiculos, valor: '', tipo: 'aluguel' };
+    return { key: 'aluguel_' + x.id, data: x.fim, label: 'Contrato vence — ' + (x.cliente || '-'), veiculo: x.veiculos, valor: '', tipo: 'aluguel', aluguelId: x.id };
   });
   var alertasParcelas = (parcelasData || []).map(function(p) {
     var alu = p.alugueis || {};
@@ -264,7 +263,7 @@ async function loadNotificacoes() {
         }
         dSegFinal = dSegDateStr;
       }
-      if (dSegFinal <= em2Str) {
+      if (dSegFinal <= em5Str) {
         alertasRecorrentes.push({ key: 'seguro_' + vei.id + '_' + dSegFinal, data: dSegFinal,
           label: 'Seguro + Rastreador',
           veiculo: vl, valor: fmtBRL(vei.seguro_rastreador_mensal), tipo: 'recorrente', veiculoId: vei.id, tipoLabel: 'Seguro' });
@@ -333,7 +332,7 @@ async function loadNotificacoes() {
     if (a.tipo === 'parcela' && a.aluguelId) {
       bodyClick = 'onclick="' + _c + 'abrirParcelas(\'' + a.aluguelId + '\')" style="cursor:pointer"';
     } else if (a.tipo === 'aluguel') {
-      bodyClick = 'onclick="' + _c + 'abrirContratosVencer()" style="cursor:pointer"';
+      bodyClick = 'onclick="' + _c + 'abrirModalRenovacao(\'' + a.aluguelId + '\')" style="cursor:pointer"';
     } else if (a.tipo === 'manut') {
       bodyClick = 'onclick="' + _c + 'showSection(\'custos-geral\');showCustosTab(\'manutencoes\')" style="cursor:pointer"';
     } else if (a.tipo === 'despesa') {
@@ -458,6 +457,29 @@ function showSection(name, addHistory, renderOpts) {
   if (addHistory !== false) {
     history.pushState({ section: name }, '', '#' + name);
   }
+}
+
+async function abrirModalRenovacao(aluguelId) {
+  const { data: a } = await db.from('alugueis').select('*').eq('id', aluguelId).single();
+  if (!a) return;
+  document.getElementById('form-aluguel').reset();
+  document.getElementById('aluguel-id').value = '';
+  await populateVeiculoSelects();
+  await populateClienteSelect();
+  document.getElementById('aluguel-moto').value              = a.veiculo_id || '';
+  document.getElementById('aluguel-cliente-select').value    = a.cliente_id || '';
+  document.getElementById('aluguel-cpf').value               = a.cpf || '';
+  document.getElementById('aluguel-telefone').value          = a.telefone || '';
+  document.getElementById('aluguel-cnh').value               = a.cnh || '';
+  document.getElementById('aluguel-endereco').value          = a.endereco || '';
+  document.getElementById('aluguel-periodo').value           = a.periodo || 'semana';
+  document.getElementById('aluguel-valor').value             = a.valor || '';
+  document.getElementById('aluguel-caucao').value            = a.caucao || '';
+  document.getElementById('aluguel-caucao-devolvido').value  = 'nao';
+  document.getElementById('aluguel-status').value            = 'ativo';
+  document.getElementById('row-caucao-data').style.display   = 'none';
+  document.getElementById('modal-aluguel-title').textContent = 'Renovar Contrato';
+  openModal('modal-aluguel');
 }
 
 function abrirContratosVencer() {
