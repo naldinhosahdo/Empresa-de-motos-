@@ -2099,7 +2099,7 @@ function _getProgRecorrentes(vei, hoje, pagoDesp) {
 function _sitBadge(diff) {
   if (diff < 0)  return '<span class="badge badge-red">⚠️ Vencido há ' + Math.abs(diff) + ' dia(s)</span>';
   if (diff === 0) return '<span class="badge badge-red">⚠️ Vence hoje</span>';
-  if (diff <= 30) return '<span class="badge badge-yellow">🟡 Em ' + diff + ' dia(s)</span>';
+  if (diff <= 10) return '<span class="badge badge-yellow">🟡 Em ' + diff + ' dia(s)</span>';
   return '<span class="badge badge-green">✅ Em dia</span>';
 }
 
@@ -2274,6 +2274,8 @@ async function renderDespesasTab() {
   container.innerHTML = veiculos.map(function(vei) {
     var motoDesp  = allDespesas.filter(function(d) { return d.veiculo_id === vei.id; });
     var progs     = _getProgRecorrentes(vei, hoje, motoDesp);
+    var overrideIds2 = {};
+    progs.forEach(function(e) { if (e.overrideId) overrideIds2[e.overrideId] = true; });
     var p2h = function(n) { return String(n).padStart(2, '0'); };
     var vencidas = 0, proximas = 0;
     progs.forEach(function(e) {
@@ -2281,13 +2283,13 @@ async function renderDespesasTab() {
       var venc = e.data.getFullYear() + '-' + p2h(e.data.getMonth() + 1) + '-' + p2h(e.data.getDate());
       var pago = motoDesp.some(function(d) { return d.programada && d.pago && d.tipo === tipoKey && d.vencimento === venc; });
       if (pago) return;
-      if (e.diff < 0) vencidas++; else if (e.diff <= 30) proximas++;
+      if (e.diff < 0) vencidas++; else if (e.diff <= 10) proximas++;
     });
-    var motoProgM = motoDesp.filter(function(d) { return d.programada && !d.pago; });
+    var motoProgM = motoDesp.filter(function(d) { return d.programada && !d.pago && !overrideIds2[d.id]; });
     motoProgM.forEach(function(x) {
       if (!x.vencimento) return;
       var diff = Math.round((new Date(x.vencimento + 'T00:00:00') - hoje) / 86400000);
-      if (diff < 0) vencidas++; else if (diff <= 30) proximas++;
+      if (diff < 0) vencidas++; else if (diff <= 10) proximas++;
     });
     var badges = vencidas ? '<span class="badge badge-red" style="margin-left:0.5rem">⚠️ ' + vencidas + ' vencida(s)</span>' : '';
     badges += proximas ? '<span class="badge badge-yellow" style="margin-left:0.5rem">🟡 ' + proximas + ' próxima(s)</span>' : '';
