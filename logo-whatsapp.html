@@ -25,8 +25,8 @@
     text-transform: uppercase;
   }
   .preview-circle {
-    width: 280px;
-    height: 280px;
+    width: 300px;
+    height: 300px;
     border-radius: 50%;
     overflow: hidden;
     border: 2px solid rgba(249,115,22,0.3);
@@ -43,7 +43,6 @@
     cursor: pointer;
     box-shadow: 0 4px 20px rgba(249,115,22,0.45);
     transition: all 0.2s;
-    letter-spacing: 0.01em;
   }
   .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(249,115,22,0.6); }
   .note { color: #334155; font-size: 0.72rem; text-align: center; }
@@ -55,11 +54,11 @@
 <p class="label">Preview — como aparece no WhatsApp</p>
 
 <div class="preview-circle">
-  <svg id="logoSvg" xmlns="http://www.w3.org/2000/svg" width="280" height="280" viewBox="0 0 500 500">
+  <svg id="logoSvg" xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 500 500">
     <defs>
       <style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&amp;display=swap');</style>
-      <radialGradient id="bgGlow" cx="50%" cy="28%" r="52%">
-        <stop offset="0%" stop-color="#f97316" stop-opacity="0.24"/>
+      <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#f97316" stop-opacity="0.18"/>
         <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
       </radialGradient>
     </defs>
@@ -68,37 +67,41 @@
     <rect width="500" height="500" fill="#0f172a"/>
     <rect width="500" height="500" fill="url(#bgGlow)"/>
 
-    <!-- Moto: centrada visualmente, scale=13 -->
-    <!-- translate(132, 23): centra o visual completo (linhas + rodas) em x=250 -->
-    <g transform="translate(132,23) scale(13)" fill="none" stroke="#f97316" stroke-linecap="round" stroke-linejoin="round">
-      <!-- Linhas de velocidade: curta / longa / curta -->
-      <line x1="-3"   y1="14.8" x2="1.8" y2="14.8" stroke-width="0.115" stroke-opacity="0.5"/>
-      <line x1="-3.8" y1="17.5" x2="1.8" y2="17.5" stroke-width="0.155" stroke-opacity="0.92"/>
-      <line x1="-3"   y1="20.2" x2="1.8" y2="20.2" stroke-width="0.115" stroke-opacity="0.5"/>
+    <!--
+      Layout: ícone da moto + "Vrunn" lado a lado (igual à navbar),
+      centralizados em x=250, y=250.
+
+      Ícone: scale=9, visual de x=-3.8 a x=22 (25.8 unid → 232px),
+      y de 4 a 21 (17 unid → 153px).
+      Composição total ~480px larg → começa em x=10.
+      tx: para speed-line start (-3.8) em x=10 → tx = 10 + 3.8*9 = 44.2 ≈ 44
+      Ícone vai de x≈10 até x=44+22*9=242.
+      Texto "Vrunn" começa em x=258.
+
+      Vertical: centro em y=250
+      ty = 250 - 12.5*9 = 250 - 112.5 = 137.5 ≈ 138
+    -->
+    <g transform="translate(44,138) scale(9)"
+       fill="none" stroke="#f97316" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Linhas de velocidade -->
+      <line x1="-3"   y1="14.8" x2="1.8" y2="14.8" stroke-width="0.11" stroke-opacity="0.5"/>
+      <line x1="-3.8" y1="17.5" x2="1.8" y2="17.5" stroke-width="0.15" stroke-opacity="0.95"/>
+      <line x1="-3"   y1="20.2" x2="1.8" y2="20.2" stroke-width="0.11" stroke-opacity="0.5"/>
       <!-- Moto -->
-      <circle cx="5.5"  cy="17.5" r="3.5" stroke-width="0.24"/>
-      <circle cx="18.5" cy="17.5" r="3.5" stroke-width="0.24"/>
-      <circle cx="15"   cy="5"    r="1"   stroke-width="0.24"/>
-      <path d="M12 17.5V14l-3-3 4-3 2 3h2" stroke-width="0.24"/>
+      <circle cx="5.5"  cy="17.5" r="3.5" stroke-width="0.22"/>
+      <circle cx="18.5" cy="17.5" r="3.5" stroke-width="0.22"/>
+      <circle cx="15"   cy="5"    r="1"   stroke-width="0.22"/>
+      <path d="M12 17.5V14l-3-3 4-3 2 3h2" stroke-width="0.22"/>
     </g>
 
-    <!-- Nome da marca -->
-    <text x="250" y="383"
-      text-anchor="middle"
+    <!-- "Vrunn" — alinhado à direita do ícone, verticalmente centrado -->
+    <text x="258" y="275"
       font-family="'Inter','Arial Black','Helvetica Neue',Arial,sans-serif"
       font-weight="900"
-      font-size="84"
+      font-size="108"
       fill="#f97316"
-      letter-spacing="-3">Vrunn</text>
+      letter-spacing="-4">Vrunn</text>
 
-    <!-- Subtítulo -->
-    <text x="250" y="422"
-      text-anchor="middle"
-      font-family="'Inter',Arial,sans-serif"
-      font-weight="500"
-      font-size="17"
-      fill="#475569"
-      letter-spacing="5.5">ALUGUEL DE VEÍCULOS</text>
   </svg>
 </div>
 
