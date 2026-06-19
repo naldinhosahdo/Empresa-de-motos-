@@ -653,21 +653,21 @@ async function renderDashboard() {
   a.forEach(function(x) {
     if (x.status !== 'ativo' || !x.fim) return;
     var diffDias = Math.round((new Date(x.fim) - new Date(hojeStr)) / 86400000);
-    if (diffDias > 30) return;
+    if (diffDias > 10) return;
     var vei = v.find(function(vv) { return vv.id === x.veiculo_id; });
     vencimentos.push({ tipo: 'Contrato', descricao: 'Fim do aluguel — ' + (x.cliente || '-'), moto: vei ? veiculoLabel(vei) : '-', dias: diffDias });
   });
   d.forEach(function(x) {
     if (!x.vencimento || x.pago) return;
     var diffDias = Math.round((new Date(x.vencimento) - new Date(hojeStr)) / 86400000);
-    if (diffDias > 30) return;
+    if (diffDias > 10) return;
     var vei = v.find(function(vv) { return vv.id === x.veiculo_id; });
     vencimentos.push({ tipo: 'Despesa', descricao: x.descricao || x.tipo || 'Despesa', moto: vei ? veiculoLabel(vei) : '-', dias: diffDias });
   });
   m.forEach(function(x) {
     if (!x.prox_data) return;
     var diffDias = Math.round((new Date(x.prox_data) - new Date(hojeStr)) / 86400000);
-    if (diffDias > 30) return;
+    if (diffDias > 10) return;
     var vei = v.find(function(vv) { return vv.id === x.veiculo_id; });
     vencimentos.push({ tipo: 'Manutenção', descricao: x.tipo || 'Manutenção', moto: vei ? veiculoLabel(vei) : '-', dias: diffDias });
   });
@@ -675,7 +675,7 @@ async function renderDashboard() {
 
   var vencEl = document.getElementById('dash-vencimentos-list');
   if (vencimentos.length === 0) {
-    vencEl.innerHTML = '<span style="color:var(--text2);font-size:0.85rem">Nenhum vencimento nos próximos 30 dias</span>';
+    vencEl.innerHTML = '<span style="color:var(--text2);font-size:0.85rem">Nenhum vencimento nos próximos 10 dias</span>';
   } else {
     vencEl.innerHTML = vencimentos.map(function(vc) {
       var cls = vc.dias < 0 ? 'vencido' : vc.dias <= 7 ? 'urgente' : vc.dias <= 15 ? 'proximo' : 'normal';
