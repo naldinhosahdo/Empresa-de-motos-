@@ -82,8 +82,10 @@
     <div class="cliente-nome" id="cliente-nome">—</div>
 
     <div class="valor-box">
-      <div class="valor-label">Valor do aluguel</div>
+      <div class="valor-label" id="valor-label">Valor do aluguel</div>
       <div class="valor" id="valor">—</div>
+      <div id="valor-original" style="font-size:0.8rem;color:#64748b;text-decoration:line-through;margin-top:0.1rem;display:none"></div>
+      <div id="desconto-badge" style="display:none;margin-top:0.35rem;background:#166534;color:#4ade80;font-size:0.72rem;font-weight:700;border-radius:6px;padding:0.2rem 0.5rem;display:none">✅ 5% de desconto aplicado</div>
       <div class="vencimento" id="vencimento"></div>
     </div>
 
@@ -152,15 +154,31 @@
 
     (function init() {
       var params = new URLSearchParams(location.search);
-      var valor = params.get('v');
-      var nome  = decodeURIComponent(params.get('n') || '');
-      var venc  = params.get('d') || '';
+      var valorBase = parseFloat(params.get('v') || '0');
+      var nome = decodeURIComponent(params.get('n') || '');
+      var venc = params.get('d') || '';
 
       if (nome) document.getElementById('cliente-nome').textContent = nome;
-      if (valor) document.getElementById('valor').textContent = fmtBRL(valor);
+
+      var hoje = new Date().toISOString().split('T')[0];
+      var antesDovenc = venc && hoje < venc;
+      var valorFinal = antesDovenc
+        ? Math.round(valorBase * 0.95 * 100) / 100
+        : valorBase;
+
+      document.getElementById('valor').textContent = fmtBRL(valorFinal);
+
+      if (antesDovenc && valorBase) {
+        var orig = document.getElementById('valor-original');
+        orig.textContent = fmtBRL(valorBase);
+        orig.style.display = 'block';
+        var badge = document.getElementById('desconto-badge');
+        badge.style.display = 'inline-block';
+        document.getElementById('valor-label').textContent = 'Valor com desconto';
+      }
+
       if (venc) {
         var el = document.getElementById('vencimento');
-        var hoje = new Date().toISOString().split('T')[0];
         var atrasada = venc < hoje;
         el.textContent = atrasada
           ? '⚠️ Venceu em ' + fmtDate(venc)
@@ -168,7 +186,7 @@
         el.style.color = atrasada ? '#f87171' : '#94a3b8';
       }
 
-      var emv = gerarPixEMV(PIX_KEY, valor);
+      var emv = gerarPixEMV(PIX_KEY, valorFinal);
       QRCode.toCanvas(document.getElementById('qr-canvas'), emv, {
         width: 200,
         margin: 1,
