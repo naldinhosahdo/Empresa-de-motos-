@@ -3160,26 +3160,30 @@ async function renderCaucao() {
     .gt('caucao', 0)
     .order('fim', { ascending: false });
 
-  var pendentes = (alugueis || []).filter(function(a) { return a.caucao_devolvido !== 'sim'; });
+  var todos = (alugueis || []);
+  var pendentes = todos.filter(function(a) { return a.caucao_devolvido !== 'sim'; });
   if (countEl) countEl.textContent = pendentes.length || '';
 
-  if (!pendentes.length) {
-    lista.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text2)">✅ Nenhum caução pendente</div>';
+  if (!todos.length) {
+    lista.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text2)">Nenhum caução cadastrado</div>';
     return;
   }
 
-  lista.innerHTML = pendentes.map(function(a) {
+  lista.innerHTML = todos.map(function(a) {
     var vei = a.veiculos;
-    return '<div class="cobranca-card" style="border-left-color:var(--yellow)">' +
+    var devolvido = a.caucao_devolvido === 'sim';
+    var borda = devolvido ? 'var(--green)' : 'var(--yellow)';
+    var btn = devolvido
+      ? '<button class="btn btn-sm" style="font-size:0.85rem;white-space:nowrap;background:var(--green);color:#fff" onclick="desfazerDevolucaoCaucao(\'' + a.id + '\')">✅ Devolvido</button>'
+      : '<button class="btn btn-primary" style="font-size:0.85rem;white-space:nowrap" onclick="devolverCaucao(\'' + a.id + '\')">💰 Devolver</button>';
+    return '<div class="cobranca-card" style="border-left-color:' + borda + ';opacity:' + (devolvido ? '0.6' : '1') + '">' +
       '<div class="cobranca-info">' +
         '<div class="cobranca-nome">' + a.cliente + '</div>' +
         '<div class="cobranca-status" style="color:var(--text2)">' + (vei ? vei.modelo + ' · ' + vei.placa : '') + '</div>' +
         '<div class="cobranca-status" style="color:var(--text2)">' + fmtDate(a.inicio) + (a.fim ? ' → ' + fmtDate(a.fim) : '') + '</div>' +
-        '<div class="cobranca-valor" style="color:var(--yellow)">' + fmtBRL(a.caucao) + '</div>' +
+        '<div class="cobranca-valor" style="color:' + (devolvido ? 'var(--green)' : 'var(--yellow)') + '">' + fmtBRL(a.caucao) + '</div>' +
       '</div>' +
-      '<div class="cobranca-acao">' +
-        '<button class="btn btn-primary" style="font-size:0.85rem;white-space:nowrap" onclick="devolverCaucao(\'' + a.id + '\')">💰 Devolver</button>' +
-      '</div>' +
+      '<div class="cobranca-acao">' + btn + '</div>' +
     '</div>';
   }).join('');
 }
@@ -3187,6 +3191,14 @@ async function renderCaucao() {
 async function devolverCaucao(aluguelId) {
   if (!confirm('Confirmar devolução do caução?')) return;
   var { error } = await db.from('alugueis').update({ caucao_devolvido: 'sim', caucao_data: hojeLocalStr() }).eq('id', aluguelId);
+  if (error) { alert('Erro: ' + error.message); return; }
+  renderCaucao();
+  renderDashboard();
+}
+
+async function desfazerDevolucaoCaucao(aluguelId) {
+  if (!confirm('Desfazer devolução do caução?')) return;
+  var { error } = await db.from('alugueis').update({ caucao_devolvido: 'nao', caucao_data: null }).eq('id', aluguelId);
   if (error) { alert('Erro: ' + error.message); return; }
   renderCaucao();
   renderDashboard();
