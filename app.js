@@ -1480,7 +1480,7 @@ var _manutencoesCache = null;
 
 function _buildManutMotoBody(vei, motoProg, motoAvul) {
   var kmAtual = Number(vei.km_atual) || 0;
-  var subHdr  = function(txt) { return '<div style="font-weight:600;font-size:0.82rem;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;margin:0.75rem 0 0.4rem">' + txt + '</div>'; };
+  var subHdr  = function(txt) { return '<div style="font-weight:600;font-size:0.82rem;color:var(--text2);letter-spacing:0.06em;text-transform:uppercase;margin:0.75rem 0 0.4rem">' + txt + '</div>'; };
   var progRows = motoProg.map(function(x) {
     var proximaKm = x.ultima_km ? (Number(x.ultima_km) + Number(x.intervalo_km)) : null;
     var restante  = (proximaKm && kmAtual) ? proximaKm - kmAtual : null;
@@ -1536,7 +1536,7 @@ function _buildManutMotoBody(vei, motoProg, motoAvul) {
 async function renderManutencoesTab() {
   var container = document.getElementById('manutencoes-motos-list');
   if (!container) return;
-  container.innerHTML = '<p style="color:#94a3b8;padding:1rem 0">Carregando...</p>';
+  container.innerHTML = '<p style="color:var(--text2);padding:1rem 0">Carregando...</p>';
   var results = await Promise.all([
     db.from('veiculos').select('id, modelo, placa, km_atual').order('modelo'),
     db.from('manut_programada').select('*').order('created_at'),
@@ -1547,7 +1547,7 @@ async function renderManutencoesTab() {
   var allAvul  = results[2].data || [];
   _manutencoesCache = { veiculos: veiculos, allProgs: allProgs, allAvul: allAvul };
   if (!veiculos.length) {
-    container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:2rem">Nenhuma moto cadastrada.</p>';
+    container.innerHTML = '<p style="color:var(--text2);text-align:center;padding:2rem">Nenhuma moto cadastrada.</p>';
     return;
   }
   container.innerHTML = veiculos.map(function(vei) {
@@ -1565,10 +1565,10 @@ async function renderManutencoesTab() {
     if (vencidas) badges += '<span class="badge badge-red" style="margin-left:0.5rem">⚠️ ' + vencidas + ' vencida(s)</span>';
     if (proximas) badges += '<span class="badge badge-yellow" style="margin-left:0.5rem">🔴 ' + proximas + ' próxima(s)</span>';
     if (!vencidas && !proximas && motoProg.length) badges += '<span class="badge badge-green" style="margin-left:0.5rem">✅ Em dia</span>';
-    var avulCount = motoAvul.length ? '<span style="margin-left:auto;font-size:0.82rem;color:#94a3b8">' + motoAvul.length + ' avulsa(s)</span>' : '';
-    return '<div style="border:1px solid #334155;border-radius:0.5rem;margin-bottom:0.6rem;overflow:hidden">' +
-      '<div onclick="toggleManutMoto(\'' + vei.id + '\')" style="display:flex;align-items:center;gap:0.5rem;padding:0.8rem 1rem;cursor:pointer;background:#1e293b;user-select:none">' +
-        '<span id="acc-manut-arrow-' + vei.id + '" style="font-size:0.7rem;color:#94a3b8">▶</span>' +
+    var avulCount = motoAvul.length ? '<span style="margin-left:auto;font-size:0.82rem;color:var(--text2)">' + motoAvul.length + ' avulsa(s)</span>' : '';
+    return '<div style="border:1px solid var(--border);border-radius:0.75rem;margin-bottom:0.6rem;overflow:hidden">' +
+      '<div onclick="toggleManutMoto(\'' + vei.id + '\')" style="display:flex;align-items:center;gap:0.5rem;padding:0.8rem 1rem;cursor:pointer;background:var(--bg3);user-select:none">' +
+        '<span id="acc-manut-arrow-' + vei.id + '" style="font-size:0.7rem;color:var(--text2)">▶</span>' +
         '<span style="font-weight:600">' + veiculoLabel(vei) + '</span>' +
         badges + avulCount +
       '</div>' +
@@ -2108,7 +2108,7 @@ function _buildDespesaMotoBody(vei, motoDesp) {
   var p2 = function(n) { return String(n).padStart(2, '0'); };
   var fmtD = function(d) { return p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear(); };
   var isoD = function(d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); };
-  var subHdr = function(txt) { return '<div style="font-weight:600;font-size:0.82rem;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;margin:0.75rem 0 0.4rem">' + txt + '</div>'; };
+  var subHdr = function(txt) { return '<div style="font-weight:600;font-size:0.82rem;color:var(--text2);letter-spacing:0.06em;text-transform:uppercase;margin:0.75rem 0 0.4rem">' + txt + '</div>'; };
   var progs = _getProgRecorrentes(vei, hoje, motoDesp);
   // IDs dos registros que estão sendo usados como override de data — não duplicar no bloco manual
   var overrideIds = {};
@@ -2258,7 +2258,7 @@ var _despesasCache = null;
 async function renderDespesasTab() {
   var container = document.getElementById('despesas-motos-list');
   if (!container) return;
-  container.innerHTML = '<p style="color:#94a3b8;padding:1rem 0">Carregando...</p>';
+  container.innerHTML = '<p style="color:var(--text2);padding:1rem 0">Carregando...</p>';
   var [veiculosRes, despesasRes] = await Promise.all([
     db.from('veiculos').select('id, modelo, placa, seguro_rastreador_mensal').order('modelo'),
     db.from('despesas').select('id, tipo, ano, valor, vencimento, obs, veiculo_id, programada, pago').order('created_at', { ascending: false })
@@ -2267,7 +2267,7 @@ async function renderDespesasTab() {
   var allDespesas = despesasRes.data || [];
   _despesasCache = { veiculos: veiculos, allDespesas: allDespesas };
   if (!veiculos.length) {
-    container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:2rem">Nenhuma moto cadastrada.</p>';
+    container.innerHTML = '<p style="color:var(--text2);text-align:center;padding:2rem">Nenhuma moto cadastrada.</p>';
     return;
   }
   var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
@@ -2294,9 +2294,9 @@ async function renderDespesasTab() {
     var badges = vencidas ? '<span class="badge badge-red" style="margin-left:0.5rem">⚠️ ' + vencidas + ' vencida(s)</span>' : '';
     badges += proximas ? '<span class="badge badge-yellow" style="margin-left:0.5rem">🟡 ' + proximas + ' próxima(s)</span>' : '';
     if (!vencidas && !proximas) badges += '<span class="badge badge-green" style="margin-left:0.5rem">✅ Em dia</span>';
-    return '<div style="border:1px solid #334155;border-radius:0.5rem;margin-bottom:0.6rem;overflow:hidden">' +
-      '<div onclick="toggleDespesaMoto(\'' + vei.id + '\')" style="display:flex;align-items:center;gap:0.5rem;padding:0.8rem 1rem;cursor:pointer;background:#1e293b;user-select:none">' +
-        '<span id="acc-desp-arrow-' + vei.id + '" style="font-size:0.7rem;color:#94a3b8;transition:transform 0.2s">▶</span>' +
+    return '<div style="border:1px solid var(--border);border-radius:0.75rem;margin-bottom:0.6rem;overflow:hidden">' +
+      '<div onclick="toggleDespesaMoto(\'' + vei.id + '\')" style="display:flex;align-items:center;gap:0.5rem;padding:0.8rem 1rem;cursor:pointer;background:var(--bg3);user-select:none">' +
+        '<span id="acc-desp-arrow-' + vei.id + '" style="font-size:0.7rem;color:var(--text2);transition:transform 0.2s">▶</span>' +
         '<span style="font-weight:600">' + veiculoLabel(vei) + '</span>' +
         badges +
       '</div>' +
