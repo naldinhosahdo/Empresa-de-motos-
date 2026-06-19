@@ -69,6 +69,14 @@ body {
   align-items: center;
 }
 
+.nav-brand img {
+  mix-blend-mode: lighten;
+}
+
+.login-logo-img {
+  mix-blend-mode: lighten;
+}
+
 .nav-links {
   display: flex;
   list-style: none;
