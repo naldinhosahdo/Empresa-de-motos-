@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vrunn — Logo WhatsApp</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #060d1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 1.5rem;
+    font-family: system-ui, sans-serif;
+    padding: 2rem;
+  }
+  .label {
+    font-size: 0.68rem;
+    color: #475569;
+    text-align: center;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .preview-circle {
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba(249,115,22,0.3);
+    box-shadow: 0 0 50px rgba(249,115,22,0.18), 0 0 100px rgba(249,115,22,0.08);
+  }
+  .btn {
+    background: linear-gradient(135deg, #f97316, #fb923c);
+    color: #fff;
+    border: none;
+    padding: 0.8rem 2.2rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(249,115,22,0.45);
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(249,115,22,0.6); }
+  .note { color: #334155; font-size: 0.72rem; text-align: center; }
+  canvas { display: none; }
+</style>
+</head>
+<body>
+
+<p class="label">Preview — como aparece no WhatsApp</p>
+
+<div class="preview-circle">
+  <svg id="logoSvg" xmlns="http://www.w3.org/2000/svg" width="280" height="280" viewBox="0 0 500 500">
+    <defs>
+      <style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&amp;display=swap');</style>
+      <radialGradient id="bgGlow" cx="50%" cy="28%" r="52%">
+        <stop offset="0%" stop-color="#f97316" stop-opacity="0.24"/>
+        <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+
+    <!-- Fundo -->
+    <rect width="500" height="500" fill="#0f172a"/>
+    <rect width="500" height="500" fill="url(#bgGlow)"/>
+
+    <!-- Moto: centrada visualmente, scale=13 -->
+    <!-- translate(132, 23): centra o visual completo (linhas + rodas) em x=250 -->
+    <g transform="translate(132,23) scale(13)" fill="none" stroke="#f97316" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Linhas de velocidade: curta / longa / curta -->
+      <line x1="-3"   y1="14.8" x2="1.8" y2="14.8" stroke-width="0.115" stroke-opacity="0.5"/>
+      <line x1="-3.8" y1="17.5" x2="1.8" y2="17.5" stroke-width="0.155" stroke-opacity="0.92"/>
+      <line x1="-3"   y1="20.2" x2="1.8" y2="20.2" stroke-width="0.115" stroke-opacity="0.5"/>
+      <!-- Moto -->
+      <circle cx="5.5"  cy="17.5" r="3.5" stroke-width="0.24"/>
+      <circle cx="18.5" cy="17.5" r="3.5" stroke-width="0.24"/>
+      <circle cx="15"   cy="5"    r="1"   stroke-width="0.24"/>
+      <path d="M12 17.5V14l-3-3 4-3 2 3h2" stroke-width="0.24"/>
+    </g>
+
+    <!-- Nome da marca -->
+    <text x="250" y="383"
+      text-anchor="middle"
+      font-family="'Inter','Arial Black','Helvetica Neue',Arial,sans-serif"
+      font-weight="900"
+      font-size="84"
+      fill="#f97316"
+      letter-spacing="-3">Vrunn</text>
+
+    <!-- Subtítulo -->
+    <text x="250" y="422"
+      text-anchor="middle"
+      font-family="'Inter',Arial,sans-serif"
+      font-weight="500"
+      font-size="17"
+      fill="#475569"
+      letter-spacing="5.5">ALUGUEL DE VEÍCULOS</text>
+  </svg>
+</div>
+
+<button class="btn" onclick="downloadPng()">Baixar PNG (1000 × 1000)</button>
+<p class="note">Alta resolução — ideal para foto de perfil</p>
+
+<canvas id="c" width="1000" height="1000"></canvas>
+
+<script>
+function downloadPng() {
+  const canvas = document.getElementById('c');
+  const ctx    = canvas.getContext('2d');
+  const svg    = document.getElementById('logoSvg');
+
+  const clone = svg.cloneNode(true);
+  clone.setAttribute('width',  '1000');
+  clone.setAttribute('height', '1000');
+
+  const svgData = new XMLSerializer().serializeToString(clone);
+  const blob    = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+  const url     = URL.createObjectURL(blob);
+
+  const img = new Image();
+  img.onload = function () {
+    ctx.clearRect(0, 0, 1000, 1000);
+    ctx.drawImage(img, 0, 0, 1000, 1000);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.download = 'vrunn-logo.png';
+    a.href = canvas.toDataURL('image/png');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+  img.src = url;
+}
+</script>
+
+</body>
+</html>
