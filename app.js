@@ -3125,7 +3125,7 @@ async function renderMultas() {
 
     var btnPagar = !pago
       ? '<button class="btn btn-secondary btn-sm" style="font-size:0.8rem" onclick="marcarMultaPaga(\'' + m.id + '\')">Pagar</button>'
-      : '';
+      : '<button class="btn btn-sm" style="font-size:0.8rem;background:var(--green);color:#fff" onclick="marcarMultaPendente(\'' + m.id + '\')">✅ Pago</button>';
 
     return '<div class="multa-card">' +
       '<div class="multa-info">' +
@@ -3216,6 +3216,11 @@ async function salvarMulta() {
 
 async function marcarMultaPaga(id) {
   await db.from('multas').update({ status: 'pago' }).eq('id', id);
+  renderMultas();
+}
+
+async function marcarMultaPendente(id) {
+  await db.from('multas').update({ status: 'pendente' }).eq('id', id);
   renderMultas();
 }
 
