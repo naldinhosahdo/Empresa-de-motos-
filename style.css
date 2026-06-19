@@ -1146,3 +1146,25 @@ tr.row-vencido:hover td { background: rgba(239,68,68,0.13); }
 .cobranca-status { font-size: 0.8rem; font-weight: 600; margin-top: 0.2rem; }
 .cobranca-valor { font-size: 1rem; font-weight: 800; color: var(--green); margin-top: 0.2rem; }
 .cobranca-acao { flex-shrink: 0; }
+
+/* ── MULTAS ── */
+.multa-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--red);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+}
+.multa-info { flex: 1; min-width: 0; }
+.multa-veiculo { font-size: 0.95rem; font-weight: 700; }
+.multa-data { font-size: 0.8rem; color: var(--text2); margin-top: 0.15rem; }
+.multa-responsavel { font-size: 0.82rem; font-weight: 600; color: var(--text); margin-top: 0.2rem; }
+.multa-direita { text-align: right; flex-shrink: 0; }
+.multa-valor { font-size: 1.05rem; font-weight: 800; color: var(--red); }

@@ -452,6 +452,7 @@ function showSection(name, addHistory, renderOpts) {
   if (name === 'relatorios') renderRelatorios();
   if (name === 'checklist')  buildChecklist();
   if (name === 'cobrancas')  renderCobrancas();
+  if (name === 'multas')     renderMultas();
 
   if (addHistory !== false) {
     history.pushState({ section: name }, '', '#' + name);
@@ -3075,6 +3076,138 @@ async function renderCobrancas() {
       '<div class="cobranca-acao">' + btnHtml + '</div>' +
     '</div>';
   }).join('');
+}
+
+// --- MULTAS ---
+async function renderMultas() {
+  var container = document.getElementById('multas-lista');
+  var countEl   = document.getElementById('multas-count');
+  if (!container) return;
+  container.innerHTML = '<div style="color:var(--text2);padding:1rem">Carregando...</div>';
+
+  var { data: multas } = await db
+    .from('multas')
+    .select('*, veiculos(modelo, placa), alugueis(cliente)')
+    .order('data_infracao', { ascending: false });
+
+  multas = multas || [];
+  if (countEl) countEl.textContent = multas.length || '';
+
+  if (!multas.length) {
+    container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text2)">✅ Nenhuma multa registrada</div>';
+    return;
+  }
+
+  container.innerHTML = multas.map(function(m) {
+    var vei = m.veiculos;
+    var alu = m.alugueis;
+    var statusColor = m.status === 'pago' ? 'var(--green)' : m.status === 'cobrado' ? 'var(--blue2)' : 'var(--red)';
+    var statusLabel = m.status === 'pago' ? '✅ Pago' : m.status === 'cobrado' ? '💬 Cobrado' : '⚠️ Pendente';
+    var btnStatus = m.status === 'pendente'
+      ? '<button class="btn btn-sm btn-secondary" style="font-size:0.72rem;margin-top:0.3rem" onclick="marcarMultaCobrada(' + m.id + ')">Marcar cobrado</button>'
+      : m.status === 'cobrado'
+        ? '<button class="btn btn-sm btn-secondary" style="font-size:0.72rem;margin-top:0.3rem" onclick="marcarMultaPaga(' + m.id + ')">Marcar pago</button>'
+        : '';
+
+    return '<div class="multa-card">' +
+      '<div class="multa-info">' +
+        '<div class="multa-veiculo">' + (vei ? vei.modelo + ' · ' + vei.placa : '—') + '</div>' +
+        '<div class="multa-data">📅 ' + fmtDate(m.data_infracao) + (m.descricao ? ' · ' + m.descricao : '') + '</div>' +
+        '<div class="multa-responsavel">' + (alu ? '👤 ' + alu.cliente : '🏠 Sem aluguel nessa data') + '</div>' +
+      '</div>' +
+      '<div class="multa-direita">' +
+        '<div class="multa-valor">' + fmtBRL(m.valor) + '</div>' +
+        '<div style="font-size:0.72rem;font-weight:700;color:' + statusColor + '">' + statusLabel + '</div>' +
+        btnStatus +
+        '<button class="btn btn-sm" style="font-size:0.72rem;margin-top:0.3rem;display:block" onclick="deletarMulta(' + m.id + ')">🗑️ Excluir</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function abrirModalMulta() {
+  var { data: veiculos } = await db.from('veiculos').select('id, modelo, placa').order('modelo');
+  var sel = document.getElementById('multa-veiculo');
+  sel.innerHTML = '<option value="">Selecione o veículo...</option>' +
+    (veiculos || []).map(function(v) {
+      return '<option value="' + v.id + '">' + v.modelo + ' · ' + v.placa + '</option>';
+    }).join('');
+  document.getElementById('multa-data').value = hojeLocalStr();
+  document.getElementById('multa-valor').value = '';
+  document.getElementById('multa-descricao').value = '';
+  document.getElementById('multa-contrato-result').innerHTML = '';
+  openModal('modal-multa');
+}
+
+async function buscarContratoMulta() {
+  var veiculoId = document.getElementById('multa-veiculo').value;
+  var data      = document.getElementById('multa-data').value;
+  var resultEl  = document.getElementById('multa-contrato-result');
+  if (!veiculoId || !data) { resultEl.innerHTML = ''; return; }
+
+  var { data: contratos } = await db
+    .from('alugueis')
+    .select('id, cliente, inicio, fim')
+    .eq('veiculo_id', veiculoId)
+    .lte('inicio', data)
+    .neq('status', 'cancelado')
+    .order('inicio', { ascending: false });
+
+  var contrato = (contratos || []).find(function(c) { return !c.fim || c.fim >= data; });
+
+  if (contrato) {
+    resultEl.innerHTML = '<div style="background:var(--bg);border:1px solid var(--green);border-radius:10px;padding:0.75rem;margin:0.5rem 0">' +
+      '<div style="font-size:0.72rem;color:var(--green);font-weight:700">✅ Contrato encontrado</div>' +
+      '<div style="font-size:0.9rem;font-weight:700;margin-top:0.2rem">' + contrato.cliente + '</div>' +
+      '<div style="font-size:0.75rem;color:var(--text2)">Contrato: ' + fmtDate(contrato.inicio) + ' → ' + (contrato.fim ? fmtDate(contrato.fim) : 'em aberto') + '</div>' +
+      '<input type="hidden" id="multa-aluguel-id" value="' + contrato.id + '">' +
+      '</div>';
+  } else {
+    resultEl.innerHTML = '<div style="background:var(--bg);border:1px solid var(--yellow);border-radius:10px;padding:0.75rem;margin:0.5rem 0">' +
+      '<div style="font-size:0.78rem;color:var(--yellow)">⚠️ Nenhum aluguel ativo nessa data — a moto estava com você.</div>' +
+      '<input type="hidden" id="multa-aluguel-id" value="">' +
+      '</div>';
+  }
+}
+
+async function salvarMulta() {
+  var veiculoId  = document.getElementById('multa-veiculo').value;
+  var data       = document.getElementById('multa-data').value;
+  var valor      = parseFloat(document.getElementById('multa-valor').value);
+  var descricao  = document.getElementById('multa-descricao').value.trim();
+  var aluguelEl  = document.getElementById('multa-aluguel-id');
+  var aluguelId  = aluguelEl ? (aluguelEl.value || null) : null;
+
+  if (!veiculoId || !data || !valor) { alert('Preencha veículo, data e valor.'); return; }
+
+  var { error } = await db.from('multas').insert({
+    veiculo_id:    parseInt(veiculoId),
+    data_infracao: data,
+    valor:         valor,
+    descricao:     descricao || null,
+    aluguel_id:    aluguelId ? parseInt(aluguelId) : null,
+    status:        'pendente'
+  });
+  if (error) { alert('Erro ao salvar: ' + error.message); return; }
+  closeModal('modal-multa');
+  renderMultas();
+}
+
+async function marcarMultaCobrada(id) {
+  await db.from('multas').update({ status: 'cobrado' }).eq('id', id);
+  renderMultas();
+}
+
+async function marcarMultaPaga(id) {
+  await db.from('multas').update({ status: 'pago' }).eq('id', id);
+  renderMultas();
+}
+
+async function deletarMulta(id) {
+  if (!confirm('Excluir esta multa?')) return;
+  var { error } = await db.from('multas').delete().eq('id', id);
+  if (error) { alert('Erro: ' + error.message); return; }
+  renderMultas();
 }
 
 // --- INIT ---

@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Vrunn">
   <meta name="theme-color" content="#2563eb">
-  <link rel="stylesheet" href="style.css?v=36">
+  <link rel="stylesheet" href="style.css?v=37">
 </head>
 <body>
 
@@ -59,6 +59,7 @@
     <li><a href="#" class="nav-item" data-section="clientes">Clientes</a></li>
     <li><a href="#" class="nav-item" data-section="checklist">Checklist de Compra</a></li>
     <li><a href="#" class="nav-item" data-section="cobrancas">Cobranças</a></li>
+    <li><a href="#" class="nav-item" data-section="multas">Multas</a></li>
   </ul>
   <button class="hamburger" id="hamburger">&#9776;</button>
   <div class="notif-wrapper">
@@ -313,6 +314,16 @@
       </select>
     </div>
     <div id="cobrancas-lista"></div>
+  </section>
+
+  <!-- MULTAS -->
+  <section id="multas" class="section">
+    <div class="section-header">
+      <h2 class="section-title">Multas <span class="section-count" id="multas-count"></span></h2>
+      <button class="btn btn-primary" onclick="abrirModalMulta()">+ Registrar Multa</button>
+    </div>
+    <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.25rem">Registre uma multa informando a moto e a data — o sistema identifica automaticamente qual cliente estava com ela naquele dia.</p>
+    <div id="multas-lista"></div>
   </section>
 
   <!-- RELATÓRIOS -->
@@ -993,12 +1004,47 @@
   </div>
 </div>
 
+<!-- MODAL MULTA -->
+<div class="modal-overlay" id="modal-multa">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3>🚨 Registrar Multa</h3>
+      <button class="modal-close" onclick="closeModal('modal-multa')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Veículo *</label>
+        <select id="multa-veiculo" onchange="buscarContratoMulta()">
+          <option value="">Selecione o veículo...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Data da Infração *</label>
+        <input type="date" id="multa-data" onchange="buscarContratoMulta()">
+      </div>
+      <div id="multa-contrato-result"></div>
+      <div class="form-group" style="margin-top:1rem">
+        <label>Valor da Multa (R$) *</label>
+        <input type="number" id="multa-valor" step="0.01" min="0" placeholder="0,00">
+      </div>
+      <div class="form-group">
+        <label>Descrição / Tipo de Infração</label>
+        <input type="text" id="multa-descricao" placeholder="Ex: Excesso de velocidade, semáforo...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="salvarMulta()">Salvar</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-multa')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- /app-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=229"></script>
+<script src="app.js?v=230"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');
