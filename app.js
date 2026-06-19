@@ -3215,11 +3215,33 @@ async function salvarMulta() {
 }
 
 async function marcarMultaPaga(id) {
+  var { data: multa } = await db.from('multas').select('valor, aluguel_id').eq('id', id).single();
+  if (!multa) return;
+
+  if (multa.aluguel_id) {
+    var { data: aluguel } = await db.from('alugueis').select('caucao').eq('id', multa.aluguel_id).single();
+    if (aluguel) {
+      var novoCaucao = (Number(aluguel.caucao) || 0) - Number(multa.valor);
+      await db.from('alugueis').update({ caucao: novoCaucao }).eq('id', multa.aluguel_id);
+    }
+  }
+
   await db.from('multas').update({ status: 'pago' }).eq('id', id);
   renderMultas();
 }
 
 async function marcarMultaPendente(id) {
+  var { data: multa } = await db.from('multas').select('valor, aluguel_id').eq('id', id).single();
+  if (!multa) return;
+
+  if (multa.aluguel_id) {
+    var { data: aluguel } = await db.from('alugueis').select('caucao').eq('id', multa.aluguel_id).single();
+    if (aluguel) {
+      var novoCaucao = (Number(aluguel.caucao) || 0) + Number(multa.valor);
+      await db.from('alugueis').update({ caucao: novoCaucao }).eq('id', multa.aluguel_id);
+    }
+  }
+
   await db.from('multas').update({ status: 'pendente' }).eq('id', id);
   renderMultas();
 }
