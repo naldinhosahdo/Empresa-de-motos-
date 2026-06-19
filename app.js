@@ -3181,11 +3181,11 @@ async function salvarMulta() {
   if (!veiculoId || !data || !valor) { alert('Preencha veículo, data e valor.'); return; }
 
   var { error } = await db.from('multas').insert({
-    veiculo_id:    parseInt(veiculoId),
+    veiculo_id:    veiculoId,
     data_infracao: data,
     valor:         valor,
     descricao:     descricao || null,
-    aluguel_id:    aluguelId ? parseInt(aluguelId) : null,
+    aluguel_id:    aluguelId || null,
     status:        'pendente'
   });
   if (error) { alert('Erro ao salvar: ' + error.message); return; }
