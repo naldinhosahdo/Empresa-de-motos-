@@ -3120,29 +3120,27 @@ async function renderMultas() {
       : null;
 
     var btnCobrar = (alu && whatsUrl)
-      ? '<a href="' + whatsUrl + '" target="_blank" rel="noopener" class="btn btn-primary" style="text-decoration:none;font-size:0.75rem;padding:0.25rem 0.6rem;display:inline-flex;align-items:center;gap:0.3rem;margin-top:0.3rem">📱 Cobrar multa</a>'
+      ? '<a href="' + whatsUrl + '" target="_blank" rel="noopener" class="btn btn-primary" style="text-decoration:none;font-size:0.8rem;text-align:center">📱 Cobrar multa</a>'
       : '';
 
     var btnPagar = !pago
-      ? '<button class="btn btn-sm btn-secondary" style="font-size:0.78rem" onclick="marcarMultaPaga(\'' + m.id + '\')">Pagar</button>'
+      ? '<button class="btn btn-secondary btn-sm" style="font-size:0.8rem" onclick="marcarMultaPaga(\'' + m.id + '\')">Pagar</button>'
       : '';
 
     return '<div class="multa-card">' +
-      '<div class="multa-card-top">' +
-        '<div class="multa-info">' +
-          '<div class="multa-veiculo">' + (vei ? vei.modelo + ' · ' + vei.placa : '—') + '</div>' +
-          '<div class="multa-data">📅 ' + fmtDate(m.data_infracao) + (m.descricao ? ' · ' + m.descricao : '') + '</div>' +
-          '<div class="multa-responsavel">' + (alu ? '👤 ' + alu.cliente : '🏠 Sem aluguel nessa data') + '</div>' +
-        '</div>' +
-        '<div class="multa-direita">' +
-          '<div class="multa-valor">' + fmtBRL(m.valor) + '</div>' +
-          '<div style="font-size:0.72rem;font-weight:700;color:' + statusColor + '">' + statusLabel + '</div>' +
+      '<div class="multa-info">' +
+        '<div class="multa-veiculo">' + (vei ? vei.modelo + ' · ' + vei.placa : '—') + '</div>' +
+        '<div class="multa-data">📅 ' + fmtDate(m.data_infracao) + (m.descricao ? ' · ' + m.descricao : '') + '</div>' +
+        '<div class="multa-responsavel">' + (alu ? '👤 ' + alu.cliente : '🏠 Sem aluguel nessa data') + '</div>' +
+        '<div style="margin-top:0.35rem">' +
+          '<span class="multa-valor">' + fmtBRL(m.valor) + '</span>' +
+          '<span style="font-size:0.72rem;font-weight:700;color:' + statusColor + ';margin-left:0.5rem">' + statusLabel + '</span>' +
         '</div>' +
       '</div>' +
-      '<div class="multa-card-btns">' +
+      '<div class="multa-acoes">' +
         btnCobrar +
         btnPagar +
-        '<button class="btn btn-sm" style="font-size:0.78rem" onclick="deletarMulta(\'' + m.id + '\')">🗑️ Excluir</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deletarMulta(\'' + m.id + '\')">🗑️ Excluir</button>' +
       '</div>' +
     '</div>';
   }).join('');
