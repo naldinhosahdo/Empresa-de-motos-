@@ -2997,6 +2997,7 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>5.7</strong> Em caso de acidente, roubo, furto ou qualquer ocorrência policial, avisar o Locador imediatamente.</div>' +
     '<div class="cl"><strong>5.8</strong> O Locatário tem até <strong>24 horas</strong> após a assinatura deste contrato para aceitar, no aplicativo <strong>Carteira Digital de Trânsito (CDT)</strong>, a transferência do veículo para seu nome como condutor principal. Caso não cumpra esse prazo, o Locador poderá cancelar a locação.</div>' +
     '<div class="cl"><strong>5.9</strong> O Locatário não pode circular com o veículo a mais de <strong>100 km</strong> de distância do local de retirada (Fortaleza-CE). O descumprimento desse limite autoriza o Locador a recolher a moto imediatamente, sem devolução do caução.</div>' +
+    '<div class="cl"><strong>5.10</strong> É <strong>expressamente proibido</strong> realizar qualquer modificação na motocicleta, incluindo alterações em peças, acessórios, pintura, motor, escapamento ou qualquer outro componente, sem autorização prévia e escrita do Locador. Modificações não autorizadas sujeitam o Locatário ao pagamento integral dos custos de restauração do veículo ao estado original, além das demais penalidades previstas neste contrato.</div>' +
 
     '<div class="sec">6. Danos à Moto</div>' +
     '<div class="cl"><strong>6.1</strong> O Locatário é responsável por qualquer dano causado à moto durante a locação, como batidas, tombamentos ou vandalismo. Danos por desgaste normal não são cobrados.</div>' +
