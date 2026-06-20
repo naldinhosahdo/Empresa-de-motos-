@@ -155,14 +155,14 @@
       });
     }
 
-    (function init() {
-      var params = new URLSearchParams(location.search);
-      var valorBase = parseFloat(params.get('v') || '0');
-      var nome = decodeURIComponent(params.get('n') || '');
-      var venc = params.get('d') || '';
+    var params    = new URLSearchParams(location.search);
+    var valorBase = parseFloat(params.get('v') || '0');
+    var nome      = decodeURIComponent(params.get('n') || '');
+    var venc      = params.get('d') || '';
 
-      if (nome) document.getElementById('cliente-nome').textContent = nome;
+    if (nome) document.getElementById('cliente-nome').textContent = nome;
 
+    function atualizar() {
       var hoje = new Date().toISOString().split('T')[0];
       var antesDovenc = venc && hoje < venc;
       var valorFinal = antesDovenc
@@ -170,14 +170,17 @@
         : valorBase;
 
       document.getElementById('valor').textContent = fmtBRL(valorFinal);
+      document.getElementById('valor-label').textContent = antesDovenc ? 'Valor com desconto' : 'Valor do aluguel';
 
+      var orig  = document.getElementById('valor-original');
+      var badge = document.getElementById('desconto-badge');
       if (antesDovenc && valorBase) {
-        var orig = document.getElementById('valor-original');
-        orig.textContent = fmtBRL(valorBase);
+        orig.textContent   = fmtBRL(valorBase);
         orig.style.display = 'block';
-        var badge = document.getElementById('desconto-badge');
         badge.style.display = 'inline-block';
-        document.getElementById('valor-label').textContent = 'Valor com desconto';
+      } else {
+        orig.style.display  = 'none';
+        badge.style.display = 'none';
       }
 
       if (venc) {
@@ -189,9 +192,11 @@
         el.style.color = atrasada ? '#f87171' : '#94a3b8';
       }
 
+      var qrContainer = document.getElementById('qr-container');
+      qrContainer.innerHTML = '';
       var emv = gerarPixEMV(PIX_KEY, valorFinal);
       try {
-        new QRCode(document.getElementById('qr-container'), {
+        new QRCode(qrContainer, {
           text: emv,
           width: 210,
           height: 210,
@@ -200,10 +205,12 @@
           correctLevel: QRCode.CorrectLevel.M
         });
       } catch (e) {
-        document.getElementById('qr-container').innerHTML =
-          '<div class="err">Erro ao gerar QR Code.<br>Use a chave PIX abaixo.</div>';
+        qrContainer.innerHTML = '<div class="err">Erro ao gerar QR Code.<br>Use a chave PIX abaixo.</div>';
       }
-    })();
+    }
+
+    atualizar();
+    setInterval(atualizar, 30000);
   </script>
 </body>
 </html>
