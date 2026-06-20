@@ -275,7 +275,7 @@ async function loadNotificacoes() {
       } else {
         var isPagoSeg = function(vencStr) {
           return (despesasData || []).some(function(d) {
-            return d.veiculo_id === vei.id && d.programada && d.pago && d.tipo === 'Seguro + Rastreador' && d.vencimento === vencStr;
+            return d.veiculo_id === vei.id && d.pago && d.tipo === 'Seguro + Rastreador' && d.vencimento === vencStr;
           });
         };
         var dSegDate = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
