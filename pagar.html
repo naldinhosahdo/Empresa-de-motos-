@@ -165,19 +165,43 @@
     function atualizar() {
       var hoje = new Date().toISOString().split('T')[0];
       var antesDovenc = venc && hoje < venc;
-      var valorFinal = antesDovenc
-        ? Math.round(valorBase * 0.95 * 100) / 100
-        : valorBase;
+      var atrasada    = venc && hoje > venc;
+
+      var valorFinal, labelValor, detalheMulta = '';
+
+      if (antesDovenc) {
+        valorFinal = Math.round(valorBase * 0.95 * 100) / 100;
+        labelValor = 'Valor com desconto';
+      } else if (atrasada) {
+        var diffMs   = new Date(hoje + 'T00:00:00') - new Date(venc + 'T00:00:00');
+        var diasAtr  = Math.round(diffMs / 86400000);
+        var multa    = Math.round(valorBase * 0.02 * 100) / 100;
+        var juros    = Math.round(valorBase * (0.01 / 30) * diasAtr * 100) / 100;
+        valorFinal   = Math.round((valorBase + multa + juros) * 100) / 100;
+        labelValor   = 'Valor em atraso (' + diasAtr + ' dia' + (diasAtr > 1 ? 's' : '') + ')';
+        detalheMulta = '⚠️ Multa 2%: ' + fmtBRL(multa) + ' + Juros: ' + fmtBRL(juros);
+      } else {
+        valorFinal = valorBase;
+        labelValor = 'Valor do aluguel';
+      }
 
       document.getElementById('valor').textContent = fmtBRL(valorFinal);
-      document.getElementById('valor-label').textContent = antesDovenc ? 'Valor com desconto' : 'Valor do aluguel';
+      document.getElementById('valor-label').textContent = labelValor;
 
       var orig  = document.getElementById('valor-original');
       var badge = document.getElementById('desconto-badge');
+
       if (antesDovenc && valorBase) {
-        orig.textContent   = fmtBRL(valorBase);
-        orig.style.display = 'block';
+        orig.textContent    = fmtBRL(valorBase);
+        orig.style.display  = 'block';
         badge.style.display = 'inline-block';
+      } else if (atrasada) {
+        orig.textContent    = fmtBRL(valorBase) + ' (original)';
+        orig.style.display  = 'block';
+        badge.textContent   = detalheMulta;
+        badge.style.display = 'inline-block';
+        badge.style.background = '#7f1d1d';
+        badge.style.color      = '#f87171';
       } else {
         orig.style.display  = 'none';
         badge.style.display = 'none';
@@ -185,7 +209,6 @@
 
       if (venc) {
         var el = document.getElementById('vencimento');
-        var atrasada = venc < hoje;
         el.textContent = atrasada
           ? '⚠️ Venceu em ' + fmtDate(venc)
           : '📅 Vence em ' + fmtDate(venc);

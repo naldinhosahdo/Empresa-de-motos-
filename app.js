@@ -3120,7 +3120,12 @@ async function renderCobrancas() {
     var btnStyle2 = btnStyle1 + ';background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3)';
     var btnStyle3 = btnStyle1 + ';background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3)';
 
-    var msg2 = 'Aviso automático — Vrunn Sistema: Identificamos pendência no pagamento de *' + fmtBRL(p.valor) + '* com vencimento em ' + fmtDate(p.vencimento) + '. Caso o pagamento não seja regularizado, a motocicleta será bloqueada automaticamente pelo sistema, impossibilitando o seu uso. Para regularizar acesse: ' + pagarLink;
+    var diasAtraso = atrasada ? Math.round((new Date(hojeStr + 'T00:00:00') - new Date(p.vencimento + 'T00:00:00')) / 86400000) : 0;
+    var multaVal   = atrasada ? Math.round(p.valor * 0.02 * 100) / 100 : 0;
+    var jurosVal   = atrasada ? Math.round(p.valor * (0.01 / 30) * diasAtraso * 100) / 100 : 0;
+    var valorComMulta = atrasada ? Math.round((p.valor + multaVal + jurosVal) * 100) / 100 : p.valor;
+
+    var msg2 = 'Aviso automático — Vrunn Sistema: Identificamos pendência no pagamento de *' + fmtBRL(p.valor) + '* com vencimento em ' + fmtDate(p.vencimento) + (atrasada ? ', que está em atraso há *' + diasAtraso + ' dia(s)*.\n\n💸 Valor atualizado com encargos:\n• Valor original: ' + fmtBRL(p.valor) + '\n• Multa (2%): ' + fmtBRL(multaVal) + '\n• Juros (' + diasAtraso + ' dia(s)): ' + fmtBRL(jurosVal) + '\n• *Total a pagar: ' + fmtBRL(valorComMulta) + '*' : '.') + '\n\nCaso o pagamento não seja regularizado, a motocicleta será bloqueada automaticamente pelo sistema. O link abaixo sempre mostra o valor atualizado com os encargos do dia. Para regularizar acesse: ' + pagarLink;
     var msg3 = 'Aviso automático — Vrunn Sistema: O pagamento de *' + fmtBRL(p.valor) + '* com vencimento em ' + fmtDate(p.vencimento) + ' não foi realizado dentro do prazo estabelecido. A motocicleta foi bloqueada automaticamente pelo sistema e está impossibilitada de uso. O desbloqueio ocorrerá de forma automática mediante a confirmação do pagamento. Para regularizar acesse: ' + pagarLink + '\n\nApós a confirmação, o sistema processará o desbloqueio em até 30 minutos.';
 
     var btnsHtml = url
