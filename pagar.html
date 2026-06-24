@@ -53,22 +53,27 @@
     .qr-box img, .qr-box canvas { display: block; }
     .qr-hint { font-size: 0.72rem; color: #475569; margin-top: 0.5rem; }
     .pix-alt { margin-top: 1.25rem; }
-    .pix-alt-label { font-size: 0.72rem; color: #64748b; margin-bottom: 0.4rem; }
-    .pix-key-box {
-      background: #0f1117;
-      border: 1px solid #2d3748;
-      border-radius: 10px;
-      padding: 0.6rem 0.85rem;
-      font-family: monospace;
-      font-size: 0.75rem;
-      color: #a78bfa;
-      word-break: break-all;
+    .pix-alt-label { font-size: 0.72rem; color: #64748b; margin-bottom: 0.75rem; }
+    .copy-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.85rem 1rem;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      color: #e2e8f0;
+      font-size: 0.9rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: border-color 0.15s;
-      user-select: all;
+      transition: background 0.15s, border-color 0.15s;
+      font-family: inherit;
     }
-    .pix-key-box:active { border-color: #a78bfa; }
-    .copy-hint { font-size: 0.7rem; color: #475569; margin-top: 0.3rem; transition: color 0.2s; }
+    .copy-btn:active { background: #273549; border-color: #a78bfa; }
+    .copy-btn.ok { background: #14532d; border-color: #4ade80; color: #4ade80; }
+    .copy-hint { font-size: 0.7rem; color: #475569; margin-top: 0.4rem; transition: color 0.2s; }
     .copy-hint.ok { color: #4ade80; }
     .footer { font-size: 0.68rem; color: #334155; margin-top: 1.25rem; }
     .err { padding: 2rem 1rem; color: #f87171; font-size: 0.9rem; }
@@ -100,11 +105,12 @@
 
     <div class="pix-alt">
       <hr class="divider">
-      <div class="pix-alt-label">Ou copie a chave PIX (aleatória):</div>
-      <div class="pix-key-box" id="pix-key" onclick="copiarChave()">
-        aba0d81b-5cb4-446f-bd89-e444f266d103
-      </div>
-      <div class="copy-hint" id="copy-hint">👆 Toque na chave para copiar</div>
+      <div class="pix-alt-label">Ou use o Pix Copia e Cola:</div>
+      <button class="copy-btn" id="copy-btn" onclick="copiarEMV()">
+        <span id="copy-icon">📋</span>
+        <span id="copy-text">Copiar código Pix</span>
+      </button>
+      <div class="copy-hint" id="copy-hint">O valor correto já está incluído no código</div>
     </div>
 
     <div class="footer">Pagamento via PIX · Vrunn Aluguel de Motos</div>
@@ -113,6 +119,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     var PIX_KEY = 'aba0d81b-5cb4-446f-bd89-e444f266d103';
+    var emvAtual = '';
 
     function campo(id, val) { return id + String(val.length).padStart(2, '0') + val; }
 
@@ -140,18 +147,41 @@
       return p[2] + '/' + p[1] + '/' + p[0];
     }
 
-    function copiarChave() {
+    function copiarEMV() {
+      if (!emvAtual) return;
+      var btn  = document.getElementById('copy-btn');
+      var icon = document.getElementById('copy-icon');
+      var txt  = document.getElementById('copy-text');
       var hint = document.getElementById('copy-hint');
-      navigator.clipboard.writeText(PIX_KEY).then(function () {
-        hint.textContent = '✅ Chave copiada!';
+      navigator.clipboard.writeText(emvAtual).then(function () {
+        btn.classList.add('ok');
+        icon.textContent = '✅';
+        txt.textContent  = 'Código copiado!';
+        hint.textContent = 'Cole no app do seu banco para pagar';
         hint.classList.add('ok');
         setTimeout(function () {
-          hint.textContent = '👆 Toque na chave para copiar';
+          btn.classList.remove('ok');
+          icon.textContent = '📋';
+          txt.textContent  = 'Copiar código Pix';
+          hint.textContent = 'O valor correto já está incluído no código';
           hint.classList.remove('ok');
-        }, 3000);
+        }, 4000);
       }).catch(function () {
-        document.getElementById('pix-key').focus();
-        document.execCommand('selectAll');
+        var el = document.createElement('textarea');
+        el.value = emvAtual;
+        el.style.position = 'fixed';
+        el.style.opacity  = '0';
+        document.body.appendChild(el);
+        el.focus();
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        icon.textContent = '✅';
+        txt.textContent  = 'Código copiado!';
+        setTimeout(function () {
+          icon.textContent = '📋';
+          txt.textContent  = 'Copiar código Pix';
+        }, 4000);
       });
     }
 
@@ -217,10 +247,10 @@
 
       var qrContainer = document.getElementById('qr-container');
       qrContainer.innerHTML = '';
-      var emv = gerarPixEMV(PIX_KEY, valorFinal);
+      emvAtual = gerarPixEMV(PIX_KEY, valorFinal);
       try {
         new QRCode(qrContainer, {
-          text: emv,
+          text: emvAtual,
           width: 210,
           height: 210,
           colorDark: '#000000',
@@ -228,7 +258,7 @@
           correctLevel: QRCode.CorrectLevel.M
         });
       } catch (e) {
-        qrContainer.innerHTML = '<div class="err">Erro ao gerar QR Code.<br>Use a chave PIX abaixo.</div>';
+        qrContainer.innerHTML = '<div class="err">Erro ao gerar QR Code.<br>Use o botão Copia e Cola abaixo.</div>';
       }
     }
 
