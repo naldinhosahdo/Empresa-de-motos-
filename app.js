@@ -1953,12 +1953,16 @@ async function gerarParcelas(aluguelId, aluguel) {
 
 // --- MODAL PARCELAS ---
 async function abrirParcelas(aluguelId) {
+  _diasParadosAluguelId = aluguelId;
   var { data: aluguel } = await db.from('alugueis')
     .select('*, veiculos(modelo, placa)').eq('id', aluguelId).single();
   var { data: parcelas } = await db.from('parcelas')
     .select('*').eq('aluguel_id', aluguelId).order('numero');
 
   if (!aluguel) return;
+  var temAberta = (parcelas || []).some(function(p) { return !p.pago; });
+  var btnDias = document.getElementById('btn-dias-parados');
+  if (btnDias) btnDias.style.display = temAberta ? '' : 'none';
   var vei = aluguel.veiculos;
   var totalPago   = (parcelas||[]).filter(function(p){ return p.pago; }).reduce(function(s,p){ return s + Number(p.valor_pago || p.valor); }, 0);
   var totalPendente = (parcelas||[]).filter(function(p){ return !p.pago; }).reduce(function(s,p){ return s + Number(p.valor); }, 0);
@@ -2030,6 +2034,43 @@ async function gerarParcelasManual(aluguelId) {
   if (!aluguel.valor) { alert('Este aluguel não tem valor cadastrado. Edite o aluguel e preencha o valor.'); return; }
   var ok = await gerarParcelas(aluguelId, aluguel);
   if (ok) abrirParcelas(aluguelId);
+}
+
+var _diasParadosAluguelId = null;
+
+function abrirDiasParados() {
+  document.getElementById('dias-parados-qtd').value = '';
+  document.getElementById('dias-parados-motivo').value = '';
+  openModal('modal-dias-parados');
+}
+
+async function confirmarDiasParados() {
+  var dias = parseInt(document.getElementById('dias-parados-qtd').value);
+  if (!dias || dias < 1) { alert('Informe quantos dias a moto ficou parada.'); return; }
+
+  var aluguelId = _diasParadosAluguelId;
+  if (!aluguelId) return;
+
+  var { data: parcelas } = await db.from('parcelas')
+    .select('*').eq('aluguel_id', aluguelId).eq('pago', false);
+
+  if (!parcelas || parcelas.length === 0) {
+    alert('Não há parcelas em aberto para ajustar.');
+    closeModal('modal-dias-parados');
+    return;
+  }
+
+  for (var i = 0; i < parcelas.length; i++) {
+    var p = parcelas[i];
+    var d = new Date(p.vencimento + 'T00:00:00');
+    d.setDate(d.getDate() + dias);
+    var novoVenc = d.toISOString().split('T')[0];
+    await db.from('parcelas').update({ vencimento: novoVenc }).eq('id', p.id);
+  }
+
+  closeModal('modal-dias-parados');
+  alert('✅ ' + parcelas.length + ' parcela(s) em aberto adiada(s) em ' + dias + ' dia(s).');
+  abrirParcelas(aluguelId);
 }
 
 async function regerarParcelas(aluguelId) {

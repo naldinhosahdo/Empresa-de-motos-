@@ -415,6 +415,15 @@ tfoot td { padding: 0.8rem 1.1rem; font-weight: 700; }
   box-shadow: 0 4px 20px rgba(14,165,233,0.4);
   transform: translateY(-1px);
 }
+.btn-warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(245,158,11,0.25);
+}
+.btn-warning:hover {
+  box-shadow: 0 4px 20px rgba(245,158,11,0.4);
+  transform: translateY(-1px);
+}
 
 /* ── BADGES ── */
 .badge {

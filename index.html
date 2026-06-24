@@ -55,10 +55,10 @@
     <li><a href="#" class="nav-item" data-section="relatorios">Lucro</a></li>
     <li><a href="#" class="nav-item" onclick="abrirContratosVencer();document.getElementById('navLinks').classList.remove('open')">Contratos a Vencer</a></li>
     <li><a href="#" class="nav-item" data-section="clientes">Clientes</a></li>
-    <li><a href="#" class="nav-item" data-section="checklist">Checklist de Compra</a></li>
     <li><a href="#" class="nav-item" data-section="cobrancas">Cobranças</a></li>
     <li><a href="#" class="nav-item" data-section="caucao">Caução</a></li>
     <li><a href="#" class="nav-item" data-section="multas">Multas</a></li>
+    <li><a href="#" class="nav-item" data-section="checklist">Checklist de Compra</a></li>
   </ul>
   <button class="hamburger" id="hamburger">&#9776;</button>
   <div class="notif-wrapper">
@@ -957,6 +957,34 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('modal-parcelas')">Fechar</button>
+      <button class="btn btn-warning" onclick="abrirDiasParados()" id="btn-dias-parados" style="display:none">🔧 Dias parados</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DIAS PARADOS -->
+<div class="modal-overlay" id="modal-dias-parados">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <h3>🔧 Registrar dias parados</h3>
+      <button class="modal-close" onclick="closeModal('modal-dias-parados')">&times;</button>
+    </div>
+    <div style="padding:0 1.5rem 1rem">
+      <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1rem">
+        Quantos dias a moto ficou parada? O vencimento de todas as parcelas em aberto será adiantado automaticamente.
+      </p>
+      <div class="form-group">
+        <label>Número de dias parados</label>
+        <input type="number" id="dias-parados-qtd" min="1" max="90" placeholder="Ex: 4" style="max-width:120px">
+      </div>
+      <div class="form-group">
+        <label>Motivo (opcional)</label>
+        <input type="text" id="dias-parados-motivo" placeholder="Ex: Manutenção, acidente...">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-dias-parados')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarDiasParados()">Confirmar</button>
     </div>
   </div>
 </div>
@@ -1070,7 +1098,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=253"></script>
+<script src="app.js?v=254"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');
