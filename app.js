@@ -1960,9 +1960,6 @@ async function abrirParcelas(aluguelId) {
     .select('*').eq('aluguel_id', aluguelId).order('numero');
 
   if (!aluguel) return;
-  var temAberta = (parcelas || []).some(function(p) { return !p.pago; });
-  var btnDias = document.getElementById('btn-dias-parados');
-  if (btnDias) btnDias.style.display = temAberta ? '' : 'none';
   var vei = aluguel.veiculos;
   var totalPago   = (parcelas||[]).filter(function(p){ return p.pago; }).reduce(function(s,p){ return s + Number(p.valor_pago || p.valor); }, 0);
   var totalPendente = (parcelas||[]).filter(function(p){ return !p.pago; }).reduce(function(s,p){ return s + Number(p.valor); }, 0);
