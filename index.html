@@ -453,6 +453,24 @@
       </div>
       <div class="form-row">
         <div class="form-group">
+          <label>Chassi</label>
+          <input type="text" id="moto-chassi" placeholder="9C2JC3110NR000000" style="text-transform:uppercase">
+        </div>
+        <div class="form-group">
+          <label>RENAVAM</label>
+          <input type="text" id="moto-renavam" placeholder="00000000000">
+        </div>
+      </div>
+      <div style="margin-bottom:0.75rem">
+        <label style="display:block;margin-bottom:0.35rem;font-size:0.82rem;font-weight:600;color:var(--text2)">Escanear CRLV</label>
+        <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem">
+          📄 Escanear CRLV
+          <input type="file" accept="image/*,application/pdf" style="display:none" onchange="scanCRLV(event)">
+        </label>
+        <span id="crlv-status" style="font-size:0.78rem;margin-left:0.75rem;color:var(--text2)"></span>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
           <label>Valor de Compra (R$)</label>
           <input type="number" id="moto-valor-compra" step="0.01" min="0" placeholder="8000.00">
         </div>
@@ -1052,7 +1070,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=252"></script>
+<script src="app.js?v=253"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');

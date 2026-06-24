@@ -1410,6 +1410,49 @@ async function renderVeiculos() {
   renderVeiculosTabela(_veiculosCache);
 }
 
+async function scanCRLV(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+  var status = document.getElementById('crlv-status');
+  var apiKey = (_configCache && _configCache.anthropic_key) || '';
+  if (!apiKey) { status.textContent = '⚠ Configure a chave da API Claude nas configurações.'; status.style.color = 'orange'; return; }
+  status.style.color = '#2196F3';
+  status.textContent = 'Lendo CRLV com IA...';
+  try {
+    var imgData = file.type === 'application/pdf' ? await renderPDFToImage(file) : await fileToDataURL(file);
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 512,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: imgData.split(';')[0].split(':')[1], data: imgData.split(',')[1] } },
+          { type: 'text', text: 'Extraia do CRLV/documento veicular os seguintes dados e retorne APENAS JSON com as chaves: modelo, placa, ano, cor, chassi, renavam. Se não encontrar algum campo, coloque null. Sem explicações.' }
+        ]}]
+      })
+    });
+    var json = await resp.json();
+    var text = json.content && json.content[0] && json.content[0].text || '';
+    var match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('JSON não encontrado');
+    var d = JSON.parse(match[0]);
+    var ok = [], faltando = [];
+    if (d.modelo)  { document.getElementById('moto-modelo').value  = d.modelo;  ok.push('Modelo'); } else faltando.push('Modelo');
+    if (d.placa)   { document.getElementById('moto-placa').value   = d.placa.replace(/[^a-zA-Z0-9]/g,'').toUpperCase(); ok.push('Placa'); } else faltando.push('Placa');
+    if (d.ano)     { document.getElementById('moto-ano').value     = d.ano;     ok.push('Ano'); }
+    if (d.cor)     { document.getElementById('moto-cor').value     = d.cor;     ok.push('Cor'); }
+    if (d.chassi)  { document.getElementById('moto-chassi').value  = String(d.chassi).toUpperCase(); ok.push('Chassi'); } else faltando.push('Chassi');
+    if (d.renavam) { document.getElementById('moto-renavam').value = String(d.renavam); ok.push('RENAVAM'); } else faltando.push('RENAVAM');
+    status.style.color = faltando.length ? 'orange' : 'var(--green)';
+    status.textContent = '✓ ' + ok.join(', ') + (faltando.length ? ' | Faltou: ' + faltando.join(', ') : '');
+  } catch(e) {
+    status.style.color = 'var(--red)';
+    status.textContent = '⚠ Erro ao ler CRLV. Preencha manualmente.';
+  }
+}
+
 function openNewMoto() {
   document.getElementById('form-moto').reset();
   document.getElementById('moto-id').value = '';
@@ -1428,6 +1471,8 @@ async function editVeiculo(id) {
   document.getElementById('moto-valor-compra').value = v.valor_compra || '';
   document.getElementById('moto-status').value           = v.status || 'disponivel';
   document.getElementById('moto-km-atual').value         = v.km_atual || '';
+  document.getElementById('moto-chassi').value           = v.chassi || '';
+  document.getElementById('moto-renavam').value          = v.renavam || '';
   document.getElementById('moto-seguro-mensal').value    = v.seguro_rastreador_mensal || '';
   document.getElementById('moto-obs').value              = v.obs || '';
   document.getElementById('modal-moto-title').textContent = 'Editar Veículo';
@@ -1444,6 +1489,8 @@ async function submitMoto(e) {
     cor:           document.getElementById('moto-cor').value.trim(),
     valor_compra:             document.getElementById('moto-valor-compra').value || null,
     km_atual:                 parseInt(document.getElementById('moto-km-atual').value) || null,
+    chassi:                   document.getElementById('moto-chassi').value.trim().toUpperCase() || null,
+    renavam:                  document.getElementById('moto-renavam').value.trim() || null,
     status:                   document.getElementById('moto-status').value,
     seguro_rastreador_mensal: document.getElementById('moto-seguro-mensal').value || null,
     obs:                      document.getElementById('moto-obs').value.trim()
@@ -2969,6 +3016,8 @@ async function gerarContrato(id, win) {
       '<tr><td class="lb">Placa</td><td>' + (vei.placa||'-') + '</td></tr>' +
       '<tr><td class="lb">Ano</td><td>' + (vei.ano||'-') + '</td></tr>' +
       '<tr><td class="lb">Cor</td><td>' + (vei.cor||'-') + '</td></tr>' +
+      '<tr><td class="lb">Chassi</td><td>' + (vei.chassi||'-') + '</td></tr>' +
+      '<tr><td class="lb">RENAVAM</td><td>' + (vei.renavam||'-') + '</td></tr>' +
     '</table>' +
 
     '<div class="sec">3. Do Prazo e Valor</div>' +
