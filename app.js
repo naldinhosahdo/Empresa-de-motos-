@@ -1458,7 +1458,7 @@ async function scanCRLV(event) {
     status.textContent = '✓ ' + ok.join(', ') + (faltando.length ? ' | Faltou: ' + faltando.join(', ') : '');
   } catch(e) {
     status.style.color = 'var(--red)';
-    status.textContent = '⚠ Erro ao ler CRLV. Preencha manualmente.';
+    status.textContent = '⚠ Erro: ' + (e && e.message ? e.message : String(e));
   }
 }
 
