@@ -128,8 +128,8 @@ function calcularValorParcela(valorOriginal, vencimento, dataPagamento) {
   var pag  = new Date(dataPagamento + 'T00:00:00');
   var diffDias = Math.round((pag - venc) / 86400000);
   if (diffDias < 0) {
-    var desc = valorOriginal * 0.05;
-    return { valor: valorOriginal - desc, descricao: 'Desconto 5%: −' + fmtBRL(desc), tipo: 'desconto' };
+    var desc = valorOriginal * 0.03;
+    return { valor: valorOriginal - desc, descricao: 'Desconto 3%: −' + fmtBRL(desc), tipo: 'desconto' };
   } else if (diffDias === 0) {
     return { valor: valorOriginal, descricao: 'Pago no vencimento — sem ajuste', tipo: 'normal' };
   } else {
@@ -3069,7 +3069,7 @@ async function gerarContrato(id, win) {
     '</table>' +
 
     '<div class="sec">4. Do Pagamento</div>' +
-    '<div class="cl"><strong>4.1</strong> Pagando antes do vencimento, o Locatário tem <strong>5% de desconto</strong> no valor da parcela.</div>' +
+    '<div class="cl"><strong>4.1</strong> Pagando antes do vencimento, o Locatário tem <strong>3% de desconto</strong> no valor da parcela.</div>' +
     '<div class="cl"><strong>4.2</strong> Pagando no dia do vencimento, o valor é o cheio, sem desconto nem acréscimo.</div>' +
     '<div class="cl"><strong>4.3</strong> O atraso gera <strong>multa de 2%</strong> sobre o valor da parcela (cobrada uma única vez no primeiro dia) mais <strong>juros de 1% ao mês</strong> (0,033% ao dia) enquanto o débito permanecer em aberto. Exemplo: parcela de ' + fmtValor(a.valor) + ' atrasada 7 dias = ' + fmtValor(a.valor) + ' + multa ' + fmtValor((a.valor||0)*0.02) + ' + juros ' + fmtValor((a.valor||0)*(0.01/30)*7) + ' = ' + fmtValor((a.valor||0) + (a.valor||0)*0.02 + (a.valor||0)*(0.01/30)*7) + '.</div>' +
     '<div class="cl"><strong>4.4</strong> Em caso de atraso, o Locador poderá <strong>bloquear a moto pelo rastreador a qualquer momento, sem aviso prévio</strong>. O bloqueio só será retirado após o pagamento total do débito com a multa.</div>' +
@@ -3179,7 +3179,7 @@ async function renderCobrancas() {
     var fone   = (alu.telefone || '').replace(/\D/g, '');
     var atrasada = p.vencimento < hojeStr;
     var hoje0    = p.vencimento === hojeStr;
-    var valorDesc = Math.round(p.valor * 0.95 * 100) / 100;
+    var valorDesc = Math.round(p.valor * 0.97 * 100) / 100;
 
     var statusLabel = atrasada
       ? IC.warn + ' Atrasada desde ' + fmtDate(p.vencimento)
@@ -3201,7 +3201,7 @@ async function renderCobrancas() {
       msg += 'Lembrete: seu pagamento de aluguel';
       if (vei) msg += ' da ' + vei.modelo;
       msg += ' no valor de *' + fmtBRL(p.valor) + '* vence ' + (hoje0 ? '*hoje*' : 'em *' + fmtDate(p.vencimento) + '*') + '.';
-      msg += '\n\n💡 Pague antes do vencimento e ganhe *5% de desconto* — fica *' + fmtBRL(valorDesc) + '*!';
+      msg += '\n\n💡 Pague antes do vencimento e ganhe *3% de desconto* — fica *' + fmtBRL(valorDesc) + '*!';
     }
     var pagarLink = 'https://naldinhosahdo.github.io/Empresa-de-motos-/pagar.html?v=' +
       encodeURIComponent(String(p.valor)) + '&n=' + encodeURIComponent(nomeDisplay) +

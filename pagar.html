@@ -93,7 +93,7 @@
       <div class="valor-label" id="valor-label">Valor do aluguel</div>
       <div class="valor" id="valor">—</div>
       <div id="valor-original" style="font-size:0.8rem;color:#64748b;text-decoration:line-through;margin-top:0.1rem;display:none"></div>
-      <div id="desconto-badge" style="display:none;margin-top:0.35rem;background:#166534;color:#4ade80;font-size:0.72rem;font-weight:700;border-radius:6px;padding:0.2rem 0.5rem;display:none">✅ 5% de desconto aplicado</div>
+      <div id="desconto-badge" style="display:none;margin-top:0.35rem;background:#166534;color:#4ade80;font-size:0.72rem;font-weight:700;border-radius:6px;padding:0.2rem 0.5rem;display:none">✅ 3% de desconto aplicado</div>
       <div class="vencimento" id="vencimento"></div>
     </div>
 
@@ -200,7 +200,7 @@
       var valorFinal, labelValor, detalheMulta = '';
 
       if (antesDovenc) {
-        valorFinal = Math.round(valorBase * 0.95 * 100) / 100;
+        valorFinal = Math.round(valorBase * 0.97 * 100) / 100;
         labelValor = 'Valor com desconto';
       } else if (atrasada) {
         var diffMs   = new Date(hoje + 'T00:00:00') - new Date(venc + 'T00:00:00');
