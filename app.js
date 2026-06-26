@@ -205,7 +205,10 @@ async function loadNotificacoes() {
   var em7Str  = em10Str;
 
   var hoje0Str = hojeLocalStr();
-  var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }, { data: veiculosData }, { data: progsData }] = await Promise.all([
+  var ha30 = new Date(hoje); ha30.setDate(ha30.getDate() - 30);
+  var ha30Str = ha30.toISOString().split('T')[0];
+
+  var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }, { data: veiculosData }, { data: progsData }, { data: caucaoData }] = await Promise.all([
     db.from('despesas').select('*, veiculos(modelo, placa)')
       .lte('vencimento', em10Str).not('vencimento', 'is', null).order('vencimento'),
     db.from('manutencoes').select('*, veiculos(modelo, placa)')
@@ -215,7 +218,9 @@ async function loadNotificacoes() {
     db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))')
       .eq('pago', false).lte('vencimento', em2Str).order('vencimento'),
     db.from('veiculos').select('id, modelo, placa, km_atual, seguro_rastreador_mensal'),
-    db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)')
+    db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)'),
+    db.from('alugueis').select('*, veiculos(modelo, placa)')
+      .eq('status', 'encerrado').gt('caucao', 0).neq('caucao_devolvido', 'sim').lte('fim', ha30Str)
   ]);
 
   var alertasDespesas = (despesasData || []).filter(function(d) { return !d.pago && !d.programada; }).map(function(d) {
@@ -313,7 +318,11 @@ async function loadNotificacoes() {
     });
   });
 
-  var todosAlertas = alertasDespesas.concat(alertasManut).concat(alertasAlug).concat(alertasParcelas).concat(alertasRecorrentes).sort(function(a, b) {
+  var alertasCaucao = (caucaoData || []).map(function(x) {
+    return { key: 'caucao_' + x.id, data: x.fim, label: '💰 Devolver caução — ' + (x.cliente || '-'), veiculo: x.veiculos, valor: fmtBRL(x.caucao), tipo: 'caucao', aluguelId: x.id };
+  });
+
+  var todosAlertas = alertasDespesas.concat(alertasManut).concat(alertasAlug).concat(alertasParcelas).concat(alertasRecorrentes).concat(alertasCaucao).sort(function(a, b) {
     return a.data < b.data ? -1 : a.data > b.data ? 1 : 0;
   });
 
@@ -338,18 +347,18 @@ async function loadNotificacoes() {
     var urgente = diff <= 7;
     var cls     = urgente ? 'notif-urgente' : 'notif-atencao';
     var vei     = a.veiculo ? (a.veiculo.modelo + (a.veiculo.placa ? ' · ' + a.veiculo.placa : '')) : '-';
-    var quando  = diff < 0
-      ? IC.warn + ' Venceu há ' + Math.abs(diff) + ' dia(s)'
-      : diff === 0
-        ? IC.dot_red + ' Vence hoje!'
-        : urgente
-          ? IC.dot_red + ' Vence em ' + diff + ' dia(s)'
-          : IC.dot_yel + ' Vence em ' + diff + ' dia(s)';
     var safeKey = a.key.replace(/'/g, "\\'");
     var safeLabel = (a.label || '').replace(/'/g, "\\'");
+    var quando = diff < 0
+      ? (a.tipo === 'caucao' ? IC.warn + ' Encerrado há ' + Math.abs(diff) + ' dia(s) — prazo de 30 dias atingido' : IC.warn + ' Venceu há ' + Math.abs(diff) + ' dia(s)')
+      : diff === 0 ? IC.dot_red + ' Vence hoje!'
+      : urgente ? IC.dot_red + ' Vence em ' + diff + ' dia(s)'
+      : IC.dot_yel + ' Vence em ' + diff + ' dia(s)';
     var pagarBtn = a.tipo === 'parcela' && a.parcelaId && a.aluguelId
       ? '<button class="btn btn-sm btn-primary" style="font-size:0.72rem;padding:3px 8px;margin-right:4px" onclick="abrirPagarParcela(\'' + a.parcelaId + '\',\'' + a.aluguelId + '\',' + a.valorNum + ',\'' + a.vencimentoStr + '\',\'' + safeLabel + '\',\'' + safeKey + '\')">Pago</button>'
-      : '';
+      : a.tipo === 'caucao' && a.aluguelId
+        ? '<button class="btn btn-sm btn-primary" style="font-size:0.72rem;padding:3px 8px;margin-right:4px" onclick="marcarCaucaoDevolvido(\'' + a.aluguelId + '\',\'' + safeKey + '\')">✅ Devolver caução</button>'
+        : '';
     var _c = "document.getElementById('notif-dropdown').style.display='none';";
     var bodyClick;
     if (a.tipo === 'parcela' && a.aluguelId) {
@@ -1826,7 +1835,9 @@ async function renderAlugueis(ordenarPorVencimento) {
             '<div class="btn-actions">' +
               '<button class="btn btn-sm btn-info" onclick="abrirParcelas(\'' + x.id + '\')">Parcelas</button>' +
               '<button class="btn btn-sm btn-info" onclick="gerarContrato(\'' + x.id + '\')">Contrato</button>' +
-              '<button class="btn btn-sm btn-warning" onclick="renovarContrato(\'' + x.id + '\')">🔄 Renovar</button>' +
+              (x.status === 'ativo' ? '<button class="btn btn-sm btn-warning" onclick="renovarContrato(\'' + x.id + '\')">🔄 Renovar</button>' : '') +
+              (x.status === 'ativo' ? '<button class="btn btn-sm btn-danger" onclick="encerrarContrato(\'' + x.id + '\')">⛔ Encerrar</button>' : '') +
+              (x.status === 'encerrado' && x.caucao && x.caucao_devolvido !== 'sim' ? '<button class="btn btn-sm btn-primary" onclick="marcarCaucaoDevolvido(\'' + x.id + '\',\'\')">✅ Devolver caução</button>' : '') +
               '<button class="btn btn-sm btn-secondary" onclick="editAluguel(\'' + x.id + '\')">Editar</button>' +
               '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'aluguel\',\'' + x.id + '\')">Excluir</button>' +
             '</div>' +
@@ -1868,6 +1879,25 @@ async function editAluguel(id) {
   document.getElementById('aluguel-status').value             = a.status || 'ativo';
   document.getElementById('modal-aluguel-title').textContent = 'Editar Aluguel';
   openModal('modal-aluguel');
+}
+
+async function encerrarContrato(id) {
+  if (!confirm('Encerrar este contrato? O status mudará para "Encerrado".')) return;
+  var hoje = hojeLocalStr();
+  var { data: a } = await db.from('alugueis').select('fim').eq('id', id).single();
+  var novoFim = (!a.fim || a.fim > hoje) ? hoje : a.fim;
+  await db.from('alugueis').update({ status: 'encerrado', fim: novoFim }).eq('id', id);
+  renderAlugueis();
+  renderAlertas();
+}
+
+async function marcarCaucaoDevolvido(aluguelId, notifKey) {
+  if (!confirm('Confirmar devolução do caução ao cliente?')) return;
+  var hoje = hojeLocalStr();
+  await db.from('alugueis').update({ caucao_devolvido: 'sim', caucao_data: hoje }).eq('id', aluguelId);
+  if (notifKey) dismissNotif(notifKey);
+  renderAlugueis();
+  renderAlertas();
 }
 
 async function renovarContrato(id) {
