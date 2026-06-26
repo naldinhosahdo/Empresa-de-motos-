@@ -3097,7 +3097,7 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>6.5</strong> Se o caução for usado para cobrir qualquer valor durante o contrato, o Locatário tem até <strong>7 dias</strong> para repor o valor descontado e manter o caução no valor original. Enquanto não repuser, o Locador poderá bloquear a moto.</div>' +
 
     '<div class="sec">7. Prazo e Encerramento</div>' +
-    '<div class="cl"><strong>7.1</strong> O contrato tem prazo mínimo de <strong>30 dias</strong>. Após isso, continua automaticamente por prazo indeterminado até que uma das partes encerre.</div>' +
+    '<div class="cl"><strong>7.1</strong> O prazo mínimo deste contrato é de <strong>30 dias</strong>.</div>' +
     '<div class="cl"><strong>7.2</strong> O Locatário só pode pedir para encerrar após os 30 dias iniciais, com aviso de pelo menos <strong>5 dias de antecedência</strong>. Devolver a moto antes dos 30 dias não cancela o que deve pagar.</div>' +
     '<div class="cl"><strong>7.3</strong> Devolver a moto com atraso gera cobrança proporcional pelos dias a mais.</div>' +
     '<div class="cl"><strong>7.4</strong> Se qualquer regra deste contrato for descumprida, o Locador pode recolher a moto imediatamente e cobrar os valores devidos.</div>' +
