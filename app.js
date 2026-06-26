@@ -3102,7 +3102,7 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>7.3</strong> Devolver a moto com atraso gera cobrança proporcional pelos dias a mais.</div>' +
     '<div class="cl"><strong>7.4</strong> Se qualquer regra deste contrato for descumprida, o Locador pode recolher a moto imediatamente e cobrar os valores devidos.</div>' +
     '<div class="cl"><strong>7.5</strong> O Locador pode encerrar o contrato a <strong>qualquer hora</strong>, avisando com 24 horas de antecedência. O caução é devolvido após os 30 dias de verificação.</div>' +
-    '<div class="cl"><strong>7.6</strong> Não há moto reserva em caso de manutenção ou pane. Em caso de colisão, pode haver moto reserva conforme disponibilidade. Dias parados por problema do Locador podem ser descontados da próxima parcela.</div>' +
+    '<div class="cl"><strong>7.6</strong> Não há moto reserva em caso de manutenção ou pane. Em caso de colisão, pode haver moto reserva conforme disponibilidade. Se a moto ficar parada por problema do Locador, os dias parados são <strong>adicionados ao prazo do contrato</strong> — ou seja, o Locatário ganha dias a mais no final. Exemplo: contrato de 35 dias com 1 dia parado = 36 dias de uso efetivo.</div>' +
 
     '<div class="sec">8. Sem Vínculo de Emprego</div>' +
     '<div class="cl"><strong>8.1</strong> Este é um contrato de aluguel de moto, não de emprego. Não existe nenhum vínculo empregatício entre as partes.</div>' +
