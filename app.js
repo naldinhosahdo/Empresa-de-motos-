@@ -1826,6 +1826,7 @@ async function renderAlugueis(ordenarPorVencimento) {
             '<div class="btn-actions">' +
               '<button class="btn btn-sm btn-info" onclick="abrirParcelas(\'' + x.id + '\')">Parcelas</button>' +
               '<button class="btn btn-sm btn-info" onclick="gerarContrato(\'' + x.id + '\')">Contrato</button>' +
+              '<button class="btn btn-sm btn-warning" onclick="renovarContrato(\'' + x.id + '\')">🔄 Renovar</button>' +
               '<button class="btn btn-sm btn-secondary" onclick="editAluguel(\'' + x.id + '\')">Editar</button>' +
               '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'aluguel\',\'' + x.id + '\')">Excluir</button>' +
             '</div>' +
@@ -1866,6 +1867,48 @@ async function editAluguel(id) {
   document.getElementById('row-caucao-data').style.display    = a.caucao_devolvido === 'sim' ? 'block' : 'none';
   document.getElementById('aluguel-status').value             = a.status || 'ativo';
   document.getElementById('modal-aluguel-title').textContent = 'Editar Aluguel';
+  openModal('modal-aluguel');
+}
+
+async function renovarContrato(id) {
+  const { data: a } = await db.from('alugueis').select('*').eq('id', id).single();
+  if (!a) return;
+  await populateVeiculoSelects();
+  await populateClienteSelect();
+
+  // Nova data de início = dia seguinte ao fim do contrato atual
+  var novoInicio = '';
+  if (a.fim) {
+    var d = new Date(a.fim + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    novoInicio = d.toISOString().split('T')[0];
+  } else {
+    novoInicio = hojeLocalStr();
+  }
+
+  // Nova data de fim = +30 dias a partir do novo início
+  var d2 = new Date(novoInicio + 'T00:00:00');
+  d2.setDate(d2.getDate() + 30);
+  var novoFim = d2.toISOString().split('T')[0];
+
+  document.getElementById('aluguel-id').value                  = ''; // novo registro
+  document.getElementById('aluguel-moto').value                = a.veiculo_id || '';
+  document.getElementById('aluguel-cliente-select').value      = a.cliente_id || '';
+  document.getElementById('aluguel-cpf').value                 = a.cpf || '';
+  document.getElementById('aluguel-telefone').value            = a.telefone || '';
+  document.getElementById('aluguel-cnh').value                 = a.cnh || '';
+  document.getElementById('aluguel-endereco').value            = a.endereco || '';
+  document.getElementById('aluguel-inicio').value              = novoInicio;
+  document.getElementById('aluguel-fim').value                 = novoFim;
+  document.getElementById('aluguel-periodo').value             = a.periodo || 'semana';
+  document.getElementById('aluguel-valor').value               = a.valor || '';
+  document.getElementById('aluguel-total').value               = a.total || '';
+  document.getElementById('aluguel-caucao').value              = '0';
+  document.getElementById('aluguel-caucao-devolvido').value    = 'nao';
+  document.getElementById('aluguel-caucao-data').value         = '';
+  document.getElementById('row-caucao-data').style.display     = 'none';
+  document.getElementById('aluguel-status').value              = 'ativo';
+  document.getElementById('modal-aluguel-title').textContent   = '🔄 Renovar Contrato — ' + a.cliente;
   openModal('modal-aluguel');
 }
 
