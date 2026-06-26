@@ -3094,6 +3094,7 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>6.2</strong> Acidente por culpa do Locatário: dano até R$1.000 → paga o valor exato. Dano acima de R$1.000 → aciona seguro e paga franquia de R$1.000 (descontado do caução). Culpa de terceiro com seguro → sem custo pro Locatário. Terceiro sem seguro → o terceiro paga a franquia.</div>' +
     '<div class="cl"><strong>6.3</strong> O caução pode ser usado para cobrir danos, multas ou valores em aberto ao final do contrato.</div>' +
     '<div class="cl"><strong>6.4</strong> O caução só é devolvido <strong>30 dias após o fim do contrato</strong>, para verificar se veio alguma multa ou pendência. Se houver, o valor é descontado antes da devolução.</div>' +
+    '<div class="cl"><strong>6.5</strong> Se o caução for usado para cobrir qualquer valor durante o contrato, o Locatário tem até <strong>7 dias</strong> para repor o valor descontado e manter o caução no valor original. Enquanto não repuser, o Locador poderá bloquear a moto.</div>' +
 
     '<div class="sec">7. Prazo e Encerramento</div>' +
     '<div class="cl"><strong>7.1</strong> O contrato tem prazo mínimo de <strong>30 dias</strong>. Após isso, continua automaticamente por prazo indeterminado até que uma das partes encerre.</div>' +
