@@ -1835,8 +1835,8 @@ async function renderAlugueis(ordenarPorVencimento) {
             '<div class="btn-actions">' +
               '<button class="btn btn-sm btn-info" onclick="abrirParcelas(\'' + x.id + '\')">Parcelas</button>' +
               '<button class="btn btn-sm btn-info" onclick="gerarContrato(\'' + x.id + '\')">Contrato</button>' +
-              (x.status === 'ativo' ? '<button class="btn btn-sm btn-warning" onclick="renovarContrato(\'' + x.id + '\')">🔄 Renovar</button>' : '') +
-              (x.status === 'ativo' ? '<button class="btn btn-sm btn-danger" onclick="encerrarContrato(\'' + x.id + '\')">⛔ Encerrar</button>' : '') +
+              (x.status === 'ativo' ? '<button class="btn btn-sm btn-warning" onclick="renovarContrato(\'' + x.id + '\')">Renovar</button>' : '') +
+              (x.status === 'ativo' ? '<button class="btn btn-sm btn-danger" onclick="encerrarContrato(\'' + x.id + '\')">Encerrar</button>' : '') +
               (x.status === 'encerrado' && x.caucao && x.caucao_devolvido !== 'sim' ? '<button class="btn btn-sm btn-primary" onclick="marcarCaucaoDevolvido(\'' + x.id + '\',\'\')">✅ Devolver caução</button>' : '') +
               '<button class="btn btn-sm btn-secondary" onclick="editAluguel(\'' + x.id + '\')">Editar</button>' +
               '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'aluguel\',\'' + x.id + '\')">Excluir</button>' +
