@@ -3061,7 +3061,7 @@ async function gerarContrato(id, win) {
     '<div class="sec">3. Do Prazo e Valor</div>' +
     '<table>' +
       '<tr><td class="lb">Início da Locação</td><td>' + fmtD(a.inicio) + '</td></tr>' +
-      '<tr><td class="lb">Fim da Locação</td><td>' + (a.fim ? fmtD(a.fim) : 'A combinar') + '</td></tr>' +
+      '<tr><td class="lb">Fim da Locação</td><td>' + (a.fim ? fmtD(a.fim) : 'Indeterminado') + '</td></tr>' +
       '<tr><td class="lb">Modalidade</td><td>' + (periodoTexto[a.periodo]||a.periodo||'-') + '</td></tr>' +
       '<tr><td class="lb">Valor por período</td><td>' + fmtValor(a.valor) + '</td></tr>' +
       '<tr><td class="lb">Valor Total</td><td>' + fmtValor(a.total) + '</td></tr>' +
