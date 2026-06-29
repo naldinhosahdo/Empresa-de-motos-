@@ -1590,12 +1590,11 @@ function _buildManutMotoBody(vei, motoProg, motoAvul) {
       '<td><span class="text-red">' + fmtBRL(x.custo) + '</span></td>' +
       '<td>' + (x.km ? Number(x.km).toLocaleString('pt-BR') + ' km' : '—') + '</td>' +
       '<td>' + fmtDate(x.data) + '</td>' +
-      '<td>' + (x.prox_data ? fmtDate(x.prox_data) : (x.prox_km ? x.prox_km + ' km' : '—')) + '</td>' +
       '<td><div class="btn-actions">' +
         '<button class="btn btn-sm btn-secondary" onclick="editManutencao(\'' + x.id + '\')">Editar</button>' +
         '<button class="btn btn-sm btn-danger" onclick="confirmDelete(\'manutencao\',\'' + x.id + '\')">Excluir</button>' +
       '</div></td></tr>';
-  }).join('') || '<tr class="empty-row"><td colspan="7">Nenhuma avulsa registrada.</td></tr>';
+  }).join('') || '<tr class="empty-row"><td colspan="6">Nenhuma avulsa registrada.</td></tr>';
   var totalManut = motoAvul.reduce(function(s, x) { return s + Number(x.custo || 0); }, 0);
   return subHdr('Programadas') +
     '<div class="table-wrap" style="margin-bottom:0.5rem"><table>' +
@@ -1603,7 +1602,7 @@ function _buildManutMotoBody(vei, motoProg, motoAvul) {
       '<tbody>' + progRows + '</tbody></table></div>' +
     subHdr('Manutenções Avulsas') +
     '<div class="table-wrap"><table>' +
-      '<thead><tr><th>Tipo</th><th>Descrição</th><th>Custo</th><th>KM</th><th>Data</th><th>Próx.</th><th>Ações</th></tr></thead>' +
+      '<thead><tr><th>Tipo</th><th>Descrição</th><th>Custo</th><th>KM</th><th>Data</th><th>Ações</th></tr></thead>' +
       '<tbody>' + avulRows + '</tbody></table></div>' +
     '<div style="text-align:right;padding:0.6rem 0.25rem;font-weight:700;font-size:0.9rem;border-top:1px solid var(--border);margin-top:0.25rem">Total gasto em manutenções: <span style="color:var(--red)">' + fmtBRL(totalManut) + '</span></div>';
 }
