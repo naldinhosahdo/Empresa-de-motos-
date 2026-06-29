@@ -675,9 +675,15 @@
       </div>
       <div class="form-row">
         <div class="form-group">
+          <label>KM da manutenção</label>
+          <input type="text" inputmode="numeric" id="manut-km" placeholder="42800">
+        </div>
+        <div class="form-group">
           <label>Próxima manutenção (km)</label>
           <input type="text" inputmode="numeric" id="manut-prox-km" placeholder="3000">
         </div>
+      </div>
+      <div class="form-row">
         <div class="form-group">
           <label>Próxima manutenção (data)</label>
           <input type="date" id="manut-prox-data">
@@ -1098,7 +1104,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=274"></script>
+<script src="app.js?v=275"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');
