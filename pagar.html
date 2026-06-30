@@ -193,7 +193,8 @@
     if (nome) document.getElementById('cliente-nome').textContent = nome;
 
     function atualizar() {
-      var hoje = new Date().toISOString().split('T')[0];
+      var _h = new Date();
+      var hoje = _h.getFullYear() + '-' + String(_h.getMonth() + 1).padStart(2, '0') + '-' + String(_h.getDate()).padStart(2, '0');
       var antesDovenc = venc && hoje < venc;
       var atrasada    = venc && hoje > venc;
 
