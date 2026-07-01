@@ -603,17 +603,14 @@ async function renderDashboard() {
   var lucroMes   = receitaMes - custosMes;
 
   document.getElementById('dash-receita-mes').textContent       = fmtBRL(receitaMes);
-  document.getElementById('dash-receita-mes-label').textContent = fmtBRL(receitaMes);
   document.getElementById('dash-receita-total').textContent     = fmtBRL(receitaTotal);
 
   document.getElementById('dash-custos-mes').textContent       = fmtBRL(custosMes);
-  document.getElementById('dash-custos-mes-label').textContent = fmtBRL(custosMes);
   document.getElementById('dash-custos').textContent           = fmtBRL(custosTotal);
 
   var lucroMesEl = document.getElementById('dash-lucro-mes');
   lucroMesEl.textContent = fmtBRL(lucroMes);
   lucroMesEl.style.color = lucroMes >= 0 ? 'var(--green)' : 'var(--red)';
-  document.getElementById('dash-lucro-mes-label').textContent = fmtBRL(lucroMes);
   var lucroTotalEl = document.getElementById('dash-lucro');
   lucroTotalEl.textContent = fmtBRL(lucroTotal);
   lucroTotalEl.style.color = lucroTotal >= 0 ? 'var(--green)' : 'var(--red)';
