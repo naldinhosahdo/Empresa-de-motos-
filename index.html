@@ -97,30 +97,30 @@
       <div class="card card-green" onclick="showSection('alugueis')" style="cursor:pointer">
         <div class="card-icon"><i data-lucide="banknote" class="ic-card"></i></div>
         <div class="card-info">
-          <span class="card-label">Receita (mês)</span>
-          <span class="card-value" id="dash-receita-mes">R$ 0,00</span>
+          <span class="card-label">Receita</span>
+          <span class="card-value" id="dash-receita-total">R$ 0,00</span>
           <div style="margin-top:0.2rem">
-            <span style="font-size:0.7rem;color:var(--text-muted)">Total <strong id="dash-receita-total">R$ 0,00</strong></span>
+            <span style="font-size:0.7rem;color:var(--text-muted)">Mês <strong id="dash-receita-mes">R$ 0,00</strong></span>
           </div>
         </div>
       </div>
       <div class="card card-red" onclick="showSection('custos-geral')" style="cursor:pointer">
         <div class="card-icon"><i data-lucide="wrench" class="ic-card"></i></div>
         <div class="card-info">
-          <span class="card-label">Custos (mês)</span>
-          <span class="card-value" id="dash-custos-mes">R$ 0,00</span>
+          <span class="card-label">Custos</span>
+          <span class="card-value" id="dash-custos">R$ 0,00</span>
           <div style="margin-top:0.2rem">
-            <span style="font-size:0.7rem;color:var(--text-muted)">Total <strong id="dash-custos">R$ 0,00</strong></span>
+            <span style="font-size:0.7rem;color:var(--text-muted)">Mês <strong id="dash-custos-mes">R$ 0,00</strong></span>
           </div>
         </div>
       </div>
       <div class="card card-purple" onclick="showSection('relatorios')" style="cursor:pointer">
         <div class="card-icon"><i data-lucide="trending-up" class="ic-card"></i></div>
         <div class="card-info">
-          <span class="card-label">Lucro (mês)</span>
-          <span class="card-value" id="dash-lucro-mes">R$ 0,00</span>
+          <span class="card-label">Lucro</span>
+          <span class="card-value" id="dash-lucro">R$ 0,00</span>
           <div style="margin-top:0.2rem">
-            <span style="font-size:0.7rem;color:var(--text-muted)">Total <strong id="dash-lucro">R$ 0,00</strong></span>
+            <span style="font-size:0.7rem;color:var(--text-muted)">Mês <strong id="dash-lucro-mes">R$ 0,00</strong></span>
           </div>
         </div>
       </div>
@@ -1101,7 +1101,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=277"></script>
+<script src="app.js?v=278"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');
