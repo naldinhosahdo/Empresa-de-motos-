@@ -3274,7 +3274,7 @@ async function renderCobrancas() {
       msg += 'Lembrete: seu pagamento de aluguel';
       if (vei) msg += ' da ' + vei.modelo;
       msg += ' no valor de *' + fmtBRL(p.valor) + '* vence ' + (hoje0 ? '*hoje*' : 'em *' + fmtDate(p.vencimento) + '*') + '.';
-      msg += '\n\n💡 Pague antes do vencimento e ganhe *3% de desconto* — fica *' + fmtBRL(valorDesc) + '*!';
+      if (!hoje0) msg += '\n\n💡 Pague antes do vencimento e ganhe *3% de desconto* — fica *' + fmtBRL(valorDesc) + '*!';
     }
     var pagarLink = 'https://naldinhosahdo.github.io/Empresa-de-motos-/pagar.html?v=' +
       encodeURIComponent(String(p.valor)) + '&n=' + encodeURIComponent(nomeDisplay) +
