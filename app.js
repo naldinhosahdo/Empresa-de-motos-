@@ -2112,33 +2112,41 @@ function abrirDiasParados() {
   openModal('modal-dias-parados');
 }
 
+var _diasParadosBusy = false;
+
 async function confirmarDiasParados() {
+  if (_diasParadosBusy) return;
   var dias = parseInt(document.getElementById('dias-parados-qtd').value);
-  if (!dias || dias < 1) { alert('Informe quantos dias a moto ficou parada.'); return; }
+  if (!dias) { alert('Informe quantos dias a moto ficou parada. (Use número negativo para corrigir um lançamento errado.)'); return; }
 
   var aluguelId = _diasParadosAluguelId;
   if (!aluguelId) return;
 
-  var { data: parcelas } = await db.from('parcelas')
-    .select('*').eq('aluguel_id', aluguelId).eq('pago', false);
+  _diasParadosBusy = true;
+  try {
+    var { data: parcelas } = await db.from('parcelas')
+      .select('*').eq('aluguel_id', aluguelId).eq('pago', false);
 
-  if (!parcelas || parcelas.length === 0) {
-    alert('Não há parcelas em aberto para ajustar.');
+    if (!parcelas || parcelas.length === 0) {
+      alert('Não há parcelas em aberto para ajustar.');
+      closeModal('modal-dias-parados');
+      return;
+    }
+
+    for (var i = 0; i < parcelas.length; i++) {
+      var p = parcelas[i];
+      var d = new Date(p.vencimento + 'T00:00:00');
+      d.setDate(d.getDate() + dias);
+      var novoVenc = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      await db.from('parcelas').update({ vencimento: novoVenc }).eq('id', p.id);
+    }
+
     closeModal('modal-dias-parados');
-    return;
+    alert('✅ ' + parcelas.length + ' parcela(s) em aberto ' + (dias > 0 ? 'adiada(s)' : 'adiantada(s)') + ' em ' + Math.abs(dias) + ' dia(s).');
+    abrirParcelas(aluguelId);
+  } finally {
+    _diasParadosBusy = false;
   }
-
-  for (var i = 0; i < parcelas.length; i++) {
-    var p = parcelas[i];
-    var d = new Date(p.vencimento + 'T00:00:00');
-    d.setDate(d.getDate() + dias);
-    var novoVenc = d.toISOString().split('T')[0];
-    await db.from('parcelas').update({ vencimento: novoVenc }).eq('id', p.id);
-  }
-
-  closeModal('modal-dias-parados');
-  alert('✅ ' + parcelas.length + ' parcela(s) em aberto adiada(s) em ' + dias + ' dia(s).');
-  abrirParcelas(aluguelId);
 }
 
 async function regerarParcelas(aluguelId) {

@@ -978,7 +978,8 @@
       </p>
       <div class="form-group">
         <label>Número de dias parados</label>
-        <input type="number" id="dias-parados-qtd" min="1" max="90" placeholder="Ex: 4" style="max-width:120px">
+        <input type="number" id="dias-parados-qtd" min="-90" max="90" placeholder="Ex: 4" style="max-width:120px">
+        <small style="color:var(--text2);font-size:0.72rem">Errou? Use número negativo (ex: -1) para voltar a data.</small>
       </div>
       <div class="form-group">
         <label>Motivo (opcional)</label>
@@ -1101,7 +1102,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=279"></script>
+<script src="app.js?v=280"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');
