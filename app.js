@@ -3273,21 +3273,21 @@ async function renderCobrancas() {
     var nomeDisplay = nome.charAt(0) + nome.slice(1).toLowerCase();
     var motoLabel   = vei ? vei.modelo + (vei.placa ? ' · ' + vei.placa : '') : '';
 
-    var msg = 'Olá ' + nomeDisplay + '! 😊\n\n';
+    var msg = 'Aviso automático — Vrunn Sistema: Olá, ' + nomeDisplay + '.\n\n';
     if (atrasada) {
-      msg += 'Seu pagamento de aluguel';
+      msg += 'O pagamento do aluguel';
       if (vei) msg += ' da ' + vei.modelo;
-      msg += ' no valor de *' + fmtBRL(p.valor) + '* está em atraso (venceu em ' + fmtDate(p.vencimento) + ').\n\nPor favor, regularize assim que possível.';
+      msg += ' no valor de *' + fmtBRL(p.valor) + '* consta em atraso (venceu em ' + fmtDate(p.vencimento) + ').\n\nPor favor, regularize assim que possível.';
     } else {
-      msg += 'Lembrete: seu pagamento de aluguel';
+      msg += 'Lembrete: o pagamento do aluguel';
       if (vei) msg += ' da ' + vei.modelo;
       msg += ' no valor de *' + fmtBRL(p.valor) + '* vence ' + (hoje0 ? '*hoje*' : 'em *' + fmtDate(p.vencimento) + '*') + '.';
-      if (!hoje0) msg += '\n\n💡 Pague antes do vencimento e ganhe *3% de desconto* — fica *' + fmtBRL(valorDesc) + '*!';
+      if (!hoje0) msg += '\n\n💡 Pagando antes do vencimento, o sistema aplica *3% de desconto* — fica *' + fmtBRL(valorDesc) + '*.';
     }
     var pagarLink = 'https://naldinhosahdo.github.io/Empresa-de-motos-/pagar.html?v=' +
       encodeURIComponent(String(p.valor)) + '&n=' + encodeURIComponent(nomeDisplay) +
       '&d=' + encodeURIComponent(p.vencimento);
-    msg += '\n\n📲 *Pagar agora:* ' + pagarLink + '\n_(Abre a página com QR Code já pronto)_\n\nAtt, Vrunn 🏍️';
+    msg += '\n\n📲 *Pagar agora:* ' + pagarLink + '\n_(O link mostra o valor atualizado do dia e o QR Code para pagamento)_\n\nMensagem gerada automaticamente pelo sistema Vrunn 🏍️';
 
     var encodedMsg = encodeURIComponent(msg);
     var url = fone
