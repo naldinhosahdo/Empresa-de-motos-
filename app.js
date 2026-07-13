@@ -341,8 +341,6 @@ async function loadNotificacoes() {
   badge.style.display = 'flex';
   badge.textContent = alertas.length;
 
-  _notificarCelular(alertas);
-
   list.innerHTML = alertas.map(function(a) {
     var venc    = new Date(a.data + 'T00:00:00');
     var diff    = Math.ceil((venc - hoje) / 86400000);
@@ -392,59 +390,6 @@ async function loadNotificacoes() {
     '</div>';
   }).join('');
   _initIcons();
-}
-
-// Espelha os alertas do sino na barra de notificações do celular.
-// Cada alerta só é notificado 1 vez por dia (controle via localStorage).
-async function _notificarCelular(alertas) {
-  try {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    if (!('serviceWorker' in navigator)) return;
-    var hojeK  = 'notif_local_' + hojeLocalStr();
-    var vistos = [];
-    try { vistos = JSON.parse(localStorage.getItem(hojeK) || '[]'); } catch(e) {}
-    var novos = alertas.filter(function(a) { return vistos.indexOf(a.key) === -1; });
-    if (!novos.length) return;
-
-    var reg = await navigator.serviceWorker.ready;
-    var corpo = novos.slice(0, 6).map(function(a) {
-      var vei = a.veiculo && a.veiculo.modelo ? ' — ' + a.veiculo.modelo : '';
-      return '• ' + a.label + vei + (a.valor ? ' · ' + a.valor : '');
-    }).join('\n');
-    if (novos.length > 6) corpo += '\n…e mais ' + (novos.length - 6);
-
-    reg.showNotification('🏍️ Vrunn — ' + novos.length + ' alerta(s)', {
-      body: corpo,
-      icon: '/Empresa-de-motos-/logo.png',
-      badge: '/Empresa-de-motos-/logo.png',
-      tag: 'vrunn-alertas'
-    });
-
-    localStorage.setItem(hojeK, JSON.stringify(vistos.concat(novos.map(function(a) { return a.key; }))));
-  } catch(e) { /* silencioso */ }
-}
-
-async function testarNotificacao() {
-  var status = document.getElementById('push-status');
-  try {
-    if (!('Notification' in window)) { status.textContent = '⚠ Navegador sem suporte a notificações.'; return; }
-    if (Notification.permission !== 'granted') {
-      status.textContent = '⚠ Permissão: ' + Notification.permission + '. Clique em "Ativar notificações" primeiro.';
-      return;
-    }
-    var reg = await navigator.serviceWorker.ready;
-    await reg.showNotification('🏍️ Vrunn — Teste', {
-      body: 'Se você está vendo isso, as notificações estão funcionando!',
-      icon: '/Empresa-de-motos-/logo.png',
-      badge: '/Empresa-de-motos-/logo.png',
-      tag: 'vrunn-teste'
-    });
-    status.style.color = 'var(--green)';
-    status.textContent = '✅ Notificação de teste enviada — confira a barra do celular.';
-  } catch(e) {
-    status.style.color = 'var(--red)';
-    status.textContent = '⚠ Erro no teste: ' + (e.message || e);
-  }
 }
 
 function toggleNotif() {
@@ -522,11 +467,8 @@ async function ativarNotificacoes() {
     }
     status.textContent = 'Registrando este aparelho...';
     await _subscribePush();
-    // Limpa o controle diário para os alertas de hoje notificarem novamente
-    localStorage.removeItem('notif_local_' + hojeLocalStr());
     status.style.color = 'var(--green)';
     status.textContent = '✅ Notificações ativadas neste aparelho!';
-    loadNotificacoes();
   } catch(e) {
     status.style.color = 'var(--red)';
     status.textContent = '⚠ Erro: ' + (e.message || e);

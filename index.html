@@ -1055,10 +1055,7 @@
       </div>
       <hr style="border-color:var(--border);margin:1rem 0">
       <p style="font-size:0.82rem;color:var(--text2);margin-bottom:0.5rem">🔔 Notificações no celular</p>
-      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-        <button type="button" class="btn btn-secondary" onclick="ativarNotificacoes()">Ativar notificações neste aparelho</button>
-        <button type="button" class="btn btn-secondary" onclick="testarNotificacao()">🔔 Testar</button>
-      </div>
+      <button type="button" class="btn btn-secondary" onclick="ativarNotificacoes()">Ativar notificações neste aparelho</button>
       <div id="push-status" style="font-size:0.78rem;color:var(--text2);margin-top:0.4rem"></div>
     </div>
     <div class="modal-footer">
@@ -1109,7 +1106,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=284"></script>
+<script src="app.js?v=285"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');
