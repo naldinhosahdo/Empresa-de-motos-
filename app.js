@@ -424,6 +424,29 @@ async function _notificarCelular(alertas) {
   } catch(e) { /* silencioso */ }
 }
 
+async function testarNotificacao() {
+  var status = document.getElementById('push-status');
+  try {
+    if (!('Notification' in window)) { status.textContent = '⚠ Navegador sem suporte a notificações.'; return; }
+    if (Notification.permission !== 'granted') {
+      status.textContent = '⚠ Permissão: ' + Notification.permission + '. Clique em "Ativar notificações" primeiro.';
+      return;
+    }
+    var reg = await navigator.serviceWorker.ready;
+    await reg.showNotification('🏍️ Vrunn — Teste', {
+      body: 'Se você está vendo isso, as notificações estão funcionando!',
+      icon: '/Empresa-de-motos-/logo.png',
+      badge: '/Empresa-de-motos-/logo.png',
+      tag: 'vrunn-teste'
+    });
+    status.style.color = 'var(--green)';
+    status.textContent = '✅ Notificação de teste enviada — confira a barra do celular.';
+  } catch(e) {
+    status.style.color = 'var(--red)';
+    status.textContent = '⚠ Erro no teste: ' + (e.message || e);
+  }
+}
+
 function toggleNotif() {
   var dd = document.getElementById('notif-dropdown');
   dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
@@ -499,8 +522,11 @@ async function ativarNotificacoes() {
     }
     status.textContent = 'Registrando este aparelho...';
     await _subscribePush();
+    // Limpa o controle diário para os alertas de hoje notificarem novamente
+    localStorage.removeItem('notif_local_' + hojeLocalStr());
     status.style.color = 'var(--green)';
     status.textContent = '✅ Notificações ativadas neste aparelho!';
+    loadNotificacoes();
   } catch(e) {
     status.style.color = 'var(--red)';
     status.textContent = '⚠ Erro: ' + (e.message || e);
