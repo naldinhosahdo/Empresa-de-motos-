@@ -41,7 +41,14 @@ function rest(token) {
       ...(opts || {})
     });
     if (opts && opts.method === 'DELETE') return null;
-    return r.json();
+    const body = await r.text();
+    let json;
+    try { json = JSON.parse(body); } catch (e) { json = null; }
+    if (!r.ok || !Array.isArray(json)) {
+      console.error('Erro na consulta "' + pathQuery + '" (HTTP ' + r.status + '): ' + body);
+      return [];
+    }
+    return json;
   };
 }
 
