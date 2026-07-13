@@ -1,0 +1,21 @@
+name: Push diário
+
+on:
+  schedule:
+    - cron: '0 11 * * *'   # 11:00 UTC = 8:00 em Fortaleza
+  workflow_dispatch:        # permite rodar manualmente pela aba Actions
+
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install web-push@3
+      - run: node scripts/send-push.js
+        env:
+          VRUNN_EMAIL: ${{ secrets.VRUNN_EMAIL }}
+          VRUNN_SENHA: ${{ secrets.VRUNN_SENHA }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
