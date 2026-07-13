@@ -413,6 +413,66 @@ async function showApp() {
   await loadConfig();
   renderDashboard();
   loadNotificacoes();
+  initPushSilencioso();
+}
+
+// --- PUSH NOTIFICATIONS ---
+var VAPID_PUBLIC_KEY = 'BLbdWTKS_A8et8ClLU0PbSAeuCxFueD29gEUIodPRlDTpZ4vUN7_955gTRrKoQWcoMQ4YBHL-REr-Txu2YZcJyY';
+
+function _urlB64ToUint8Array(base64String) {
+  var padding = '='.repeat((4 - base64String.length % 4) % 4);
+  var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  var raw = atob(base64);
+  var arr = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+
+async function _subscribePush() {
+  var reg = await navigator.serviceWorker.ready;
+  var sub = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: _urlB64ToUint8Array(VAPID_PUBLIC_KEY)
+  });
+  var json = sub.toJSON();
+  await db.from('push_subscriptions').upsert({
+    endpoint: sub.endpoint,
+    p256dh: json.keys.p256dh,
+    auth: json.keys.auth
+  }, { onConflict: 'endpoint' });
+}
+
+// Re-inscreve silenciosamente se a permissão já foi dada antes
+async function initPushSilencioso() {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    await _subscribePush();
+  } catch(e) { /* silencioso */ }
+}
+
+// Chamado pelo botão nas configurações (precisa de clique do usuário)
+async function ativarNotificacoes() {
+  var status = document.getElementById('push-status');
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      status.textContent = '⚠ Este navegador não suporta notificações push.';
+      return;
+    }
+    status.textContent = 'Solicitando permissão...';
+    var perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      status.textContent = '⚠ Permissão negada. Libere as notificações nas configurações do navegador.';
+      return;
+    }
+    status.textContent = 'Registrando este aparelho...';
+    await _subscribePush();
+    status.style.color = 'var(--green)';
+    status.textContent = '✅ Notificações ativadas neste aparelho!';
+  } catch(e) {
+    status.style.color = 'var(--red)';
+    status.textContent = '⚠ Erro: ' + (e.message || e);
+  }
 }
 
 function showLogin() {

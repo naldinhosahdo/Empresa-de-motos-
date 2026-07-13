@@ -1,4 +1,4 @@
-var CACHE = 'vrunn-v3';
+var CACHE = 'vrunn-v4';
 var ASSETS = [
   '/Empresa-de-motos-/',
   '/Empresa-de-motos-/index.html',
@@ -20,6 +20,33 @@ self.addEventListener('activate', function(e) {
     })
   );
   self.clients.claim();
+});
+
+self.addEventListener('push', function(e) {
+  var data = {};
+  try { data = e.data ? e.data.json() : {}; } catch(err) { data = { title: 'Vrunn', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(
+    self.registration.showNotification(data.title || 'Vrunn', {
+      body: data.body || '',
+      icon: '/Empresa-de-motos-/logo.png',
+      badge: '/Empresa-de-motos-/logo.png',
+      tag: data.tag || 'vrunn-alerta',
+      data: { url: data.url || '/Empresa-de-motos-/' }
+    })
+  );
+});
+
+self.addEventListener('notificationclick', function(e) {
+  e.notification.close();
+  var url = (e.notification.data && e.notification.data.url) || '/Empresa-de-motos-/';
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list) {
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].url.indexOf('/Empresa-de-motos-/') !== -1 && 'focus' in list[i]) return list[i].focus();
+      }
+      return clients.openWindow(url);
+    })
+  );
 });
 
 self.addEventListener('fetch', function(e) {
