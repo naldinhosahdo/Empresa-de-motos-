@@ -79,10 +79,88 @@ function rest(token) {
     alertas.push('💵 Caução ' + brl(c.caucao) + ' de ' + c.cliente + ' — prazo de devolução atingido');
   }
 
-  // 4. Despesas não pagas vencendo até amanhã (ex.: seguro+rastreador)
+  // 4. Despesas não pagas vencendo até amanhã (seguro tem lógica própria abaixo)
   const despesas = await q('despesas?select=tipo,valor,vencimento&pago=eq.false&vencimento=not.is.null&vencimento=lte.' + addDias(1));
   for (const d of despesas || []) {
+    if (d.tipo === 'Seguro + Rastreador') continue;
     alertas.push('🧾 ' + d.tipo + (d.valor ? ' ' + brl(d.valor) : '') + ' — vence ' + fmt(d.vencimento));
+  }
+
+  // Dados para os alertas recorrentes (mesma lógica do sino do app)
+  const veiculos    = await q('veiculos?select=id,modelo,placa,km_atual,seguro_rastreador_mensal');
+  const todasDesp   = await q('despesas?select=veiculo_id,tipo,vencimento,pago,programada');
+  const hojeD       = new Date(hojeStr + 'T00:00:00');
+  const mesHoje     = hojeD.getMonth() + 1;
+  const diaHoje     = hojeD.getDate();
+  const anoHoje     = hojeD.getFullYear();
+  const p2          = n => (n < 10 ? '0' : '') + n;
+  const pagou = (vid, tipo, venc) => (todasDesp || []).some(d =>
+    d.veiculo_id === vid && d.pago && d.tipo === tipo && d.vencimento === venc);
+
+  for (const vei of veiculos || []) {
+    const nome = vei.modelo + (vei.placa ? ' · ' + vei.placa : '');
+
+    // 5. IPVA — parcelas fev a jun, vence dia 10; avisa do dia 1 ao 9
+    if ([2, 3, 4, 5, 6].includes(mesHoje) && diaHoje >= 1 && diaHoje < 10) {
+      const dIPVA = anoHoje + '-' + p2(mesHoje) + '-10';
+      if (!pagou(vei.id, 'IPVA', dIPVA)) {
+        alertas.push('🏛️ IPVA parcela ' + (mesHoje - 1) + '/5 — ' + nome + ' — vence dia 10');
+      }
+    }
+
+    // 6. Licenciamento — dia 10 do mês (último dígito da placa + 2); avisa com 10 dias
+    if (vei.placa) {
+      const digitos = vei.placa.replace(/\D/g, '');
+      if (digitos.length) {
+        const ult = parseInt(digitos.slice(-1));
+        let mesLic = (ult === 0 ? 10 : ult) + 2, anoLic = anoHoje;
+        if (mesLic > 12) { mesLic -= 12; anoLic++; }
+        let dLic = anoLic + '-' + p2(mesLic) + '-10';
+        if (dLic < hojeStr) dLic = (anoLic + 1) + '-' + p2(mesLic) + '-10';
+        if (dLic >= hojeStr && dLic <= addDias(10) && !pagou(vei.id, 'Licenciamento', dLic)) {
+          alertas.push('📄 Licenciamento — ' + nome + ' — vence ' + fmt(dLic));
+        }
+      }
+    }
+
+    // 7. Seguro + Rastreador — vence dia 10 de cada mês; avisa com 5 dias
+    if (vei.seguro_rastreador_mensal) {
+      const override = (todasDesp || []).find(d =>
+        d.veiculo_id === vei.id && d.programada && !d.pago && d.tipo === 'Seguro + Rastreador');
+      let dSeg;
+      if (override) {
+        dSeg = override.vencimento;
+      } else {
+        let dt = new Date(anoHoje, hojeD.getMonth(), 10);
+        let dtStr = dt.getFullYear() + '-' + p2(dt.getMonth() + 1) + '-10';
+        while (pagou(vei.id, 'Seguro + Rastreador', dtStr)) {
+          dt = new Date(dt.getFullYear(), dt.getMonth() + 1, 10);
+          dtStr = dt.getFullYear() + '-' + p2(dt.getMonth() + 1) + '-10';
+        }
+        dSeg = dtStr;
+      }
+      if (dSeg && dSeg <= addDias(5)) {
+        alertas.push('🛰️ Seguro + Rastreador ' + brl(vei.seguro_rastreador_mensal) + ' — ' + nome + ' — vence ' + fmt(dSeg));
+      }
+    }
+  }
+
+  // 8. Manutenções avulsas com próxima data nos próximos 7 dias
+  const manuts = await q('manutencoes?select=descricao,prox_data,veiculos(modelo,placa)&prox_data=not.is.null&prox_data=lte.' + addDias(7));
+  for (const m of manuts || []) {
+    const v = m.veiculos ? ' — ' + m.veiculos.modelo : '';
+    alertas.push('🔧 Manutenção: ' + (m.descricao || 'sem descrição') + v + ' — ' + fmt(m.prox_data));
+  }
+
+  // 9. Manutenção programada por km — avisa quando faltam 100 km ou menos
+  const progs = await q('manut_programada?select=item,ultima_km,intervalo_km,veiculos(modelo,placa,km_atual)');
+  for (const p of progs || []) {
+    const v = p.veiculos;
+    if (!p.ultima_km || !v || !v.km_atual) continue;
+    const restante = Number(p.ultima_km) + Number(p.intervalo_km) - Number(v.km_atual);
+    if (restante <= 100) {
+      alertas.push('⚙️ ' + p.item + ' — ' + v.modelo + (restante <= 0 ? ' — VENCIDA' : ' — faltam ' + restante + ' km'));
+    }
   }
 
   console.log(alertas.length + ' alerta(s):', alertas);
