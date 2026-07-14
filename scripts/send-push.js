@@ -177,7 +177,11 @@ function rest(token) {
   let enviados = 0;
   for (const s of subs || []) {
     try {
-      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload);
+      await webpush.sendNotification(
+        { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+        payload,
+        { urgency: 'high', TTL: 86400 }
+      );
       enviados++;
     } catch (err) {
       if (err.statusCode === 404 || err.statusCode === 410) {
