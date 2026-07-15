@@ -3248,7 +3248,7 @@ async function gerarContrato(id, win) {
 
     '<div class="sec">8. Sem Vínculo de Emprego</div>' +
     '<div class="cl"><strong>8.1</strong> Este é um contrato de aluguel de moto, não de emprego. Não existe nenhum vínculo empregatício entre as partes.</div>' +
-    '<div class="cl"><strong>8.2</strong> O Locatário é autônomo e decide seus próprios horários e atividades. O Locador não manda no que ele faz com a moto.</div>' +
+    '<div class="cl"><strong>8.2</strong> O Locatário é profissional autônomo: define sozinho seus horários, rotas e para quais aplicativos ou clientes trabalha, sem qualquer subordinação ao Locador. Isso <strong>não afasta as regras deste contrato</strong> — o uso da moto continua sujeito a todas as obrigações, limites e proibições previstos neste documento.</div>' +
     '<div class="cl"><strong>8.3</strong> O Locatário é responsável pelo próprio INSS e impostos. O Locador não tem nenhuma obrigação trabalhista.</div>' +
     '<div class="cl"><strong>8.4</strong> Se o Locatário alegar que é empregado do Locador, isso será quebra grave de contrato e ele pagará todas as custas do processo judicial.</div>' +
     '<div class="sec">9. Em caso de conflito</div>' +
