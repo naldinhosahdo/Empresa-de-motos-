@@ -3214,7 +3214,8 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>4.2</strong> Pagar no dia do vencimento: valor cheio, sem desconto nem acréscimo.</div>' +
     '<div class="cl"><strong>4.3</strong> Atraso gera <strong>multa de 2%</strong> (cobrada uma vez só no primeiro dia) mais <strong>juros de 1% ao mês</strong>. Exemplo: parcela de ' + fmtValor(a.valor) + ' atrasada 7 dias = ' + fmtValor((a.valor||0) + (a.valor||0)*0.02 + (a.valor||0)*(0.01/30)*7) + ' no total.</div>' +
     '<div class="cl"><strong>4.4</strong> Se atrasar, a moto pode ser <strong>bloqueada pelo rastreador sem aviso</strong>. O bloqueio só é retirado após o pagamento total.</div>' +
-    '<div class="cl"><strong>4.5</strong> O limite de uso é de <strong>1.000 km por semana</strong>. Ultrapassar pode gerar cobrança extra ou rescisão do contrato.</div>' +
+    '<div class="cl"><strong>4.5</strong> Atraso igual ou superior a <strong>7 (sete) dias</strong> autoriza o Locador a <strong>recolher a moto imediatamente</strong>, onde ela estiver, sem necessidade de aviso prévio. O recolhimento não cancela a dívida: os valores em aberto continuam sendo devidos, podendo ser descontados do caução.</div>' +
+    '<div class="cl"><strong>4.6</strong> O limite de uso é de <strong>1.000 km por semana</strong>. Ultrapassar pode gerar cobrança extra ou rescisão do contrato.</div>' +
 
     '<div class="sec">5. Obrigações do Locatário</div>' +
     '<div class="cl"><strong>5.1</strong> Devolver a moto nas mesmas condições em que recebeu, salvo desgaste normal.</div>' +
