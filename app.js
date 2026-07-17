@@ -1902,6 +1902,19 @@ async function renderAlugueis(ordenarPorVencimento) {
           '</td></tr>';
       }).join('')
     : '<tr class="empty-row"><td colspan="12">Nenhum aluguel encontrado</td></tr>';
+
+  // Receita total (parcelas pagas, sem contar caução) — respeita o filtro de moto
+  var { data: pagas } = await db.from('parcelas')
+    .select('valor, valor_pago, numero, alugueis!inner(veiculo_id, caucao)')
+    .eq('pago', true);
+  var receitaTotal = (pagas || []).reduce(function(s, p) {
+    if (fmId && p.alugueis && p.alugueis.veiculo_id !== fmId) return s;
+    var v = Number(p.valor_pago || p.valor || 0);
+    if (p.numero === 1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
+    return s + v;
+  }, 0);
+  var recEl = document.getElementById('alugueis-receita-total');
+  if (recEl) recEl.innerHTML = 'Receita total: <span style="color:var(--green)">' + fmtBRL(receitaTotal) + '</span>';
 }
 
 function openNewAluguel() {
