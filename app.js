@@ -3803,9 +3803,12 @@ async function enviarAssistente() {
 
       chatHistorico.push({ role: 'assistant', content: json.content });
 
-      // Mostra os textos da resposta
+      // Mostra os textos da resposta (e fala, se a pergunta veio por voz)
       (json.content || []).forEach(function(b) {
-        if (b.type === 'text' && b.text) _chatAdd('chat-msg-ia', b.text);
+        if (b.type === 'text' && b.text) {
+          _chatAdd('chat-msg-ia', b.text);
+          if (chatPorVoz) _falarResposta(b.text);
+        }
       });
 
       if (json.stop_reason !== 'tool_use') break;
@@ -3826,7 +3829,72 @@ async function enviarAssistente() {
   } finally {
     statusEl.remove();
     chatOcupado = false;
+    chatPorVoz = false;
     document.getElementById('chat-enviar').disabled = false;
     inputEl.focus();
   }
+}
+
+// --- ASSISTENTE POR VOZ ---
+var _vozRec = null;
+var _vozGravando = false;
+var chatPorVoz = false; // se a última pergunta veio por voz, a resposta é falada
+
+function alternarVoz() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { _chatAdd('chat-msg-ia', '⚠ Este navegador não suporta reconhecimento de voz. Use o Chrome.'); return; }
+
+  if (_vozGravando) { try { _vozRec.stop(); } catch(e) {} return; }
+
+  // Parar qualquer fala em andamento ao começar a ouvir
+  try { window.speechSynthesis.cancel(); } catch(e) {}
+
+  _vozRec = new SR();
+  _vozRec.lang = 'pt-BR';
+  _vozRec.interimResults = true;
+  _vozRec.continuous = false;
+
+  var micBtn = document.getElementById('chat-mic');
+  var inputEl = document.getElementById('chat-input');
+
+  _vozRec.onstart = function() {
+    _vozGravando = true;
+    micBtn.classList.add('gravando');
+    inputEl.placeholder = 'Ouvindo... fale agora';
+  };
+  _vozRec.onresult = function(ev) {
+    var txt = '';
+    for (var i = 0; i < ev.results.length; i++) txt += ev.results[i][0].transcript;
+    inputEl.value = txt;
+  };
+  _vozRec.onerror = function(ev) {
+    if (ev.error === 'not-allowed') _chatAdd('chat-msg-ia', '⚠ Permita o acesso ao microfone nas configurações do navegador.');
+  };
+  _vozRec.onend = function() {
+    _vozGravando = false;
+    micBtn.classList.remove('gravando');
+    inputEl.placeholder = 'Fale ou digite... Ex: marca a parcela do Luiz como paga';
+    if (inputEl.value.trim()) {
+      chatPorVoz = true;
+      enviarAssistente();
+    }
+  };
+  _vozRec.start();
+}
+
+function _falarResposta(texto) {
+  try {
+    if (!('speechSynthesis' in window)) return;
+    // Remove emojis e símbolos que a voz leria de forma estranha
+    var limpo = texto.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}→•*_#`]/gu, '').replace(/\s+/g, ' ').trim();
+    if (!limpo) return;
+    var u = new SpeechSynthesisUtterance(limpo);
+    u.lang = 'pt-BR';
+    u.rate = 1.05;
+    var vozes = window.speechSynthesis.getVoices() || [];
+    var vozPt = vozes.find(function(v) { return v.lang && v.lang.toLowerCase().indexOf('pt-br') === 0; }) ||
+                vozes.find(function(v) { return v.lang && v.lang.toLowerCase().indexOf('pt') === 0; });
+    if (vozPt) u.voice = vozPt;
+    window.speechSynthesis.speak(u);
+  } catch(e) {}
 }
