@@ -3620,3 +3620,213 @@ async function deletarMulta(id) {
 }
 
 // --- INIT ---
+
+// --- ASSISTENTE IA ---
+var ASSIST_TOOLS = [
+  { name: 'listar_veiculos', description: 'Lista todas as motos cadastradas com id, modelo, placa, km atual e status.',
+    input_schema: { type: 'object', properties: {}, additionalProperties: false } },
+  { name: 'listar_alugueis', description: 'Lista os aluguéis/contratos com id, cliente, datas, valores, caução e status. Use para encontrar o id de um contrato pelo nome do cliente.',
+    input_schema: { type: 'object', properties: { status: { type: 'string', enum: ['ativo', 'encerrado', 'todos'], description: 'Filtrar por status (padrão: todos)' } }, additionalProperties: false } },
+  { name: 'listar_clientes', description: 'Lista os clientes cadastrados com id, nome, cpf e telefone.',
+    input_schema: { type: 'object', properties: {}, additionalProperties: false } },
+  { name: 'cadastrar_cliente', description: 'Cadastra um novo cliente.',
+    input_schema: { type: 'object', properties: {
+      nome: { type: 'string' }, cpf: { type: 'string' }, telefone: { type: 'string' },
+      cnh: { type: 'string' }, endereco: { type: 'string' } }, required: ['nome'], additionalProperties: false } },
+  { name: 'listar_parcelas', description: 'Lista parcelas. Sem filtro retorna todas em aberto; com aluguel_id retorna todas do contrato.',
+    input_schema: { type: 'object', properties: { aluguel_id: { type: 'string', description: 'id do aluguel (opcional)' } }, additionalProperties: false } },
+  { name: 'marcar_parcela_paga', description: 'Marca uma parcela como paga.',
+    input_schema: { type: 'object', properties: {
+      parcela_id: { type: 'string' },
+      valor_pago: { type: 'number', description: 'Valor efetivamente pago (opcional, padrão = valor da parcela)' },
+      data_pagamento: { type: 'string', description: 'Data AAAA-MM-DD (opcional, padrão hoje)' } }, required: ['parcela_id'], additionalProperties: false } },
+  { name: 'registrar_despesa', description: 'Registra uma despesa (multa, manutenção paga por fora, taxa, outro).',
+    input_schema: { type: 'object', properties: {
+      veiculo_id: { type: 'string' }, tipo: { type: 'string' }, valor: { type: 'number' },
+      vencimento: { type: 'string', description: 'AAAA-MM-DD' }, pago: { type: 'boolean' } }, required: ['tipo', 'valor'], additionalProperties: false } },
+  { name: 'registrar_manutencao', description: 'Registra uma manutenção realizada na moto (ex: troca de óleo).',
+    input_schema: { type: 'object', properties: {
+      veiculo_id: { type: 'string' }, tipo: { type: 'string' }, descricao: { type: 'string' },
+      custo: { type: 'number' }, km: { type: 'integer', description: 'KM da moto na manutenção' } }, required: ['veiculo_id', 'tipo'], additionalProperties: false } },
+  { name: 'atualizar_km', description: 'Atualiza o KM atual de uma moto.',
+    input_schema: { type: 'object', properties: { veiculo_id: { type: 'string' }, km: { type: 'integer' } }, required: ['veiculo_id', 'km'], additionalProperties: false } },
+  { name: 'marcar_caucao_devolvido', description: 'Marca o caução de um contrato como devolvido/resolvido.',
+    input_schema: { type: 'object', properties: { aluguel_id: { type: 'string' } }, required: ['aluguel_id'], additionalProperties: false } },
+  { name: 'encerrar_contrato', description: 'Encerra um contrato de aluguel: muda status para encerrado e exclui as parcelas em aberto (as pagas são mantidas).',
+    input_schema: { type: 'object', properties: { aluguel_id: { type: 'string' } }, required: ['aluguel_id'], additionalProperties: false } }
+];
+
+async function executarFerramenta(nome, input) {
+  try {
+    var hoje = hojeLocalStr();
+    var r;
+    switch (nome) {
+      case 'listar_veiculos':
+        r = await db.from('veiculos').select('id, modelo, placa, ano, cor, km_atual, status, valor_compra');
+        break;
+      case 'listar_alugueis':
+        var q = db.from('alugueis').select('id, cliente, telefone, inicio, fim, periodo, valor, total, caucao, caucao_devolvido, status, veiculo_id');
+        if (input.status && input.status !== 'todos') q = q.eq('status', input.status);
+        r = await q;
+        break;
+      case 'listar_clientes':
+        r = await db.from('clientes').select('id, nome, cpf, telefone');
+        break;
+      case 'cadastrar_cliente':
+        r = await db.from('clientes').insert({
+          nome: (input.nome || '').toUpperCase(), cpf: input.cpf || null, telefone: input.telefone || null,
+          cnh: input.cnh || null, endereco: input.endereco ? input.endereco.toUpperCase() : null
+        }).select();
+        break;
+      case 'listar_parcelas':
+        if (input.aluguel_id) {
+          r = await db.from('parcelas').select('id, descricao, valor, valor_pago, vencimento, pago, data_pagamento, aluguel_id').eq('aluguel_id', input.aluguel_id).order('numero');
+        } else {
+          r = await db.from('parcelas').select('id, descricao, valor, vencimento, aluguel_id, alugueis(cliente)').eq('pago', false).order('vencimento');
+        }
+        break;
+      case 'marcar_parcela_paga':
+        r = await db.from('parcelas').update({
+          pago: true,
+          data_pagamento: input.data_pagamento || hoje,
+          valor_pago: (input.valor_pago === undefined || input.valor_pago === null) ? undefined : input.valor_pago
+        }).eq('id', input.parcela_id).select();
+        break;
+      case 'registrar_despesa':
+        r = await db.from('despesas').insert({
+          veiculo_id: input.veiculo_id || null, tipo: input.tipo, valor: input.valor,
+          vencimento: input.vencimento || hoje, pago: input.pago !== false
+        }).select();
+        break;
+      case 'registrar_manutencao':
+        r = await db.from('manutencoes').insert({
+          veiculo_id: input.veiculo_id, tipo: input.tipo, descricao: input.descricao || input.tipo,
+          custo: input.custo || null, km: input.km || null, data: hoje
+        }).select();
+        if (!r.error && input.km) {
+          var { data: veiK } = await db.from('veiculos').select('km_atual').eq('id', input.veiculo_id).single();
+          if (veiK && (!veiK.km_atual || input.km > veiK.km_atual)) {
+            await db.from('veiculos').update({ km_atual: input.km }).eq('id', input.veiculo_id);
+          }
+        }
+        break;
+      case 'atualizar_km':
+        r = await db.from('veiculos').update({ km_atual: input.km }).eq('id', input.veiculo_id).select('id, modelo, km_atual');
+        break;
+      case 'marcar_caucao_devolvido':
+        r = await db.from('alugueis').update({ caucao_devolvido: 'sim', caucao_data: hoje }).eq('id', input.aluguel_id).select('id, cliente, caucao');
+        break;
+      case 'encerrar_contrato':
+        var { data: alu } = await db.from('alugueis').select('fim').eq('id', input.aluguel_id).single();
+        var novoFim = (!alu || !alu.fim || alu.fim > hoje) ? hoje : alu.fim;
+        r = await db.from('alugueis').update({ status: 'encerrado', fim: novoFim }).eq('id', input.aluguel_id).select('id, cliente, status');
+        if (!r.error) await db.from('parcelas').delete().eq('aluguel_id', input.aluguel_id).eq('pago', false);
+        break;
+      default:
+        return JSON.stringify({ error: 'Ferramenta desconhecida: ' + nome });
+    }
+    if (r && r.error) return JSON.stringify({ error: r.error.message });
+    return JSON.stringify({ ok: true, dados: (r && r.data) || null });
+  } catch (e) {
+    return JSON.stringify({ error: String(e && e.message || e) });
+  }
+}
+
+var chatHistorico = [];
+var chatOcupado = false;
+
+function _chatAdd(classe, texto) {
+  var box = document.getElementById('chat-mensagens');
+  var el = document.createElement('div');
+  el.className = 'chat-msg ' + classe;
+  el.textContent = texto;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+  return el;
+}
+
+function limparChatAssistente() {
+  chatHistorico = [];
+  document.getElementById('chat-mensagens').innerHTML =
+    '<div class="chat-msg chat-msg-ia">Olá! Sou o assistente da Vrunn. Posso consultar seus dados e executar ações no sistema. O que precisa?</div>';
+}
+
+function _assistSystem() {
+  return 'Você é o assistente do sistema Vrunn, um app de gestão de aluguel de motos em Fortaleza-CE, usado pelo dono do negócio (o locador). ' +
+    'Hoje é ' + hojeLocalStr() + '. Valores em reais (BRL). Responda sempre em português do Brasil, de forma curta e direta, como num chat. ' +
+    'Você tem ferramentas para consultar e modificar os dados reais do negócio (Supabase). ' +
+    'Quando o usuário citar um cliente, moto ou contrato pelo nome/placa, use as ferramentas de listagem primeiro para descobrir o id correto — nunca invente ids. ' +
+    'Antes de executar uma ação destrutiva ou irreversível (encerrar contrato, excluir), confirme com o usuário em uma mensagem, a menos que ele já tenha pedido explicitamente. ' +
+    'Ações simples pedidas explicitamente (marcar parcela paga, cadastrar cliente, registrar despesa/manutenção, atualizar km) podem ser executadas direto. ' +
+    'Depois de executar, confirme o que foi feito com os dados relevantes. Se uma ferramenta retornar erro, explique o problema de forma simples.';
+}
+
+async function enviarAssistente() {
+  if (chatOcupado) return;
+  var inputEl = document.getElementById('chat-input');
+  var texto = inputEl.value.trim();
+  if (!texto) return;
+  var apiKey = (_configCache && _configCache.anthropic_key) || '';
+  if (!apiKey) { _chatAdd('chat-msg-ia', '⚠ Configure a chave da API Claude nas configurações (⚙️) para usar o assistente.'); return; }
+
+  inputEl.value = '';
+  chatOcupado = true;
+  document.getElementById('chat-enviar').disabled = true;
+  _chatAdd('chat-msg-user', texto);
+  chatHistorico.push({ role: 'user', content: texto });
+
+  var statusEl = _chatAdd('chat-msg-acao', 'Pensando...');
+
+  try {
+    var iteracoes = 0;
+    while (iteracoes < 8) {
+      iteracoes++;
+      var resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-8',
+          max_tokens: 8192,
+          thinking: { type: 'adaptive' },
+          system: _assistSystem(),
+          tools: ASSIST_TOOLS,
+          messages: chatHistorico
+        })
+      });
+      var json = await resp.json();
+      if (json.type === 'error') throw new Error(json.error && json.error.message || 'Erro na API');
+
+      chatHistorico.push({ role: 'assistant', content: json.content });
+
+      // Mostra os textos da resposta
+      (json.content || []).forEach(function(b) {
+        if (b.type === 'text' && b.text) _chatAdd('chat-msg-ia', b.text);
+      });
+
+      if (json.stop_reason !== 'tool_use') break;
+
+      // Executa as ferramentas pedidas e devolve os resultados
+      var toolUses = (json.content || []).filter(function(b) { return b.type === 'tool_use'; });
+      var resultados = [];
+      for (var i = 0; i < toolUses.length; i++) {
+        statusEl.textContent = 'Executando: ' + toolUses[i].name + '...';
+        var out = await executarFerramenta(toolUses[i].name, toolUses[i].input || {});
+        resultados.push({ type: 'tool_result', tool_use_id: toolUses[i].id, content: out });
+      }
+      chatHistorico.push({ role: 'user', content: resultados });
+      statusEl.textContent = 'Pensando...';
+    }
+  } catch (e) {
+    _chatAdd('chat-msg-ia', '⚠ Erro: ' + (e && e.message || e));
+  } finally {
+    statusEl.remove();
+    chatOcupado = false;
+    document.getElementById('chat-enviar').disabled = false;
+    inputEl.focus();
+  }
+}

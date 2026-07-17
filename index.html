@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Vrunn">
   <meta name="theme-color" content="#0f172a">
-  <link rel="stylesheet" href="style.css?v=46">
+  <link rel="stylesheet" href="style.css?v=47">
 </head>
 <body>
 
@@ -58,6 +58,7 @@
     <li><a href="#" class="nav-item" data-section="cobrancas">Cobranças</a></li>
     <li><a href="#" class="nav-item" data-section="caucao">Caução</a></li>
     <li><a href="#" class="nav-item" data-section="multas">Multas</a></li>
+    <li><a href="#" class="nav-item" data-section="assistente">🤖 Assistente</a></li>
     <li><a href="#" class="nav-item" data-section="checklist">Checklist de Compra</a></li>
   </ul>
   <button class="hamburger" id="hamburger">&#9776;</button>
@@ -330,6 +331,22 @@
     </div>
     <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.25rem">Registre uma multa informando a moto e a data — o sistema identifica automaticamente qual cliente estava com ela naquele dia.</p>
     <div id="multas-lista"></div>
+  </section>
+
+  <!-- ASSISTENTE -->
+  <section id="assistente" class="section">
+    <div class="section-header">
+      <h2 class="section-title">🤖 Assistente Vrunn</h2>
+      <button class="btn btn-secondary btn-sm" onclick="limparChatAssistente()">↺ Nova conversa</button>
+    </div>
+    <p style="font-size:0.82rem;color:var(--text2);margin-bottom:0.75rem">Fale com o assistente para consultar dados e executar ações: cadastrar cliente, marcar parcela paga, registrar despesa, encerrar contrato e mais.</p>
+    <div id="chat-mensagens" class="chat-mensagens">
+      <div class="chat-msg chat-msg-ia">Olá! Sou o assistente da Vrunn. Posso consultar seus dados e executar ações no sistema. O que precisa?</div>
+    </div>
+    <div class="chat-input-row">
+      <textarea id="chat-input" rows="1" placeholder="Ex: marca a parcela do Luiz como paga..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarAssistente();}"></textarea>
+      <button class="btn btn-primary" id="chat-enviar" onclick="enviarAssistente()">Enviar</button>
+    </div>
   </section>
 
   <!-- RELATÓRIOS -->
@@ -1106,7 +1123,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=290"></script>
+<script src="app.js?v=291"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');

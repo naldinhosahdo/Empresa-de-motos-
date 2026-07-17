@@ -1226,3 +1226,65 @@ tr.row-vencido:hover td { background: rgba(239,68,68,0.1); }
   flex-shrink: 0;
   min-width: 110px;
 }
+
+/* --- ASSISTENTE (chat) --- */
+.chat-mensagens {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  height: 55vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+.chat-msg {
+  max-width: 85%;
+  padding: 0.6rem 0.85rem;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.chat-msg-user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.chat-msg-ia {
+  align-self: flex-start;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+.chat-msg-acao {
+  align-self: flex-start;
+  font-size: 0.72rem;
+  color: var(--text2);
+  font-style: italic;
+  padding: 0 0.5rem;
+}
+.chat-input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+.chat-input-row textarea {
+  flex: 1;
+  resize: none;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  min-height: 42px;
+  max-height: 120px;
+}
+.chat-input-row textarea:focus { outline: none; border-color: var(--accent); }
