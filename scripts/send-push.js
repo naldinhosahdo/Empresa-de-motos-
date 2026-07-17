@@ -57,8 +57,8 @@ function rest(token) {
   const q = rest(token);
   const alertas = [];
 
-  // 1. Parcelas em aberto vencendo até amanhã (inclui atrasadas)
-  const parcelas = await q('parcelas?select=valor,vencimento,alugueis(cliente)&pago=eq.false&vencimento=lte.' + addDias(1) + '&order=vencimento');
+  // 1. Parcelas em aberto vencendo até amanhã (inclui atrasadas) — só de contratos ativos
+  const parcelas = await q('parcelas?select=valor,vencimento,alugueis!inner(cliente,status)&pago=eq.false&alugueis.status=eq.ativo&vencimento=lte.' + addDias(1) + '&order=vencimento');
   for (const p of parcelas || []) {
     const cliente = (p.alugueis && p.alugueis.cliente) || 'Cliente';
     const quando = p.vencimento < hojeStr
