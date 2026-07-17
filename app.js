@@ -215,8 +215,8 @@ async function loadNotificacoes() {
       .lte('prox_data', em7Str).not('prox_data', 'is', null).order('prox_data'),
     db.from('alugueis').select('*, veiculos(modelo, placa)')
       .eq('status', 'ativo').lte('fim', em10Str).not('fim', 'is', null).order('fim'),
-    db.from('parcelas').select('*, alugueis!inner(cliente, status, veiculos(modelo, placa))')
-      .eq('pago', false).eq('alugueis.status', 'ativo').lte('vencimento', em2Str).order('vencimento'),
+    db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))')
+      .eq('pago', false).lte('vencimento', em2Str).order('vencimento'),
     db.from('veiculos').select('id, modelo, placa, km_atual, seguro_rastreador_mensal'),
     db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)'),
     db.from('alugueis').select('*, veiculos(modelo, placa)')
@@ -628,7 +628,7 @@ async function renderDashboard() {
     db.from('manutencoes').select('*'),
     db.from('despesas').select('*'),
     db.from('parcelas').select('*, alugueis(veiculo_id, caucao)').eq('pago', true),
-    db.from('parcelas').select('*, alugueis!inner(cliente, status, veiculos(modelo, placa))').eq('pago', false).eq('alugueis.status', 'ativo').order('vencimento'),
+    db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))').eq('pago', false).order('vencimento'),
     db.from('clientes').select('id')
   ]);
 
@@ -1945,11 +1945,6 @@ async function encerrarContrato(id) {
   var { data: a } = await db.from('alugueis').select('fim').eq('id', id).single();
   var novoFim = (!a.fim || a.fim > hoje) ? hoje : a.fim;
   await db.from('alugueis').update({ status: 'encerrado', fim: novoFim }).eq('id', id);
-  // Parcelas em aberto de contrato encerrado não devem continuar gerando cobrança
-  var { data: abertas } = await db.from('parcelas').select('id').eq('aluguel_id', id).eq('pago', false);
-  if (abertas && abertas.length && confirm('Este contrato tem ' + abertas.length + ' parcela(s) em aberto. Excluir essas parcelas? (As pagas são mantidas.)')) {
-    await db.from('parcelas').delete().eq('aluguel_id', id).eq('pago', false);
-  }
   renderAlugueis();
   loadNotificacoes();
 }
@@ -2134,8 +2129,7 @@ async function abrirParcelas(aluguelId) {
         var safeDesc = (p.descricao || '').replace(/'/g, "\\'");
         var btn = p.pago
           ? '<button class="btn btn-sm btn-secondary" onclick="toggleParcela(\'' + p.id + '\', false, \'' + aluguelId + '\')">Desfazer</button>'
-          : '<button class="btn btn-sm btn-primary" onclick="abrirPagarParcela(\'' + p.id + '\',\'' + aluguelId + '\',' + p.valor + ',\'' + p.vencimento + '\',\'' + safeDesc + '\',\'\')">Marcar pago</button>' +
-            '<button class="btn btn-sm btn-danger" onclick="excluirParcela(\'' + p.id + '\',\'' + aluguelId + '\')" title="Excluir parcela">×</button>';
+          : '<button class="btn btn-sm btn-primary" onclick="abrirPagarParcela(\'' + p.id + '\',\'' + aluguelId + '\',' + p.valor + ',\'' + p.vencimento + '\',\'' + safeDesc + '\',\'\')">Marcar pago</button>';
         var valorExibido = p.pago && p.valor_pago && Number(p.valor_pago) !== Number(p.valor)
           ? fmtBRL(p.valor) + ' → <strong>' + fmtBRL(p.valor_pago) + '</strong>'
           : fmtBRL(p.valor);
@@ -2150,13 +2144,6 @@ async function abrirParcelas(aluguelId) {
     : '<p style="color:var(--text2);padding:1rem 0">Nenhuma parcela encontrada. <button class="btn btn-sm btn-primary" onclick="gerarParcelasManual(\'' + aluguelId + '\')">Gerar parcelas</button></p>';
 
   openModal('modal-parcelas');
-}
-
-async function excluirParcela(parcelaId, aluguelId) {
-  if (!confirm('Excluir esta parcela? Ela some da lista e das cobranças.')) return;
-  await db.from('parcelas').delete().eq('id', parcelaId);
-  abrirParcelas(aluguelId);
-  loadNotificacoes();
 }
 
 async function toggleParcela(parcelaId, pago, aluguelId) {
@@ -3312,9 +3299,8 @@ async function renderCobrancas() {
 
   var { data: parcelas } = await db
     .from('parcelas')
-    .select('*, alugueis!inner(cliente, telefone, status, veiculos(modelo, placa))')
+    .select('*, alugueis(cliente, telefone, veiculos(modelo, placa))')
     .eq('pago', false)
-    .eq('alugueis.status', 'ativo')
     .lte('vencimento', emNStr)
     .order('vencimento');
 
