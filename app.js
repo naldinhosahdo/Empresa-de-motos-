@@ -1940,11 +1940,12 @@ async function editAluguel(id) {
 }
 
 async function encerrarContrato(id) {
-  if (!confirm('Encerrar este contrato? O status mudará para "Encerrado".')) return;
+  if (!confirm('Encerrar este contrato? O status mudará para "Encerrado" e as parcelas em aberto serão encerradas junto. (As parcelas pagas são mantidas.)')) return;
   var hoje = hojeLocalStr();
   var { data: a } = await db.from('alugueis').select('fim').eq('id', id).single();
   var novoFim = (!a.fim || a.fim > hoje) ? hoje : a.fim;
   await db.from('alugueis').update({ status: 'encerrado', fim: novoFim }).eq('id', id);
+  await db.from('parcelas').delete().eq('aluguel_id', id).eq('pago', false);
   renderAlugueis();
   loadNotificacoes();
 }
