@@ -3241,7 +3241,7 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>5.8</strong> Em até <strong>24 horas</strong> após assinar, aceitar a transferência do veículo para seu nome no app <strong>CDT (Carteira Digital de Trânsito)</strong>. Caso contrário, o contrato poderá ser cancelado.</div>' +
     '<div class="cl"><strong>5.9</strong> Proibido circular a mais de <strong>100 km</strong> de Fortaleza-CE. Se descumprir, a moto é recolhida sem devolução do caução.</div>' +
     '<div class="cl"><strong>5.10</strong> Proibido fazer qualquer modificação na moto (peças, pintura, escapamento, etc.) sem autorização escrita. Se fizer, paga o conserto para voltar ao estado original.</div>' +
-    '<div class="cl"><strong>5.11</strong> Toda multa deve ser paga no prazo, mesmo que queira recorrer. Se recorrer e ganhar, o valor é devolvido em até <strong>5 dias úteis</strong>. Se não pagar no prazo, o valor é descontado do caução.</div>' +
+    '<div class="cl"><strong>5.11</strong> Toda multa deve ser paga no prazo, mesmo que queira recorrer. Se recorrer e ganhar, o valor é devolvido em até <strong>5 dias úteis contados a partir do recebimento, pelo Locador, da restituição correspondente pelo órgão de trânsito</strong> (ou por quem tiver processado o pagamento). Se não pagar no prazo, o valor é descontado do caução.</div>' +
     '<div class="cl"><strong>5.12</strong> Se se envolver em acidente comprovadamente sob efeito de álcool, drogas ou remédios que proíbem dirigir, pagará o <strong>valor FIPE da moto</strong> na data do acidente. O caução é retido e o restante cobrado judicialmente.</div>' +
 
     '<div class="sec">6. Danos à Moto</div>' +
