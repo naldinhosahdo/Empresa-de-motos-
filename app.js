@@ -3239,7 +3239,7 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>5.6</strong> Proibido usar a moto para atividades ilegais, carregar cargas não permitidas ou participar de rachas.</div>' +
     '<div class="cl"><strong>5.7</strong> Em caso de acidente, roubo, furto ou qualquer ocorrência policial, avisar o Locador imediatamente.</div>' +
     '<div class="cl"><strong>5.8</strong> Em até <strong>24 horas</strong> após assinar, aceitar a transferência do veículo para seu nome no app <strong>CDT (Carteira Digital de Trânsito)</strong>. Caso contrário, o contrato poderá ser cancelado.</div>' +
-    '<div class="cl"><strong>5.9</strong> Proibido circular a mais de <strong>100 km</strong> de Fortaleza-CE. Se descumprir, a moto é recolhida sem devolução do caução.</div>' +
+    '<div class="cl"><strong>5.9</strong> Proibido circular a mais de <strong>150 km</strong> de Fortaleza-CE. Se descumprir, a moto é recolhida sem devolução do caução.</div>' +
     '<div class="cl"><strong>5.10</strong> Proibido fazer qualquer modificação na moto (peças, pintura, escapamento, etc.) sem autorização escrita. Se fizer, paga o conserto para voltar ao estado original.</div>' +
     '<div class="cl"><strong>5.11</strong> Toda multa deve ser paga no prazo, mesmo que queira recorrer. Se recorrer e ganhar, o valor é devolvido em até <strong>5 dias úteis contados a partir do recebimento, pelo Locador, da restituição correspondente pelo órgão de trânsito</strong> (ou por quem tiver processado o pagamento). Se não pagar no prazo, o valor é descontado do caução.</div>' +
     '<div class="cl"><strong>5.12</strong> Se se envolver em acidente comprovadamente sob efeito de álcool, drogas ou remédios que proíbem dirigir, pagará o <strong>valor FIPE da moto</strong> na data do acidente. O caução é retido e o restante cobrado judicialmente.</div>' +
@@ -3258,6 +3258,7 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>7.4</strong> Se qualquer regra deste contrato for descumprida, o Locador pode recolher a moto imediatamente e cobrar os valores devidos.</div>' +
     '<div class="cl"><strong>7.5</strong> O Locador pode encerrar o contrato a <strong>qualquer hora</strong>, avisando com 24 horas de antecedência. O caução é devolvido após os 30 dias de verificação.</div>' +
     '<div class="cl"><strong>7.6</strong> Não há moto reserva em caso de manutenção ou pane. Em caso de colisão, pode haver moto reserva conforme disponibilidade. Se a moto ficar parada por problema do Locador, os dias parados são <strong>adicionados ao prazo do contrato</strong> — ou seja, o Locatário ganha dias a mais no final. Exemplo: contrato de 35 dias com 1 dia parado = 36 dias de uso efetivo.</div>' +
+    '<div class="cl"><strong>7.7</strong> Se o Locatário encerrar o contrato ou devolver a moto antes de completar os <strong>30 (trinta) dias</strong> mínimos previstos na cláusula 7.1, o caução será <strong>recolhido integralmente</strong> pelo Locador, a título de multa contratual, sem prejuízo da cobrança dos demais valores em aberto.</div>' +
 
     '<div class="sec">8. Sem Vínculo de Emprego</div>' +
     '<div class="cl"><strong>8.1</strong> Este é um contrato de aluguel de moto, não de emprego. Não existe nenhum vínculo empregatício entre as partes.</div>' +
