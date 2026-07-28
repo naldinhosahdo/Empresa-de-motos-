@@ -3252,13 +3252,13 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>6.5</strong> Se o caução for usado para cobrir qualquer valor durante o contrato, o Locatário tem até <strong>7 dias</strong> para repor o valor descontado e manter o caução no valor original. Enquanto não repuser, o Locador poderá bloquear a moto.</div>' +
 
     '<div class="sec">7. Prazo e Encerramento</div>' +
-    '<div class="cl"><strong>7.1</strong> O prazo mínimo deste contrato é de <strong>30 dias</strong>.</div>' +
-    '<div class="cl"><strong>7.2</strong> O Locatário só pode pedir para encerrar após os 30 dias iniciais, com aviso de pelo menos <strong>5 dias de antecedência</strong>. Devolver a moto antes dos 30 dias não cancela o que deve pagar.</div>' +
+    '<div class="cl"><strong>7.1</strong> O prazo mínimo deste contrato é de <strong>28 dias</strong>.</div>' +
+    '<div class="cl"><strong>7.2</strong> O Locatário só pode pedir para encerrar após os 28 dias iniciais, com aviso de pelo menos <strong>5 dias de antecedência</strong>. Devolver a moto antes dos 28 dias não cancela o que deve pagar.</div>' +
     '<div class="cl"><strong>7.3</strong> Devolver a moto com atraso gera cobrança proporcional pelos dias a mais.</div>' +
     '<div class="cl"><strong>7.4</strong> Se qualquer regra deste contrato for descumprida, o Locador pode recolher a moto imediatamente e cobrar os valores devidos.</div>' +
     '<div class="cl"><strong>7.5</strong> O Locador pode encerrar o contrato a <strong>qualquer hora</strong>, avisando com 24 horas de antecedência. O caução é devolvido após os 30 dias de verificação.</div>' +
     '<div class="cl"><strong>7.6</strong> Não há moto reserva em caso de manutenção ou pane. Em caso de colisão, pode haver moto reserva conforme disponibilidade. Se a moto ficar parada por problema do Locador, os dias parados são <strong>adicionados ao prazo do contrato</strong> — ou seja, o Locatário ganha dias a mais no final. Exemplo: contrato de 35 dias com 1 dia parado = 36 dias de uso efetivo.</div>' +
-    '<div class="cl"><strong>7.7</strong> Se o Locatário encerrar o contrato ou devolver a moto antes de completar os <strong>30 (trinta) dias</strong> mínimos previstos na cláusula 7.1, o caução será <strong>recolhido integralmente</strong> pelo Locador, a título de multa contratual, sem prejuízo da cobrança dos demais valores em aberto.</div>' +
+    '<div class="cl"><strong>7.7</strong> Se o Locatário encerrar o contrato ou devolver a moto antes de completar os <strong>28 (vinte e oito) dias</strong> mínimos previstos na cláusula 7.1, o caução será <strong>recolhido integralmente</strong> pelo Locador, a título de multa contratual, sem prejuízo da cobrança dos demais valores em aberto.</div>' +
 
     '<div class="sec">8. Sem Vínculo de Emprego</div>' +
     '<div class="cl"><strong>8.1</strong> Este é um contrato de aluguel de moto, não de emprego. Não existe nenhum vínculo empregatício entre as partes.</div>' +
