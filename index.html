@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Vrunn">
   <meta name="theme-color" content="#0f172a">
-  <link rel="stylesheet" href="style.css?v=48">
+  <link rel="stylesheet" href="style.css?v=49">
 </head>
 <body>
 
@@ -250,6 +250,8 @@
       </table>
     </div>
     <div id="alugueis-receita-total" style="text-align:right;padding:0.75rem 0.25rem;font-weight:700;font-size:0.95rem;border-top:1px solid var(--border);margin-top:0.5rem"></div>
+    <h3 style="margin:1.25rem 0 0.75rem;font-size:1rem">Detalhamento da Receita</h3>
+    <div id="alugueis-receita-lista"></div>
   </section>
 
   <!-- CUSTOS GERAL -->
@@ -1125,7 +1127,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=297"></script>
+<script src="app.js?v=298"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');

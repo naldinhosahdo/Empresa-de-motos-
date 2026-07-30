@@ -1905,16 +1905,35 @@ async function renderAlugueis(ordenarPorVencimento) {
 
   // Receita total (parcelas pagas, sem contar caução) — respeita o filtro de moto
   var { data: pagas } = await db.from('parcelas')
-    .select('valor, valor_pago, numero, alugueis!inner(veiculo_id, caucao)')
-    .eq('pago', true);
+    .select('valor, valor_pago, numero, data_pagamento, alugueis!inner(veiculo_id, caucao, cliente, veiculos(modelo, placa))')
+    .eq('pago', true)
+    .order('data_pagamento', { ascending: false });
+
+  var receitaItens = [];
   var receitaTotal = (pagas || []).reduce(function(s, p) {
     if (fmId && p.alugueis && p.alugueis.veiculo_id !== fmId) return s;
     var v = Number(p.valor_pago || p.valor || 0);
     if (p.numero === 1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
+    receitaItens.push({ cliente: p.alugueis.cliente, vei: p.alugueis.veiculos, numero: p.numero, data: p.data_pagamento, valor: v });
     return s + v;
   }, 0);
   var recEl = document.getElementById('alugueis-receita-total');
   if (recEl) recEl.innerHTML = 'Receita total: <span style="color:var(--green)">' + fmtBRL(receitaTotal) + '</span>';
+
+  var listaEl = document.getElementById('alugueis-receita-lista');
+  if (listaEl) {
+    listaEl.innerHTML = receitaItens.length
+      ? receitaItens.map(function(r) {
+          return '<div class="receita-item">' +
+            '<div class="receita-info">' +
+              '<div class="receita-cliente">' + (r.cliente || '-') + '</div>' +
+              '<div class="receita-detalhe">' + (r.vei ? r.vei.modelo + (r.vei.placa ? ' · ' + r.vei.placa : '') : '-') + ' · Parcela ' + r.numero + (r.data ? ' · ' + fmtDate(r.data) : '') + '</div>' +
+            '</div>' +
+            '<div class="receita-valor">' + fmtBRL(r.valor) + '</div>' +
+          '</div>';
+        }).join('')
+      : '<div style="text-align:center;padding:1.5rem;color:var(--text2)">Nenhuma receita registrada</div>';
+  }
 }
 
 function openNewAluguel() {
