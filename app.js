@@ -215,7 +215,7 @@ async function loadNotificacoes() {
       .lte('prox_data', em7Str).not('prox_data', 'is', null).order('prox_data'),
     db.from('alugueis').select('*, veiculos(modelo, placa)')
       .eq('status', 'ativo').lte('fim', em10Str).not('fim', 'is', null).order('fim'),
-    db.from('parcelas').select('*, alugueis(cliente, veiculos(modelo, placa))')
+    db.from('parcelas').select('*, alugueis(cliente, telefone, veiculos(modelo, placa))')
       .eq('pago', false).lte('vencimento', em2Str).order('vencimento'),
     db.from('veiculos').select('id, modelo, placa, km_atual, seguro_rastreador_mensal'),
     db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)'),
@@ -234,7 +234,7 @@ async function loadNotificacoes() {
   });
   var alertasParcelas = (parcelasData || []).map(function(p) {
     var alu = p.alugueis || {};
-    return { key: 'parcela_' + p.id, data: p.vencimento, label: p.descricao + ' — ' + (alu.cliente || '-'), veiculo: alu.veiculos, valor: fmtBRL(p.valor), tipo: 'parcela', parcelaId: p.id, aluguelId: p.aluguel_id, valorNum: p.valor, vencimentoStr: p.vencimento };
+    return { key: 'parcela_' + p.id, data: p.vencimento, label: p.descricao + ' — ' + (alu.cliente || '-'), veiculo: alu.veiculos, valor: fmtBRL(p.valor), tipo: 'parcela', parcelaId: p.id, aluguelId: p.aluguel_id, valorNum: p.valor, vencimentoStr: p.vencimento, cliente: alu.cliente, telefone: alu.telefone };
   });
 
   function p2(n) { return n < 10 ? '0' + n : '' + n; }
@@ -349,6 +349,9 @@ async function loadNotificacoes() {
     var vei     = a.veiculo ? (a.veiculo.modelo + (a.veiculo.placa ? ' · ' + a.veiculo.placa : '')) : '-';
     var safeKey = a.key.replace(/'/g, "\\'");
     var safeLabel = (a.label || '').replace(/'/g, "\\'");
+    var safeCliente = (a.cliente || '').replace(/'/g, "\\'");
+    var safeTelefone = (a.telefone || '').replace(/'/g, "\\'");
+    var safeVei = vei.replace(/'/g, "\\'");
     var quando = diff < 0
       ? (a.tipo === 'caucao' ? IC.warn + ' Encerrado há ' + Math.abs(diff) + ' dia(s) — prazo de 30 dias atingido' : IC.warn + ' Venceu há ' + Math.abs(diff) + ' dia(s)')
       : diff === 0 ? IC.dot_red + ' Vence hoje!'
@@ -362,7 +365,7 @@ async function loadNotificacoes() {
     var _c = "document.getElementById('notif-dropdown').style.display='none';";
     var bodyClick;
     if (a.tipo === 'parcela' && a.aluguelId) {
-      bodyClick = 'onclick="' + _c + 'abrirParcelas(\'' + a.aluguelId + '\')" style="cursor:pointer"';
+      bodyClick = 'onclick="' + _c + 'cobrarParcelaWhatsapp(\'' + safeTelefone + '\',\'' + safeCliente + '\',\'' + safeVei + '\',' + a.valorNum + ',\'' + a.vencimentoStr + '\')" style="cursor:pointer"';
     } else if (a.tipo === 'aluguel') {
       bodyClick = 'onclick="' + _c + 'abrirModalRenovacao(\'' + a.aluguelId + '\')" style="cursor:pointer"';
     } else if (a.tipo === 'manut') {
@@ -395,6 +398,37 @@ async function loadNotificacoes() {
 function toggleNotif() {
   var dd = document.getElementById('notif-dropdown');
   dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+function cobrarParcelaWhatsapp(telefone, cliente, veiculoLabel, valor, vencimento) {
+  var fone = (telefone || '').replace(/\D/g, '');
+  if (!fone) { alert('Cliente sem telefone cadastrado.'); return; }
+
+  var nome = (cliente || 'Cliente').toUpperCase();
+  var nomeDisplay = nome.charAt(0) + nome.slice(1).toLowerCase();
+  var hojeStr   = hojeLocalStr();
+  var atrasada  = vencimento < hojeStr;
+  var hoje0     = vencimento === hojeStr;
+  var valorDesc = Math.round(valor * 0.97 * 100) / 100;
+
+  var msg = 'Aviso automático — Vrunn Sistema: Olá, ' + nomeDisplay + '.\n\n';
+  if (atrasada) {
+    msg += 'O pagamento do aluguel';
+    if (veiculoLabel && veiculoLabel !== '-') msg += ' da ' + veiculoLabel;
+    msg += ' no valor de *' + fmtBRL(valor) + '* consta em atraso (venceu em ' + fmtDate(vencimento) + ').\n\nPor favor, regularize assim que possível.';
+  } else {
+    msg += 'Lembrete: o pagamento do aluguel';
+    if (veiculoLabel && veiculoLabel !== '-') msg += ' da ' + veiculoLabel;
+    msg += ' no valor de *' + fmtBRL(valor) + '* vence ' + (hoje0 ? '*hoje*' : 'em *' + fmtDate(vencimento) + '*') + '.';
+    if (!hoje0) msg += '\n\n💡 Pagando antes do vencimento, o sistema aplica *3% de desconto* — fica *' + fmtBRL(valorDesc) + '*.';
+  }
+  var pagarLink = 'https://naldinhosahdo.github.io/Empresa-de-motos-/pagar.html?v=' +
+    encodeURIComponent(String(valor)) + '&n=' + encodeURIComponent(nomeDisplay) +
+    '&d=' + encodeURIComponent(vencimento);
+  msg += '\n\n📲 *Pagar agora:* ' + pagarLink + '\n_(O link mostra o valor atualizado do dia e o QR Code para pagamento)_\n\nMensagem gerada automaticamente pelo sistema Vrunn 🏍️';
+
+  var url = 'intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end';
+  window.open(url, '_blank');
 }
 
 document.addEventListener('click', function(e) {
