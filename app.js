@@ -357,6 +357,10 @@ async function loadNotificacoes() {
       : diff === 0 ? IC.dot_red + ' Vence hoje!'
       : urgente ? IC.dot_red + ' Vence em ' + diff + ' dia(s)'
       : IC.dot_yel + ' Vence em ' + diff + ' dia(s)';
+    var valorExibir = a.valor;
+    if (a.tipo === 'parcela' && diff < 0) {
+      valorExibir = fmtBRL(calcularValorParcela(a.valorNum, a.vencimentoStr, hoje0Str).valor) + ' (c/ juros)';
+    }
     var pagarBtn = a.tipo === 'parcela' && a.parcelaId && a.aluguelId
       ? '<button class="btn btn-sm btn-primary" style="font-size:0.72rem;padding:3px 8px;margin-right:4px" onclick="abrirPagarParcela(\'' + a.parcelaId + '\',\'' + a.aluguelId + '\',' + a.valorNum + ',\'' + a.vencimentoStr + '\',\'' + safeLabel + '\',\'' + safeKey + '\')">Pago</button>'
       : a.tipo === 'caucao' && a.aluguelId
@@ -384,7 +388,7 @@ async function loadNotificacoes() {
     return '<div class="notif-item ' + cls + '" data-key="' + a.key + '">' +
       '<div class="notif-item-body" ' + bodyClick + '>' +
         '<div class="notif-item-titulo">' + a.label + ' — ' + vei + '</div>' +
-        '<div class="notif-item-desc">' + quando + (a.valor ? ' · ' + a.valor : '') + '</div>' +
+        '<div class="notif-item-desc">' + quando + (valorExibir ? ' · ' + valorExibir : '') + '</div>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:2px">' +
         pagarBtn +
@@ -413,9 +417,11 @@ function cobrarParcelaWhatsapp(telefone, cliente, veiculoLabel, valor, venciment
 
   var msg = 'Aviso automático — Vrunn Sistema: Olá, ' + nomeDisplay + '.\n\n';
   if (atrasada) {
+    var calcAtraso = calcularValorParcela(valor, vencimento, hojeStr);
     msg += 'O pagamento do aluguel';
     if (veiculoLabel && veiculoLabel !== '-') msg += ' da ' + veiculoLabel;
-    msg += ' no valor de *' + fmtBRL(valor) + '* consta em atraso (venceu em ' + fmtDate(vencimento) + ').\n\nPor favor, regularize assim que possível.';
+    msg += ' no valor original de *' + fmtBRL(valor) + '* consta em atraso (venceu em ' + fmtDate(vencimento) + ').\n' +
+      '⚠️ Com multa e juros, o valor atualizado é *' + fmtBRL(calcAtraso.valor) + '*.\n\nPor favor, regularize assim que possível.';
   } else {
     msg += 'Lembrete: o pagamento do aluguel';
     if (veiculoLabel && veiculoLabel !== '-') msg += ' da ' + veiculoLabel;
