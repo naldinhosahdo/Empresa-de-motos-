@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Vrunn">
   <meta name="theme-color" content="#0f172a">
-  <link rel="stylesheet" href="style.css?v=49">
+  <link rel="stylesheet" href="style.css?v=50">
 </head>
 <body>
 
@@ -342,11 +342,18 @@
       <h2 class="section-title">🤖 Assistente Vrunn</h2>
       <button class="btn btn-secondary btn-sm" onclick="limparChatAssistente()">↺ Nova conversa</button>
     </div>
-    <p style="font-size:0.82rem;color:var(--text2);margin-bottom:0.75rem">Fale com o assistente para consultar dados e executar ações: cadastrar cliente, marcar parcela paga, registrar despesa, encerrar contrato e mais.</p>
+    <p style="font-size:0.82rem;color:var(--text2);margin-bottom:0.75rem">Fale com o assistente para consultar dados e executar ações: cadastrar cliente (inclusive por foto da CNH), cadastrar veículo (por foto do documento), marcar parcela paga, registrar despesa, encerrar contrato e mais.</p>
     <div id="chat-mensagens" class="chat-mensagens">
-      <div class="chat-msg chat-msg-ia">Olá! Sou o assistente da Vrunn. Posso consultar seus dados e executar ações no sistema. O que precisa?</div>
+      <div class="chat-msg chat-msg-ia">Olá! Sou o assistente da Vrunn. Posso consultar seus dados e executar ações no sistema — inclusive ler foto de CNH ou documento de veículo e já cadastrar. O que precisa?</div>
+    </div>
+    <div id="chat-anexo-preview" class="chat-anexo-preview" style="display:none">
+      <img id="chat-anexo-thumb" alt="Anexo">
+      <span id="chat-anexo-nome"></span>
+      <button type="button" class="chat-anexo-remover" onclick="removerAnexoChat()" title="Remover anexo">×</button>
     </div>
     <div class="chat-input-row">
+      <input type="file" id="chat-anexo-input" accept="image/*,application/pdf" style="display:none" onchange="handleChatAnexo(event)">
+      <button class="chat-mic" id="chat-anexar" onclick="document.getElementById('chat-anexo-input').click()" title="Anexar foto de CNH ou documento do veículo">📎</button>
       <textarea id="chat-input" rows="1" placeholder="Fale ou digite... Ex: marca a parcela do Luiz como paga" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarAssistente();}"></textarea>
       <button class="chat-mic" id="chat-mic" onclick="alternarVoz()" title="Falar com o assistente">🎤</button>
       <button class="btn btn-primary" id="chat-enviar" onclick="enviarAssistente()">Enviar</button>
@@ -1127,7 +1134,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=302"></script>
+<script src="app.js?v=303"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');
