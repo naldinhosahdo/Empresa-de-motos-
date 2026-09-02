@@ -2257,16 +2257,21 @@ async function confirmarDiasParados() {
 
   _diasParadosBusy = true;
   try {
+    var { data: aluguel } = await db.from('alugueis').select('fim').eq('id', aluguelId).single();
+    var novoFimTxt = '';
+    if (aluguel && aluguel.fim) {
+      var df = new Date(aluguel.fim + 'T00:00:00');
+      df.setDate(df.getDate() + dias);
+      var novoFim = df.getFullYear() + '-' + String(df.getMonth() + 1).padStart(2, '0') + '-' + String(df.getDate()).padStart(2, '0');
+      await db.from('alugueis').update({ fim: novoFim }).eq('id', aluguelId);
+      novoFimTxt = ' Novo fim do contrato: ' + fmtDate(novoFim) + '.';
+    }
+
     var { data: parcelas } = await db.from('parcelas')
       .select('*').eq('aluguel_id', aluguelId).eq('pago', false);
 
-    if (!parcelas || parcelas.length === 0) {
-      alert('Não há parcelas em aberto para ajustar.');
-      closeModal('modal-dias-parados');
-      return;
-    }
-
-    for (var i = 0; i < parcelas.length; i++) {
+    var qtdParcelas = parcelas ? parcelas.length : 0;
+    for (var i = 0; i < qtdParcelas; i++) {
       var p = parcelas[i];
       var d = new Date(p.vencimento + 'T00:00:00');
       d.setDate(d.getDate() + dias);
@@ -2275,7 +2280,8 @@ async function confirmarDiasParados() {
     }
 
     closeModal('modal-dias-parados');
-    alert('✅ ' + parcelas.length + ' parcela(s) em aberto ' + (dias > 0 ? 'adiada(s)' : 'adiantada(s)') + ' em ' + Math.abs(dias) + ' dia(s).');
+    alert('✅ Prazo do contrato ' + (dias > 0 ? 'estendido' : 'reduzido') + ' em ' + Math.abs(dias) + ' dia(s).' + novoFimTxt +
+      (qtdParcelas ? ' ' + qtdParcelas + ' parcela(s) em aberto ' + (dias > 0 ? 'adiada(s)' : 'adiantada(s)') + ' junto.' : ' Não havia parcelas em aberto para ajustar.'));
     abrirParcelas(aluguelId);
   } finally {
     _diasParadosBusy = false;
