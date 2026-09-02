@@ -3719,6 +3719,11 @@ var ASSIST_TOOLS = [
     input_schema: { type: 'object', properties: {
       nome: { type: 'string' }, cpf: { type: 'string' }, telefone: { type: 'string' },
       cnh: { type: 'string' }, endereco: { type: 'string' } }, required: ['nome'], additionalProperties: false } },
+  { name: 'cadastrar_veiculo', description: 'Cadastra um novo veículo/moto, tipicamente a partir dos dados lidos de uma foto de CRLV/documento do veículo.',
+    input_schema: { type: 'object', properties: {
+      modelo: { type: 'string' }, placa: { type: 'string' }, ano: { type: 'integer' }, cor: { type: 'string' },
+      chassi: { type: 'string' }, renavam: { type: 'string' }, km_atual: { type: 'integer' },
+      valor_compra: { type: 'number' } }, required: ['modelo'], additionalProperties: false } },
   { name: 'listar_parcelas', description: 'Lista parcelas. Sem filtro retorna todas em aberto; com aluguel_id retorna todas do contrato.',
     input_schema: { type: 'object', properties: { aluguel_id: { type: 'string', description: 'id do aluguel (opcional)' } }, additionalProperties: false } },
   { name: 'marcar_parcela_paga', description: 'Marca uma parcela como paga.',
@@ -3762,6 +3767,14 @@ async function executarFerramenta(nome, input) {
         r = await db.from('clientes').insert({
           nome: (input.nome || '').toUpperCase(), cpf: input.cpf || null, telefone: input.telefone || null,
           cnh: input.cnh || null, endereco: input.endereco ? input.endereco.toUpperCase() : null
+        }).select();
+        break;
+      case 'cadastrar_veiculo':
+        r = await db.from('veiculos').insert({
+          modelo: input.modelo, placa: input.placa ? input.placa.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : null,
+          ano: input.ano || null, cor: input.cor || null,
+          chassi: input.chassi ? String(input.chassi).toUpperCase() : null, renavam: input.renavam || null,
+          km_atual: input.km_atual || null, valor_compra: input.valor_compra || null, status: 'disponivel'
         }).select();
         break;
       case 'listar_parcelas':
@@ -3820,12 +3833,48 @@ async function executarFerramenta(nome, input) {
 
 var chatHistorico = [];
 var chatOcupado = false;
+var chatAnexoPendente = null; // { mediaType, base64, previewUrl }
+
+async function handleChatAnexo(event) {
+  var file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  try {
+    var dataUrl = file.type === 'application/pdf' ? await renderPDFToImage(file) : await fileToDataURL(file);
+    var mediaType = dataUrl.split(';')[0].split(':')[1];
+    var base64 = dataUrl.split(',')[1];
+    chatAnexoPendente = { mediaType: mediaType, base64: base64, previewUrl: dataUrl };
+    document.getElementById('chat-anexo-thumb').src = dataUrl;
+    document.getElementById('chat-anexo-nome').textContent = file.name || 'Documento anexado';
+    document.getElementById('chat-anexo-preview').style.display = 'flex';
+  } catch (e) {
+    alert('Não foi possível ler o arquivo: ' + (e && e.message ? e.message : e));
+  }
+}
+
+function removerAnexoChat() {
+  chatAnexoPendente = null;
+  document.getElementById('chat-anexo-preview').style.display = 'none';
+}
 
 function _chatAdd(classe, texto) {
   var box = document.getElementById('chat-mensagens');
   var el = document.createElement('div');
   el.className = 'chat-msg ' + classe;
   el.textContent = texto;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+  return el;
+}
+
+function _chatAddImagem(classe, imgUrl, texto) {
+  var box = document.getElementById('chat-mensagens');
+  var el = document.createElement('div');
+  el.className = 'chat-msg ' + classe;
+  var img = document.createElement('img');
+  img.src = imgUrl;
+  el.appendChild(img);
+  if (texto) el.appendChild(document.createTextNode(texto));
   box.appendChild(el);
   box.scrollTop = box.scrollHeight;
   return el;
@@ -3844,6 +3893,9 @@ function _assistSystem() {
     'Quando o usuário citar um cliente, moto ou contrato pelo nome/placa, use as ferramentas de listagem primeiro para descobrir o id correto — nunca invente ids. ' +
     'Antes de executar uma ação destrutiva ou irreversível (encerrar contrato, excluir), confirme com o usuário em uma mensagem, a menos que ele já tenha pedido explicitamente. ' +
     'Ações simples pedidas explicitamente (marcar parcela paga, cadastrar cliente, registrar despesa/manutenção, atualizar km) podem ser executadas direto. ' +
+    'Você pode receber fotos de documentos junto da mensagem: se for uma CNH, extraia nome, CPF e número de registro da própria imagem (você tem visão) e cadastre o cliente com cadastrar_cliente. ' +
+    'Se for um documento de veículo (CRLV), extraia modelo, placa, ano, cor, chassi e renavam e cadastre com cadastrar_veiculo. ' +
+    'Se a imagem não estiver legível ou faltar algum dado obrigatório, avise o usuário e peça pra reenviar ou completar manualmente — nunca invente dado que não conseguiu ler. ' +
     'Depois de executar, confirme o que foi feito com os dados relevantes. Se uma ferramenta retornar erro, explique o problema de forma simples.';
 }
 
@@ -3851,15 +3903,25 @@ async function enviarAssistente() {
   if (chatOcupado) return;
   var inputEl = document.getElementById('chat-input');
   var texto = inputEl.value.trim();
-  if (!texto) return;
+  var anexo = chatAnexoPendente;
+  if (!texto && !anexo) return;
   var apiKey = (_configCache && _configCache.anthropic_key) || '';
   if (!apiKey) { _chatAdd('chat-msg-ia', '⚠ Configure a chave da API Claude nas configurações (⚙️) para usar o assistente.'); return; }
 
   inputEl.value = '';
+  removerAnexoChat();
   chatOcupado = true;
   document.getElementById('chat-enviar').disabled = true;
-  _chatAdd('chat-msg-user', texto);
-  chatHistorico.push({ role: 'user', content: texto });
+
+  if (anexo) {
+    _chatAddImagem('chat-msg-user', anexo.previewUrl, texto);
+    var blocos = [{ type: 'image', source: { type: 'base64', media_type: anexo.mediaType, data: anexo.base64 } }];
+    blocos.push({ type: 'text', text: texto || 'Segue a foto do documento. Identifique se é CNH de cliente ou documento de veículo e cadastre.' });
+    chatHistorico.push({ role: 'user', content: blocos });
+  } else {
+    _chatAdd('chat-msg-user', texto);
+    chatHistorico.push({ role: 'user', content: texto });
+  }
 
   var statusEl = _chatAdd('chat-msg-acao', 'Pensando...');
 
