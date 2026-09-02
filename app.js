@@ -608,7 +608,7 @@ async function abrirModalRenovacao(aluguelId) {
   document.getElementById('aluguel-endereco').value          = a.endereco || '';
   document.getElementById('aluguel-periodo').value           = a.periodo || 'semana';
   document.getElementById('aluguel-valor').value             = a.valor || '';
-  document.getElementById('aluguel-caucao').value            = a.caucao || '';
+  document.getElementById('aluguel-caucao').value            = '0';
   document.getElementById('aluguel-caucao-devolvido').value  = 'nao';
   document.getElementById('aluguel-status').value            = 'ativo';
   document.getElementById('row-caucao-data').style.display   = 'none';
