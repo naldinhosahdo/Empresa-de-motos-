@@ -2980,7 +2980,19 @@ async function renderRelatorios() {
         var datas = alugsVei.map(function(x) { return x.inicio; }).filter(Boolean).sort();
         if (datas.length > 0) {
           var mesesDecorridos = Math.max(1, Math.ceil((new Date(hojeLocalStr()) - new Date(datas[0] + 'T00:00:00')) / (30 * 86400000)));
-          lucroMensal = lucro / mesesDecorridos;
+          var janelaMeses = Math.min(2, mesesDecorridos);
+          var corte = new Date(hojeLocalStr());
+          corte.setDate(corte.getDate() - janelaMeses * 30);
+          var corteStr = corte.toISOString().split('T')[0];
+
+          var receitaJanela = pp.filter(function(p) {
+            return p.alugueis && p.alugueis.veiculo_id === vei.id && p.data_pagamento && p.data_pagamento >= corteStr;
+          }).reduce(function(s, p) { return s + valorSemCaucaoRel(p); }, 0);
+          var custosJanela = m.filter(function(x) { return x.veiculo_id === vei.id && x.data && x.data >= corteStr; })
+                              .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
+                            + d.filter(function(x) { return x.veiculo_id === vei.id && x.pago && x.vencimento && x.vencimento >= corteStr; })
+                              .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+          lucroMensal = (receitaJanela - custosJanela) / janelaMeses;
         }
       }
       if (lucroMensal > 0) {
@@ -3000,7 +3012,7 @@ async function renderRelatorios() {
   grid.innerHTML = rows.length
     ? rows.map(function(r) {
         var lc = r.lucro >= 0 ? 'text-green' : 'text-red';
-        var paybackLabel = filtroMes ? 'Payback (neste ritmo)' : 'Payback (média histórica)';
+        var paybackLabel = filtroMes ? 'Payback (neste ritmo)' : 'Payback (média 2 meses)';
         return '<div class="relatorio-card">' +
           '<h4>' + veiculoLabel(r.vei) + '</h4>' +
           '<div class="rel-row"><span>Receita</span><span class="text-green">' + fmtBRL(r.receita) + '</span></div>' +
