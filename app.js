@@ -3743,10 +3743,10 @@ var ASSIST_TOOLS = [
       parcela_id: { type: 'string' },
       valor_pago: { type: 'number', description: 'Valor efetivamente pago (opcional, padrão = valor da parcela)' },
       data_pagamento: { type: 'string', description: 'Data AAAA-MM-DD (opcional, padrão hoje)' } }, required: ['parcela_id'], additionalProperties: false } },
-  { name: 'registrar_despesa', description: 'Registra uma despesa (multa, manutenção paga por fora, taxa, outro).',
+  { name: 'registrar_despesa', description: 'Registra uma despesa (multa, manutenção paga por fora, taxa, outro). Toda despesa precisa estar vinculada a uma moto — use listar_veiculos para descobrir o id se o usuário não informou.',
     input_schema: { type: 'object', properties: {
       veiculo_id: { type: 'string' }, tipo: { type: 'string' }, valor: { type: 'number' },
-      vencimento: { type: 'string', description: 'AAAA-MM-DD' }, pago: { type: 'boolean' } }, required: ['tipo', 'valor'], additionalProperties: false } },
+      vencimento: { type: 'string', description: 'AAAA-MM-DD' }, pago: { type: 'boolean' } }, required: ['veiculo_id', 'tipo', 'valor'], additionalProperties: false } },
   { name: 'registrar_manutencao', description: 'Registra uma manutenção realizada na moto (ex: troca de óleo).',
     input_schema: { type: 'object', properties: {
       veiculo_id: { type: 'string' }, tipo: { type: 'string' }, descricao: { type: 'string' },
@@ -3903,6 +3903,7 @@ function _assistSystem() {
     'Hoje é ' + hojeLocalStr() + '. Valores em reais (BRL). Responda sempre em português do Brasil, de forma curta e direta, como num chat. ' +
     'Você tem ferramentas para consultar e modificar os dados reais do negócio (Supabase). ' +
     'Quando o usuário citar um cliente, moto ou contrato pelo nome/placa, use as ferramentas de listagem primeiro para descobrir o id correto — nunca invente ids. ' +
+    'Ao registrar despesa ou manutenção sem o usuário especificar a moto: use listar_veiculos primeiro; se houver só uma moto cadastrada, use ela automaticamente; se houver mais de uma, pergunte qual antes de registrar — nunca registre despesa sem moto vinculada. ' +
     'Antes de executar uma ação destrutiva ou irreversível (encerrar contrato, excluir), confirme com o usuário em uma mensagem, a menos que ele já tenha pedido explicitamente. ' +
     'Ações simples pedidas explicitamente (marcar parcela paga, cadastrar cliente, registrar despesa/manutenção, atualizar km) podem ser executadas direto. ' +
     'Você pode receber fotos de documentos junto da mensagem: se for uma CNH, extraia nome, CPF e número de registro da própria imagem (você tem visão) e cadastre o cliente com cadastrar_cliente. ' +
