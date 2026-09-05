@@ -271,16 +271,18 @@ async function loadNotificacoes() {
     }
     // Seguro + Rastreador — avisa 2 dias antes e persiste até ser pago
     if (vei.seguro_rastreador_mensal) {
+      var isTipoSeguro = function(t) { return (t || '').trim().toLowerCase() === 'seguro + rastreador'; };
       var segOverride = (despesasData || []).find(function(d) {
-        return d.veiculo_id === vei.id && d.programada && !d.pago && d.tipo === 'Seguro + Rastreador';
+        return d.veiculo_id === vei.id && d.programada && !d.pago && isTipoSeguro(d.tipo);
       });
       var dSegFinal;
       if (segOverride) {
         dSegFinal = segOverride.vencimento;
       } else {
         var isPagoSeg = function(vencStr) {
+          var mesAlvo = vencStr.slice(0, 7); // AAAA-MM
           return (despesasData || []).some(function(d) {
-            return d.veiculo_id === vei.id && d.pago && d.tipo === 'Seguro + Rastreador' && d.vencimento === vencStr;
+            return d.veiculo_id === vei.id && d.pago && isTipoSeguro(d.tipo) && (d.vencimento || '').slice(0, 7) === mesAlvo;
           });
         };
         var dSegDate = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
@@ -2604,7 +2606,7 @@ async function renderDespesasTab() {
     progs.forEach(function(e) {
       var tipoKey = e.tipo.indexOf('IPVA') === 0 ? 'IPVA' : e.tipo.indexOf('Seguro') === 0 ? 'Seguro + Rastreador' : e.tipo;
       var venc = e.data.getFullYear() + '-' + p2h(e.data.getMonth() + 1) + '-' + p2h(e.data.getDate());
-      var pago = motoDesp.some(function(d) { return d.programada && d.pago && d.tipo === tipoKey && d.vencimento === venc; });
+      var pago = motoDesp.some(function(d) { return d.programada && d.pago && (d.tipo || '').trim().toLowerCase() === tipoKey.toLowerCase() && d.vencimento === venc; });
       if (pago) return;
       if (e.diff < 0) vencidas++; else if (e.diff <= 10) proximas++;
     });
@@ -3904,6 +3906,7 @@ function _assistSystem() {
     'Você tem ferramentas para consultar e modificar os dados reais do negócio (Supabase). ' +
     'Quando o usuário citar um cliente, moto ou contrato pelo nome/placa, use as ferramentas de listagem primeiro para descobrir o id correto — nunca invente ids. ' +
     'Ao registrar despesa ou manutenção sem o usuário especificar a moto: use listar_veiculos primeiro; se houver só uma moto cadastrada, use ela automaticamente; se houver mais de uma, pergunte qual antes de registrar — nunca registre despesa sem moto vinculada. ' +
+    'Para despesas recorrentes do tipo seguro/rastreador, use exatamente o texto "Seguro + Rastreador" no campo tipo (respeitando maiúsculas), para o sistema reconhecer como pago corretamente. ' +
     'Antes de executar uma ação destrutiva ou irreversível (encerrar contrato, excluir), confirme com o usuário em uma mensagem, a menos que ele já tenha pedido explicitamente. ' +
     'Ações simples pedidas explicitamente (marcar parcela paga, cadastrar cliente, registrar despesa/manutenção, atualizar km) podem ser executadas direto. ' +
     'Você pode receber fotos de documentos junto da mensagem: se for uma CNH, extraia nome, CPF e número de registro da própria imagem (você tem visão) e cadastre o cliente com cadastrar_cliente. ' +
