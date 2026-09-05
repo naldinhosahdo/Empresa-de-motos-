@@ -3808,7 +3808,7 @@ async function executarFerramenta(nome, input) {
       case 'registrar_despesa':
         r = await db.from('despesas').insert({
           veiculo_id: input.veiculo_id || null, tipo: input.tipo, valor: input.valor,
-          vencimento: input.vencimento || hoje, pago: input.pago !== false
+          vencimento: input.vencimento || hoje, pago: input.pago === true
         }).select();
         break;
       case 'registrar_manutencao':
@@ -3907,6 +3907,7 @@ function _assistSystem() {
     'Quando o usuário citar um cliente, moto ou contrato pelo nome/placa, use as ferramentas de listagem primeiro para descobrir o id correto — nunca invente ids. ' +
     'Ao registrar despesa ou manutenção sem o usuário especificar a moto: use listar_veiculos primeiro; se houver só uma moto cadastrada, use ela automaticamente; se houver mais de uma, pergunte qual antes de registrar — nunca registre despesa sem moto vinculada. ' +
     'Para despesas recorrentes do tipo seguro/rastreador, use exatamente o texto "Seguro + Rastreador" no campo tipo (respeitando maiúsculas), para o sistema reconhecer como pago corretamente. ' +
+    'Ao registrar uma despesa, se o usuário não deixar claro se ela já foi paga ou ainda está pendente, pergunte antes de registrar — nunca assuma que já foi paga (o padrão do sistema é registrar como pendente quando não informado). ' +
     'Antes de executar uma ação destrutiva ou irreversível (encerrar contrato, excluir), confirme com o usuário em uma mensagem, a menos que ele já tenha pedido explicitamente. ' +
     'Ações simples pedidas explicitamente (marcar parcela paga, cadastrar cliente, registrar despesa/manutenção, atualizar km) podem ser executadas direto. ' +
     'Você pode receber fotos de documentos junto da mensagem: se for uma CNH, extraia nome, CPF e número de registro da própria imagem (você tem visão) e cadastre o cliente com cadastrar_cliente. ' +
