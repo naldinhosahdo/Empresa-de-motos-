@@ -1,4 +1,4 @@
-var CACHE = 'vrunn-v20';
+var CACHE = 'vrunn-v21';
 var ASSETS = [
   '/Empresa-de-motos-/',
   '/Empresa-de-motos-/index.html',
