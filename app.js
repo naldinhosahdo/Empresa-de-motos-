@@ -354,7 +354,8 @@ async function loadNotificacoes() {
     var safeCliente = (a.cliente || '').replace(/'/g, "\\'");
     var safeTelefone = (a.telefone || '').replace(/'/g, "\\'");
     var safeVei = vei.replace(/'/g, "\\'");
-    var quando = diff < 0
+    var isProgKm = a.tipo === 'recorrente' && a.key.indexOf('prog_') === 0;
+    var quando = isProgKm ? '' : diff < 0
       ? (a.tipo === 'caucao' ? IC.warn + ' Encerrado há ' + Math.abs(diff) + ' dia(s) — prazo de 30 dias atingido' : IC.warn + ' Venceu há ' + Math.abs(diff) + ' dia(s)')
       : diff === 0 ? IC.dot_red + ' Vence hoje!'
       : urgente ? IC.dot_red + ' Vence em ' + diff + ' dia(s)'
@@ -390,7 +391,7 @@ async function loadNotificacoes() {
     return '<div class="notif-item ' + cls + '" data-key="' + a.key + '">' +
       '<div class="notif-item-body" ' + bodyClick + '>' +
         '<div class="notif-item-titulo">' + a.label + ' — ' + vei + '</div>' +
-        '<div class="notif-item-desc">' + quando + (valorExibir ? ' · ' + valorExibir : '') + '</div>' +
+        '<div class="notif-item-desc">' + (quando && valorExibir ? quando + ' · ' + valorExibir : (quando || valorExibir)) + '</div>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:2px">' +
         pagarBtn +
@@ -2327,6 +2328,17 @@ async function editManutencao(id) {
   openModal('modal-manutencao');
 }
 
+async function sincronizarManutProgramada(veiculoId, tipo, km) {
+  if (!veiculoId || !tipo || !km) return;
+  var tipoNorm = tipo.trim().toLowerCase();
+  var { data: progs } = await db.from('manut_programada').select('id, item, ultima_km').eq('veiculo_id', veiculoId);
+  (progs || []).forEach(function(p) {
+    if ((p.item || '').trim().toLowerCase() === tipoNorm && km > Number(p.ultima_km || 0)) {
+      db.from('manut_programada').update({ ultima_km: km }).eq('id', p.id);
+    }
+  });
+}
+
 async function submitManutencao() {
   const id = document.getElementById('manut-id').value;
   const m = {
@@ -2343,6 +2355,7 @@ async function submitManutencao() {
     ? await db.from('manutencoes').update(m).eq('id', id)
     : await db.from('manutencoes').insert(m);
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
+  await sincronizarManutProgramada(m.veiculo_id, m.tipo, m.km);
   closeModal('modal-manutencao');
   if (document.getElementById('custos-geral').classList.contains('active')) renderManutencoesTab();
 }
@@ -3821,6 +3834,7 @@ async function executarFerramenta(nome, input) {
           if (veiK && (!veiK.km_atual || input.km > veiK.km_atual)) {
             await db.from('veiculos').update({ km_atual: input.km }).eq('id', input.veiculo_id);
           }
+          await sincronizarManutProgramada(input.veiculo_id, input.tipo, input.km);
         }
         break;
       case 'atualizar_km':
