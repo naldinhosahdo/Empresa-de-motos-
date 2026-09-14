@@ -407,34 +407,50 @@ function toggleNotif() {
   dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
 }
 
-function cobrarParcelaWhatsapp(telefone, cliente, veiculoLabel, valor, vencimento) {
-  var fone = (telefone || '').replace(/\D/g, '');
-  if (!fone) { alert('Cliente sem telefone cadastrado.'); return; }
-
+function construirLembreteCobranca(nivel, cliente, veiculoLabel, valor, vencimento) {
   var nome = (cliente || 'Cliente').toUpperCase();
   var nomeDisplay = nome.charAt(0) + nome.slice(1).toLowerCase();
   var hojeStr   = hojeLocalStr();
   var atrasada  = vencimento < hojeStr;
   var hoje0     = vencimento === hojeStr;
   var valorDesc = Math.round(valor * 0.97 * 100) / 100;
+  var pagarLink = 'https://naldinhosahdo.github.io/Empresa-de-motos-/pagar.html?v=' +
+    encodeURIComponent(String(valor)) + '&n=' + encodeURIComponent(nomeDisplay) +
+    '&d=' + encodeURIComponent(vencimento);
+
+  if (nivel === 2) {
+    var diasAtraso = atrasada ? Math.round((new Date(hojeStr + 'T00:00:00') - new Date(vencimento + 'T00:00:00')) / 86400000) : 0;
+    var multaVal   = atrasada ? Math.round(valor * 0.02 * 100) / 100 : 0;
+    var jurosVal   = atrasada ? Math.round(valor * (0.01 / 30) * diasAtraso * 100) / 100 : 0;
+    var valorComMulta = atrasada ? Math.round((valor + multaVal + jurosVal) * 100) / 100 : valor;
+    return 'Aviso automático — Vrunn Sistema: Identificamos pendência no pagamento de *' + fmtBRL(valor) + '* com vencimento em ' + fmtDate(vencimento) +
+      (atrasada
+        ? ', que está em atraso há *' + diasAtraso + ' dia(s)*.\n\n💸 Valor atualizado com encargos:\n• Valor original: ' + fmtBRL(valor) + '\n• Multa (2%): ' + fmtBRL(multaVal) + '\n• Juros (' + diasAtraso + ' dia(s)): ' + fmtBRL(jurosVal) + '\n• *Total a pagar: ' + fmtBRL(valorComMulta) + '*'
+        : '.') +
+      '\n\nCaso o pagamento não seja regularizado, a motocicleta será bloqueada automaticamente pelo sistema. O link abaixo sempre mostra o valor atualizado com os encargos do dia. Para regularizar acesse: ' + pagarLink;
+  }
 
   var msg = 'Aviso automático — Vrunn Sistema: Olá, ' + nomeDisplay + '.\n\n';
   if (atrasada) {
-    var calcAtraso = calcularValorParcela(valor, vencimento, hojeStr);
     msg += 'O pagamento do aluguel';
     if (veiculoLabel && veiculoLabel !== '-') msg += ' da ' + veiculoLabel;
-    msg += ' no valor original de *' + fmtBRL(valor) + '* consta em atraso (venceu em ' + fmtDate(vencimento) + ').\n' +
-      '⚠️ Com multa e juros, o valor atualizado é *' + fmtBRL(calcAtraso.valor) + '*.\n\nPor favor, regularize assim que possível.';
+    msg += ' no valor de *' + fmtBRL(valor) + '* consta em atraso (venceu em ' + fmtDate(vencimento) + ').\n\nPor favor, regularize assim que possível.';
   } else {
     msg += 'Lembrete: o pagamento do aluguel';
     if (veiculoLabel && veiculoLabel !== '-') msg += ' da ' + veiculoLabel;
     msg += ' no valor de *' + fmtBRL(valor) + '* vence ' + (hoje0 ? '*hoje*' : 'em *' + fmtDate(vencimento) + '*') + '.';
     if (!hoje0) msg += '\n\n💡 Pagando antes do vencimento, o sistema aplica *3% de desconto* — fica *' + fmtBRL(valorDesc) + '*.';
   }
-  var pagarLink = 'https://naldinhosahdo.github.io/Empresa-de-motos-/pagar.html?v=' +
-    encodeURIComponent(String(valor)) + '&n=' + encodeURIComponent(nomeDisplay) +
-    '&d=' + encodeURIComponent(vencimento);
   msg += '\n\n📲 *Pagar agora:* ' + pagarLink + '\n_(O link mostra o valor atualizado do dia e o QR Code para pagamento)_\n\nMensagem gerada automaticamente pelo sistema Vrunn 🏍️';
+  return msg;
+}
+
+function cobrarParcelaWhatsapp(telefone, cliente, veiculoLabel, valor, vencimento) {
+  var fone = (telefone || '').replace(/\D/g, '');
+  if (!fone) { alert('Cliente sem telefone cadastrado.'); return; }
+
+  var atrasada = vencimento < hojeLocalStr();
+  var msg = construirLembreteCobranca(atrasada ? 2 : 1, cliente, veiculoLabel, valor, vencimento);
 
   var url = 'intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end';
   window.open(url, '_blank');
@@ -3427,7 +3443,6 @@ async function renderCobrancas() {
     var fone   = (alu.telefone || '').replace(/\D/g, '');
     var atrasada = p.vencimento < hojeStr;
     var hoje0    = p.vencimento === hojeStr;
-    var valorDesc = Math.round(p.valor * 0.97 * 100) / 100;
 
     var statusLabel = atrasada
       ? IC.warn + ' Atrasada desde ' + fmtDate(p.vencimento)
@@ -3440,21 +3455,11 @@ async function renderCobrancas() {
     var nomeDisplay = nome.charAt(0) + nome.slice(1).toLowerCase();
     var motoLabel   = vei ? vei.modelo + (vei.placa ? ' · ' + vei.placa : '') : '';
 
-    var msg = 'Aviso automático — Vrunn Sistema: Olá, ' + nomeDisplay + '.\n\n';
-    if (atrasada) {
-      msg += 'O pagamento do aluguel';
-      if (vei) msg += ' da ' + vei.modelo;
-      msg += ' no valor de *' + fmtBRL(p.valor) + '* consta em atraso (venceu em ' + fmtDate(p.vencimento) + ').\n\nPor favor, regularize assim que possível.';
-    } else {
-      msg += 'Lembrete: o pagamento do aluguel';
-      if (vei) msg += ' da ' + vei.modelo;
-      msg += ' no valor de *' + fmtBRL(p.valor) + '* vence ' + (hoje0 ? '*hoje*' : 'em *' + fmtDate(p.vencimento) + '*') + '.';
-      if (!hoje0) msg += '\n\n💡 Pagando antes do vencimento, o sistema aplica *3% de desconto* — fica *' + fmtBRL(valorDesc) + '*.';
-    }
+    var msg  = construirLembreteCobranca(1, alu.cliente, vei ? vei.modelo : '', p.valor, p.vencimento);
+    var msg2 = construirLembreteCobranca(2, alu.cliente, vei ? vei.modelo : '', p.valor, p.vencimento);
     var pagarLink = 'https://naldinhosahdo.github.io/Empresa-de-motos-/pagar.html?v=' +
       encodeURIComponent(String(p.valor)) + '&n=' + encodeURIComponent(nomeDisplay) +
       '&d=' + encodeURIComponent(p.vencimento);
-    msg += '\n\n📲 *Pagar agora:* ' + pagarLink + '\n_(O link mostra o valor atualizado do dia e o QR Code para pagamento)_\n\nMensagem gerada automaticamente pelo sistema Vrunn 🏍️';
 
     var encodedMsg = encodeURIComponent(msg);
     var url = fone
@@ -3465,12 +3470,6 @@ async function renderCobrancas() {
     var btnStyle2 = btnStyle1 + ';background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3)';
     var btnStyle3 = btnStyle1 + ';background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3)';
 
-    var diasAtraso = atrasada ? Math.round((new Date(hojeStr + 'T00:00:00') - new Date(p.vencimento + 'T00:00:00')) / 86400000) : 0;
-    var multaVal   = atrasada ? Math.round(p.valor * 0.02 * 100) / 100 : 0;
-    var jurosVal   = atrasada ? Math.round(p.valor * (0.01 / 30) * diasAtraso * 100) / 100 : 0;
-    var valorComMulta = atrasada ? Math.round((p.valor + multaVal + jurosVal) * 100) / 100 : p.valor;
-
-    var msg2 = 'Aviso automático — Vrunn Sistema: Identificamos pendência no pagamento de *' + fmtBRL(p.valor) + '* com vencimento em ' + fmtDate(p.vencimento) + (atrasada ? ', que está em atraso há *' + diasAtraso + ' dia(s)*.\n\n💸 Valor atualizado com encargos:\n• Valor original: ' + fmtBRL(p.valor) + '\n• Multa (2%): ' + fmtBRL(multaVal) + '\n• Juros (' + diasAtraso + ' dia(s)): ' + fmtBRL(jurosVal) + '\n• *Total a pagar: ' + fmtBRL(valorComMulta) + '*' : '.') + '\n\nCaso o pagamento não seja regularizado, a motocicleta será bloqueada automaticamente pelo sistema. O link abaixo sempre mostra o valor atualizado com os encargos do dia. Para regularizar acesse: ' + pagarLink;
     var msg3 = 'Aviso automático — Vrunn Sistema: O pagamento de *' + fmtBRL(p.valor) + '* com vencimento em ' + fmtDate(p.vencimento) + ' não foi realizado dentro do prazo estabelecido. A motocicleta foi bloqueada automaticamente pelo sistema e está impossibilitada de uso. O desbloqueio ocorrerá de forma automática mediante a confirmação do pagamento. Para regularizar acesse: ' + pagarLink + '\n\nApós a confirmação, o sistema processará o desbloqueio em até 30 minutos.';
 
     var btnsHtml = url
