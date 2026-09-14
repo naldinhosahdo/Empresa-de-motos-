@@ -2,7 +2,7 @@ name: Push diário
 
 on:
   schedule:
-    - cron: '0 11 * * *'   # 11:00 UTC = 8:00 em Fortaleza
+    - cron: '0 7 * * *'   # 7:00 UTC — o GitHub costuma atrasar ~3h30-4h a execucao real, entao isso tende a cair perto das 8h em Fortaleza (UTC-3)
   workflow_dispatch:        # permite rodar manualmente pela aba Actions
 
 jobs:
