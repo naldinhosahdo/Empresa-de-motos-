@@ -3470,7 +3470,8 @@ async function renderCobrancas() {
     var btnStyle2 = btnStyle1 + ';background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3)';
     var btnStyle3 = btnStyle1 + ';background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3)';
 
-    var msg3 = 'Aviso automático — Vrunn Sistema: O pagamento de *' + fmtBRL(p.valor) + '* com vencimento em ' + fmtDate(p.vencimento) + ' não foi realizado dentro do prazo estabelecido. A motocicleta foi bloqueada automaticamente pelo sistema e está impossibilitada de uso. O desbloqueio ocorrerá de forma automática mediante a confirmação do pagamento. Para regularizar acesse: ' + pagarLink + '\n\nApós a confirmação, o sistema processará o desbloqueio em até 30 minutos.';
+    var calcBloqueio = calcularValorParcela(p.valor, p.vencimento, hojeStr);
+    var msg3 = 'Aviso automático — Vrunn Sistema: O pagamento de *' + fmtBRL(p.valor) + '* com vencimento em ' + fmtDate(p.vencimento) + ' não foi realizado dentro do prazo estabelecido. A motocicleta foi bloqueada automaticamente pelo sistema e está impossibilitada de uso.\n\n💸 Valor atualizado com multa e juros: *' + fmtBRL(calcBloqueio.valor) + '*\n\nO desbloqueio ocorrerá de forma automática mediante a confirmação do pagamento. Para regularizar acesse: ' + pagarLink + '\n\nApós a confirmação, o sistema processará o desbloqueio em até 30 minutos.';
 
     var btnsHtml = url
       ? '<div style="display:flex;flex-direction:column;gap:0.4rem;align-items:flex-end">' +
