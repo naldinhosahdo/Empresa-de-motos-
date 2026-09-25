@@ -73,9 +73,12 @@ function rest(token) {
     alertas.push('📋 Contrato de ' + c.cliente + ' termina em ' + fmt(c.fim));
   }
 
-  // 3. Caução pendente após 30 dias do encerramento
-  const caucoes = await q('alugueis?select=cliente,caucao,fim&status=eq.encerrado&caucao=gt.0&caucao_devolvido=neq.sim&fim=lte.' + addDias(-30));
+  // 3. Caução pendente após 30 dias do encerramento (ignora veiculo com contrato ativo, ex: renovado)
+  const caucoes = await q('alugueis?select=cliente,caucao,fim,veiculo_id&status=eq.encerrado&caucao=gt.0&caucao_devolvido=neq.sim&fim=lte.' + addDias(-30));
+  const ativos = await q('alugueis?select=veiculo_id&status=eq.ativo');
+  const veiculosAtivos = new Set((ativos || []).map(a => a.veiculo_id));
   for (const c of caucoes || []) {
+    if (veiculosAtivos.has(c.veiculo_id)) continue;
     alertas.push('💵 Caução ' + brl(c.caucao) + ' de ' + c.cliente + ' — prazo de devolução atingido');
   }
 
