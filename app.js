@@ -208,7 +208,7 @@ async function loadNotificacoes() {
   var ha30 = new Date(hoje); ha30.setDate(ha30.getDate() - 30);
   var ha30Str = ha30.toISOString().split('T')[0];
 
-  var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }, { data: veiculosData }, { data: progsData }, { data: caucaoData }] = await Promise.all([
+  var [{ data: despesasData }, { data: manutData }, { data: alugData }, { data: parcelasData }, { data: veiculosData }, { data: progsData }, { data: caucaoData }, { data: ativosData }] = await Promise.all([
     db.from('despesas').select('*, veiculos(modelo, placa)')
       .lte('vencimento', em10Str).not('vencimento', 'is', null).order('vencimento'),
     db.from('manutencoes').select('*, veiculos(modelo, placa)')
@@ -220,7 +220,8 @@ async function loadNotificacoes() {
     db.from('veiculos').select('id, modelo, placa, km_atual, seguro_rastreador_mensal'),
     db.from('manut_programada').select('*, veiculos(modelo, placa, km_atual)'),
     db.from('alugueis').select('*, veiculos(modelo, placa)')
-      .eq('status', 'encerrado').gt('caucao', 0).neq('caucao_devolvido', 'sim').lte('fim', ha30Str)
+      .eq('status', 'encerrado').gt('caucao', 0).neq('caucao_devolvido', 'sim').lte('fim', ha30Str),
+    db.from('alugueis').select('veiculo_id').eq('status', 'ativo')
   ]);
 
   var alertasDespesas = (despesasData || []).filter(function(d) { return !d.pago && !d.programada; }).map(function(d) {
@@ -320,9 +321,12 @@ async function loadNotificacoes() {
     });
   });
 
-  var alertasCaucao = (caucaoData || []).map(function(x) {
-    return { key: 'caucao_' + x.id, data: x.fim, label: '💰 Devolver caução — ' + (x.cliente || '-'), veiculo: x.veiculos, valor: fmtBRL(x.caucao), tipo: 'caucao', aluguelId: x.id };
-  });
+  var veiculosAtivos = new Set((ativosData || []).map(function(a) { return a.veiculo_id; }));
+  var alertasCaucao = (caucaoData || [])
+    .filter(function(x) { return !veiculosAtivos.has(x.veiculo_id); })
+    .map(function(x) {
+      return { key: 'caucao_' + x.id, data: x.fim, label: '💰 Devolver caução — ' + (x.cliente || '-'), veiculo: x.veiculos, valor: fmtBRL(x.caucao), tipo: 'caucao', aluguelId: x.id };
+    });
 
   var todosAlertas = alertasDespesas.concat(alertasManut).concat(alertasAlug).concat(alertasParcelas).concat(alertasRecorrentes).concat(alertasCaucao).sort(function(a, b) {
     return a.data < b.data ? -1 : a.data > b.data ? 1 : 0;
