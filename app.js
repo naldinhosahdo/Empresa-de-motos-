@@ -616,11 +616,16 @@ function showSection(name, addHistory, renderOpts) {
   }
 }
 
+var _renovacaoAnteriorId = null;
+var _renovacaoAnteriorCaucao = 0;
+
 async function abrirModalRenovacao(aluguelId) {
   const { data: a } = await db.from('alugueis').select('*').eq('id', aluguelId).single();
   if (!a) return;
   document.getElementById('form-aluguel').reset();
   document.getElementById('aluguel-id').value = '';
+  _renovacaoAnteriorId = aluguelId;
+  _renovacaoAnteriorCaucao = Number(a.caucao) || 0;
   await populateVeiculoSelects();
   await populateClienteSelect();
   document.getElementById('aluguel-moto').value              = a.veiculo_id || '';
@@ -2002,6 +2007,7 @@ async function renderAlugueis(ordenarPorVencimento) {
 function openNewAluguel() {
   document.getElementById('form-aluguel').reset();
   document.getElementById('aluguel-id').value = '';
+  _renovacaoAnteriorId = null;
   document.getElementById('modal-aluguel-title').textContent = 'Novo Aluguel';
   populateVeiculoSelects();
   populateClienteSelect();
@@ -2011,6 +2017,7 @@ function openNewAluguel() {
 async function editAluguel(id) {
   const { data: a } = await db.from('alugueis').select('*').eq('id', id).single();
   if (!a) return;
+  _renovacaoAnteriorId = null;
   await populateVeiculoSelects();
   await populateClienteSelect();
   document.getElementById('aluguel-id').value       = a.id;
@@ -2057,6 +2064,8 @@ async function marcarCaucaoDevolvido(aluguelId, notifKey) {
 async function renovarContrato(id) {
   const { data: a } = await db.from('alugueis').select('*').eq('id', id).single();
   if (!a) return;
+  _renovacaoAnteriorId = id;
+  _renovacaoAnteriorCaucao = Number(a.caucao) || 0;
   await populateVeiculoSelects();
   await populateClienteSelect();
 
@@ -2138,6 +2147,16 @@ async function submitAluguel() {
     await db.from('veiculos').update({ status: 'alugada' }).eq('id', aluguel.veiculo_id);
   }
   if (!id && savedId) await gerarParcelas(savedId, aluguel);
+  // Renovação: encerra o contrato anterior e transfere o caução pendente pro novo
+  if (!id && savedId && _renovacaoAnteriorId) {
+    var idAnterior = _renovacaoAnteriorId;
+    var caucaoAnterior = _renovacaoAnteriorCaucao;
+    _renovacaoAnteriorId = null;
+    await db.from('alugueis').update({ status: 'encerrado', caucao_devolvido: 'sim', caucao_data: hojeLocalStr() }).eq('id', idAnterior);
+    if (caucaoAnterior > 0) {
+      await db.from('alugueis').update({ caucao: caucaoAnterior }).eq('id', savedId);
+    }
+  }
   closeModal('modal-aluguel');
   renderAlugueis();
   if (!id && savedId && contratoWin) gerarContrato(savedId, contratoWin);
