@@ -35,9 +35,6 @@ body {
   color: var(--text);
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
   min-height: 100vh;
-  background-image:
-    radial-gradient(ellipse at 15% 0%,   rgba(249,115,22,0.09) 0%, transparent 55%),
-    radial-gradient(ellipse at 85% 100%, rgba(249,115,22,0.05) 0%, transparent 55%);
 }
 
 /* ── NAVBAR ── */
