@@ -3791,6 +3791,8 @@ var ASSIST_TOOLS = [
       custo: { type: 'number' }, km: { type: 'integer', description: 'KM da moto na manutenção' } }, required: ['veiculo_id', 'tipo'], additionalProperties: false } },
   { name: 'atualizar_km', description: 'Atualiza o KM atual de uma moto.',
     input_schema: { type: 'object', properties: { veiculo_id: { type: 'string' }, km: { type: 'integer' } }, required: ['veiculo_id', 'km'], additionalProperties: false } },
+  { name: 'verificar_manutencao', description: 'Verifica a situação de manutenção de uma moto (ou de todas): para cada item programado (ex: troca de óleo, relação, pneus) mostra a cada quantos km é feito, a km da última troca, a km atual da moto, quanto falta e se está vencida, próxima ou em dia. Também traz o histórico recente de manutenções feitas. Use sempre que o usuário perguntar se a moto está em dia ou precisando de alguma manutenção.',
+    input_schema: { type: 'object', properties: { veiculo_id: { type: 'string', description: 'id da moto (opcional; sem isso verifica todas as motos)' } }, additionalProperties: false } },
   { name: 'marcar_caucao_devolvido', description: 'Marca o caução de um contrato como devolvido/resolvido.',
     input_schema: { type: 'object', properties: { aluguel_id: { type: 'string' } }, required: ['aluguel_id'], additionalProperties: false } },
   { name: 'encerrar_contrato', description: 'Encerra um contrato de aluguel: muda status para encerrado e exclui as parcelas em aberto (as pagas são mantidas).',
@@ -3862,6 +3864,35 @@ async function executarFerramenta(nome, input) {
         break;
       case 'atualizar_km':
         r = await db.from('veiculos').update({ km_atual: input.km }).eq('id', input.veiculo_id).select('id, modelo, km_atual');
+        break;
+      case 'verificar_manutencao':
+        var qVeis = db.from('veiculos').select('id, modelo, placa, km_atual');
+        if (input.veiculo_id) qVeis = qVeis.eq('id', input.veiculo_id);
+        var { data: veisChk } = await qVeis;
+
+        var qProgs = db.from('manut_programada').select('id, veiculo_id, item, intervalo_km, ultima_km');
+        if (input.veiculo_id) qProgs = qProgs.eq('veiculo_id', input.veiculo_id);
+        var { data: progsChk } = await qProgs;
+
+        var qHist = db.from('manutencoes').select('veiculo_id, tipo, descricao, custo, km, data').order('data', { ascending: false }).limit(40);
+        if (input.veiculo_id) qHist = qHist.eq('veiculo_id', input.veiculo_id);
+        var { data: histChk } = await qHist;
+
+        var resultadoChk = (veisChk || []).map(function(v) {
+          var itens = (progsChk || []).filter(function(p) { return p.veiculo_id === v.id; }).map(function(p) {
+            var proximaKm = (p.ultima_km !== null && p.ultima_km !== undefined) ? Number(p.ultima_km) + Number(p.intervalo_km) : null;
+            var restante  = (proximaKm !== null && v.km_atual !== null && v.km_atual !== undefined) ? proximaKm - Number(v.km_atual) : null;
+            var status    = !p.ultima_km ? 'sem_historico_registrado'
+              : restante === null ? 'sem_km_atual_da_moto'
+              : restante <= 0 ? 'vencida'
+              : restante <= 100 ? 'proxima'
+              : 'em_dia';
+            return { item: p.item, intervalo_km: p.intervalo_km, ultima_km: p.ultima_km, proxima_troca_km: proximaKm, km_restante: restante, status: status };
+          });
+          var historico = (histChk || []).filter(function(h) { return h.veiculo_id === v.id; }).slice(0, 10);
+          return { veiculo_id: v.id, modelo: v.modelo, placa: v.placa, km_atual: v.km_atual, manutencao_programada: itens, historico_recente: historico };
+        });
+        r = { data: resultadoChk };
         break;
       case 'marcar_caucao_devolvido':
         r = await db.from('alugueis').update({ caucao_devolvido: 'sim', caucao_data: hoje }).eq('id', input.aluguel_id).select('id, cliente, caucao');
@@ -3947,6 +3978,7 @@ function _assistSystem() {
     'Ao registrar uma despesa, se o usuário não deixar claro se ela já foi paga ou ainda está pendente, pergunte antes de registrar — nunca assuma que já foi paga (o padrão do sistema é registrar como pendente quando não informado). ' +
     'Antes de executar uma ação destrutiva ou irreversível (encerrar contrato, excluir), confirme com o usuário em uma mensagem, a menos que ele já tenha pedido explicitamente. ' +
     'Ações simples pedidas explicitamente (marcar parcela paga, cadastrar cliente, registrar despesa/manutenção, atualizar km) podem ser executadas direto. ' +
+    'Se o usuário perguntar se a moto está em dia, precisando de manutenção, ou algo do tipo (óleo, relação, pneu, etc.), use a ferramenta verificar_manutencao para consultar de verdade — nunca diga que não tem acesso a isso. ' +
     'Você pode receber fotos de documentos junto da mensagem: se for uma CNH, extraia nome, CPF e número de registro da própria imagem (você tem visão) e cadastre o cliente com cadastrar_cliente. ' +
     'Se for um documento de veículo (CRLV), extraia modelo, placa, ano, cor, chassi e renavam e cadastre com cadastrar_veiculo. ' +
     'Se a imagem não estiver legível ou faltar algum dado obrigatório, avise o usuário e peça pra reenviar ou completar manualmente — nunca invente dado que não conseguiu ler. ' +
