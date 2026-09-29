@@ -711,7 +711,7 @@ async function renderDashboard() {
   // Receita = parcelas pagas excluindo o caução (que fica no card próprio)
   function valorSemCaucao(p) {
     var v = Number(p.valor_pago || p.valor || 0);
-    if (p.numero === 1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
+    if (p.numero === 1 && p.descricao && p.descricao.indexOf('Caução') !== -1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
     return v;
   }
   var receitaTotal = pp.reduce(function(s, x) { return s + valorSemCaucao(x); }, 0);
@@ -1973,7 +1973,7 @@ async function renderAlugueis(ordenarPorVencimento) {
 
   // Receita total (parcelas pagas, sem contar caução) — respeita o filtro de moto
   var { data: pagas } = await db.from('parcelas')
-    .select('valor, valor_pago, numero, data_pagamento, alugueis!inner(veiculo_id, caucao, cliente, veiculos(modelo, placa))')
+    .select('valor, valor_pago, numero, descricao, data_pagamento, alugueis!inner(veiculo_id, caucao, cliente, veiculos(modelo, placa))')
     .eq('pago', true)
     .order('data_pagamento', { ascending: false });
 
@@ -1981,7 +1981,7 @@ async function renderAlugueis(ordenarPorVencimento) {
   var receitaTotal = (pagas || []).reduce(function(s, p) {
     if (fmId && p.alugueis && p.alugueis.veiculo_id !== fmId) return s;
     var v = Number(p.valor_pago || p.valor || 0);
-    if (p.numero === 1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
+    if (p.numero === 1 && p.descricao && p.descricao.indexOf('Caução') !== -1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
     receitaItens.push({ cliente: p.alugueis.cliente, vei: p.alugueis.veiculos, numero: p.numero, data: p.data_pagamento, valor: v });
     return s + v;
   }, 0);
@@ -2996,7 +2996,7 @@ async function renderRelatorios() {
   // Mapa: veiculo_id → receita de parcelas pagas (sem caução)
   function valorSemCaucaoRel(p) {
     var v = Number(p.valor_pago || p.valor || 0);
-    if (p.numero === 1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
+    if (p.numero === 1 && p.descricao && p.descricao.indexOf('Caução') !== -1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
     return v;
   }
   var receitaPorVeiculo = {};
