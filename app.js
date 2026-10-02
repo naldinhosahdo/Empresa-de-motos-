@@ -2985,6 +2985,7 @@ async function renderRelatorios() {
   var v = veiculos || [];
   var a = alugueis || [], m = manutencoes || [], d = despesas || [];
   var pp = parcelasPagas || [];
+  var ppFull = parcelasPagas || [], mFull = manutencoes || [], dFull = despesas || [];
 
   if (filtroMes) {
     a = a.filter(function(x) { return x.inicio && x.inicio.startsWith(filtroMes); });
@@ -3026,28 +3027,27 @@ async function renderRelatorios() {
     if (!valorCompra) {
       paybackTxt = 'Informe o valor de compra';
     } else {
+      // Payback usa sempre a janela dos últimos meses de uso real da moto,
+      // independente do filtro de mês do relatório (um único mês — especialmente
+      // o primeiro, com gastos iniciais de preparo — não é representativo pra isso).
       var lucroMensal = 0;
-      if (filtroMes) {
-        lucroMensal = lucro;
-      } else {
-        var alugsVei = todosAlugueis.filter(function(x) { return x.veiculo_id === vei.id; });
-        var datas = alugsVei.map(function(x) { return x.inicio; }).filter(Boolean).sort();
-        if (datas.length > 0) {
-          var mesesDecorridos = Math.max(1, Math.ceil((new Date(hojeLocalStr()) - new Date(datas[0] + 'T00:00:00')) / (30 * 86400000)));
-          var janelaMeses = Math.min(2, mesesDecorridos);
-          var corte = new Date(hojeLocalStr());
-          corte.setDate(corte.getDate() - janelaMeses * 30);
-          var corteStr = corte.toISOString().split('T')[0];
+      var alugsVei = todosAlugueis.filter(function(x) { return x.veiculo_id === vei.id; });
+      var datas = alugsVei.map(function(x) { return x.inicio; }).filter(Boolean).sort();
+      if (datas.length > 0) {
+        var mesesDecorridos = Math.max(1, Math.ceil((new Date(hojeLocalStr()) - new Date(datas[0] + 'T00:00:00')) / (30 * 86400000)));
+        var janelaMeses = Math.min(2, mesesDecorridos);
+        var corte = new Date(hojeLocalStr());
+        corte.setDate(corte.getDate() - janelaMeses * 30);
+        var corteStr = corte.toISOString().split('T')[0];
 
-          var receitaJanela = pp.filter(function(p) {
-            return p.alugueis && p.alugueis.veiculo_id === vei.id && p.data_pagamento && p.data_pagamento >= corteStr;
-          }).reduce(function(s, p) { return s + valorSemCaucaoRel(p); }, 0);
-          var custosJanela = m.filter(function(x) { return x.veiculo_id === vei.id && x.data && x.data >= corteStr; })
-                              .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
-                            + d.filter(function(x) { return x.veiculo_id === vei.id && x.pago && x.vencimento && x.vencimento >= corteStr; })
-                              .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
-          lucroMensal = (receitaJanela - custosJanela) / janelaMeses;
-        }
+        var receitaJanela = ppFull.filter(function(p) {
+          return p.alugueis && p.alugueis.veiculo_id === vei.id && p.data_pagamento && p.data_pagamento >= corteStr;
+        }).reduce(function(s, p) { return s + valorSemCaucaoRel(p); }, 0);
+        var custosJanela = mFull.filter(function(x) { return x.veiculo_id === vei.id && x.data && x.data >= corteStr; })
+                            .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
+                          + dFull.filter(function(x) { return x.veiculo_id === vei.id && x.pago && x.vencimento && x.vencimento >= corteStr; })
+                            .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+        lucroMensal = (receitaJanela - custosJanela) / janelaMeses;
       }
       if (lucroMensal > 0) {
         var mesesPB = Math.ceil(valorCompra / lucroMensal);
