@@ -1989,7 +1989,7 @@ async function renderAlugueis(ordenarPorVencimento) {
     if (fmId && p.alugueis && p.alugueis.veiculo_id !== fmId) return s;
     var v = Number(p.valor_pago || p.valor || 0);
     if (p.numero === 1 && p.descricao && p.descricao.indexOf('Caução') !== -1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
-    receitaItens.push({ cliente: p.alugueis.cliente, vei: p.alugueis.veiculos, numero: p.numero, data: p.data_pagamento, valor: v });
+    receitaItens.push({ cliente: p.alugueis.cliente, vei: p.alugueis.veiculos, numero: p.numero, descricao: p.descricao, data: p.data_pagamento, valor: v });
     return s + v;
   }, 0);
   var recEl = document.getElementById('alugueis-receita-total');
@@ -2002,7 +2002,7 @@ async function renderAlugueis(ordenarPorVencimento) {
           return '<div class="receita-item">' +
             '<div class="receita-info">' +
               '<div class="receita-cliente">' + (r.cliente || '-') + '</div>' +
-              '<div class="receita-detalhe">' + (r.vei ? r.vei.modelo + (r.vei.placa ? ' · ' + r.vei.placa : '') : '-') + ' · Parcela ' + r.numero + (r.data ? ' · ' + fmtDate(r.data) : '') + '</div>' +
+              '<div class="receita-detalhe">' + (r.vei ? r.vei.modelo + (r.vei.placa ? ' · ' + r.vei.placa : '') : '-') + ' · ' + (r.numero >= 900 ? r.descricao : 'Parcela ' + r.numero) + (r.data ? ' · ' + fmtDate(r.data) : '') + '</div>' +
             '</div>' +
             '<div class="receita-valor">' + fmtBRL(r.valor) + '</div>' +
           '</div>';
@@ -2049,12 +2049,32 @@ async function editAluguel(id) {
 }
 
 async function encerrarContrato(id) {
-  if (!confirm('Encerrar este contrato? O status mudará para "Encerrado" e as parcelas em aberto serão encerradas junto. (As parcelas pagas são mantidas.)')) return;
   var hoje = hojeLocalStr();
-  var { data: a } = await db.from('alugueis').select('fim').eq('id', id).single();
+  var { data: a } = await db.from('alugueis').select('fim, inicio, caucao, caucao_devolvido').eq('id', id).single();
+  if (!a) return;
+
+  var diasDecorridos = a.inicio ? Math.floor((new Date(hoje) - new Date(a.inicio + 'T00:00:00')) / 86400000) : null;
+  var caucaoVal  = Number(a.caucao || 0);
+  var antecipado = diasDecorridos !== null && diasDecorridos < 28 && caucaoVal > 0 && a.caucao_devolvido !== 'sim';
+
+  var msg = 'Encerrar este contrato? O status mudará para "Encerrado" e as parcelas em aberto serão encerradas junto. (As parcelas pagas são mantidas.)';
+  if (antecipado) {
+    msg += '\n\nEsse contrato tem só ' + diasDecorridos + ' dia(s) (mínimo contratual: 28). Pela cláusula 7.7, o caução de ' + fmtBRL(caucaoVal) + ' será retido como multa contratual e contado como lucro, não devolvido ao cliente.';
+  }
+  if (!confirm(msg)) return;
+
   var novoFim = (!a.fim || a.fim > hoje) ? hoje : a.fim;
   await db.from('alugueis').update({ status: 'encerrado', fim: novoFim }).eq('id', id);
   await db.from('parcelas').delete().eq('aluguel_id', id).eq('pago', false);
+
+  if (antecipado) {
+    await db.from('parcelas').insert({
+      aluguel_id: id, numero: 999, descricao: 'Caução retido — encerramento antecipado (cláusula 7.7)',
+      valor: caucaoVal, valor_pago: caucaoVal, vencimento: hoje, pago: true, data_pagamento: hoje
+    });
+    await db.from('alugueis').update({ caucao_devolvido: 'sim', caucao_data: hoje }).eq('id', id);
+  }
+
   renderAlugueis();
   loadNotificacoes();
 }
@@ -3365,7 +3385,7 @@ async function gerarContrato(id, win) {
     '<div class="cl"><strong>4.1</strong> Pagar antes do vencimento garante <strong>3% de desconto</strong>.</div>' +
     '<div class="cl"><strong>4.2</strong> Pagar no dia do vencimento: valor cheio, sem desconto nem acréscimo.</div>' +
     '<div class="cl"><strong>4.3</strong> Atraso gera <strong>multa de 2%</strong> (cobrada uma vez só no primeiro dia) mais <strong>juros de 1% ao mês</strong>. Exemplo: parcela de ' + fmtValor(a.valor) + ' atrasada 7 dias = ' + fmtValor((a.valor||0) + (a.valor||0)*0.02 + (a.valor||0)*(0.01/30)*7) + ' no total.</div>' +
-    '<div class="cl"><strong>4.4</strong> Se atrasar, a moto pode ser <strong>bloqueada pelo rastreador sem aviso</strong>. O bloqueio só é retirado após o pagamento total.</div>' +
+    '<div class="cl"><strong>4.4</strong> Se atrasar, a moto pode ser <strong>bloqueada pelo rastreador</strong>. O bloqueio só é retirado após o pagamento total.</div>' +
     '<div class="cl"><strong>4.5</strong> Atraso igual ou superior a <strong>7 (sete) dias</strong> autoriza o Locador a <strong>recolher a moto imediatamente</strong>, onde ela estiver, sem necessidade de aviso prévio. O recolhimento não cancela a dívida: os valores em aberto continuam sendo devidos, podendo ser descontados do caução.</div>' +
 
     '<div class="sec">5. Obrigações do Locatário</div>' +
@@ -3816,7 +3836,7 @@ var ASSIST_TOOLS = [
     input_schema: { type: 'object', properties: { veiculo_id: { type: 'string', description: 'id da moto (opcional; sem isso verifica todas as motos)' } }, additionalProperties: false } },
   { name: 'marcar_caucao_devolvido', description: 'Marca o caução de um contrato como devolvido/resolvido.',
     input_schema: { type: 'object', properties: { aluguel_id: { type: 'string' } }, required: ['aluguel_id'], additionalProperties: false } },
-  { name: 'encerrar_contrato', description: 'Encerra um contrato de aluguel: muda status para encerrado e exclui as parcelas em aberto (as pagas são mantidas).',
+  { name: 'encerrar_contrato', description: 'Encerra um contrato de aluguel: muda status para encerrado e exclui as parcelas em aberto (as pagas são mantidas). Se o contrato tiver menos de 28 dias de uso e caução pendente, o sistema retém o caução automaticamente como lucro (cláusula 7.7) — avise o usuário quando isso acontecer (o retorno traz caucao_retido_como_lucro).',
     input_schema: { type: 'object', properties: { aluguel_id: { type: 'string' } }, required: ['aluguel_id'], additionalProperties: false } }
 ];
 
@@ -3919,10 +3939,23 @@ async function executarFerramenta(nome, input) {
         r = await db.from('alugueis').update({ caucao_devolvido: 'sim', caucao_data: hoje }).eq('id', input.aluguel_id).select('id, cliente, caucao');
         break;
       case 'encerrar_contrato':
-        var { data: alu } = await db.from('alugueis').select('fim').eq('id', input.aluguel_id).single();
+        var { data: alu } = await db.from('alugueis').select('fim, inicio, caucao, caucao_devolvido').eq('id', input.aluguel_id).single();
         var novoFim = (!alu || !alu.fim || alu.fim > hoje) ? hoje : alu.fim;
+        var diasDecorridosAlu = alu && alu.inicio ? Math.floor((new Date(hoje) - new Date(alu.inicio + 'T00:00:00')) / 86400000) : null;
+        var caucaoValAlu  = Number(alu && alu.caucao || 0);
+        var antecipadoAlu = diasDecorridosAlu !== null && diasDecorridosAlu < 28 && caucaoValAlu > 0 && alu.caucao_devolvido !== 'sim';
         r = await db.from('alugueis').update({ status: 'encerrado', fim: novoFim }).eq('id', input.aluguel_id).select('id, cliente, status');
-        if (!r.error) await db.from('parcelas').delete().eq('aluguel_id', input.aluguel_id).eq('pago', false);
+        if (!r.error) {
+          await db.from('parcelas').delete().eq('aluguel_id', input.aluguel_id).eq('pago', false);
+          if (antecipadoAlu) {
+            await db.from('parcelas').insert({
+              aluguel_id: input.aluguel_id, numero: 999, descricao: 'Caução retido — encerramento antecipado (cláusula 7.7)',
+              valor: caucaoValAlu, valor_pago: caucaoValAlu, vencimento: hoje, pago: true, data_pagamento: hoje
+            });
+            await db.from('alugueis').update({ caucao_devolvido: 'sim', caucao_data: hoje }).eq('id', input.aluguel_id);
+            r.data = (r.data || []).map(function(x) { return Object.assign({}, x, { caucao_retido_como_lucro: caucaoValAlu, dias_decorridos: diasDecorridosAlu }); });
+          }
+        }
         break;
       default:
         return JSON.stringify({ error: 'Ferramenta desconhecida: ' + nome });
