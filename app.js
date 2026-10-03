@@ -450,7 +450,7 @@ function construirLembreteCobranca(nivel, cliente, veiculoLabel, valor, vencimen
 
   // nivel 5 — moto já bloqueada (envio manual, após o bloqueio real pelo rastreador)
   var calcBloqueio = calcularValorParcela(valor, vencimento, hojeStr);
-  return 'Aviso automático — Vrunn Sistema: O pagamento de *' + fmtBRL(valor) + '* com vencimento em ' + fmtDate(vencimento) + ' não foi realizado dentro do prazo estabelecido. A motocicleta foi bloqueada automaticamente pelo sistema e está impossibilitada de uso.\n\n💸 Valor atualizado com multa e juros: *' + fmtBRL(calcBloqueio.valor) + '*\n\nO desbloqueio ocorrerá de forma automática mediante a confirmação do pagamento. Para regularizar acesse: ' + pagarLink + '\n\nApós a confirmação, o sistema processará o desbloqueio em até 30 minutos.';
+  return 'Aviso automático — Vrunn Sistema: O pagamento de *' + fmtBRL(valor) + '* com vencimento em ' + fmtDate(vencimento) + ' não foi realizado dentro do prazo estabelecido. A motocicleta foi bloqueada automaticamente pelo sistema e está impossibilitada de uso.\n\n💸 Valor atualizado com multa e juros: *' + fmtBRL(calcBloqueio.valor) + '*\n\nO desbloqueio ocorrerá de forma automática mediante a confirmação do pagamento. Para regularizar acesse: ' + pagarLink + '\n\nApós a confirmação, o sistema processará o desbloqueio em até 24 horas.';
 }
 
 function cobrarParcelaWhatsapp(telefone, cliente, veiculoLabel, valor, vencimento, parcelaId) {
