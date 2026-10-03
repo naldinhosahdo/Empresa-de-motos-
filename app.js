@@ -3432,6 +3432,14 @@ function gerarPixEMV(chave) {
   return emv + crc.toString(16).toUpperCase().padStart(4, '0');
 }
 
+async function registrarLembrete(parcelaId, nivel) {
+  var campo = 'lembrete' + nivel + '_em';
+  var upd = {};
+  upd[campo] = new Date().toISOString();
+  await db.from('parcelas').update(upd).eq('id', parcelaId);
+  renderCobrancas();
+}
+
 async function renderCobrancas() {
   var container = document.getElementById('cobrancas-lista');
   var countEl   = document.getElementById('cobrancas-count');
@@ -3459,6 +3467,15 @@ async function renderCobrancas() {
   }
 
   var pixCode = gerarPixEMV('aba0d81b-5cb4-446f-bd89-e444f266d103');
+
+  function fmtLembreteQuando(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    var diffMs = Date.now() - d.getTime();
+    if (diffMs < 3600000) return 'há ' + Math.max(1, Math.round(diffMs / 60000)) + ' min';
+    if (diffMs < 86400000 && d.toDateString() === new Date().toDateString()) return 'hoje às ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return 'em ' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + ' às ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
 
   container.innerHTML = parcelas.map(function(p) {    var alu    = p.alugueis || {};
     var vei    = alu.veiculos;
@@ -3496,11 +3513,24 @@ async function renderCobrancas() {
     var calcBloqueio = calcularValorParcela(p.valor, p.vencimento, hojeStr);
     var msg3 = 'Aviso automático — Vrunn Sistema: O pagamento de *' + fmtBRL(p.valor) + '* com vencimento em ' + fmtDate(p.vencimento) + ' não foi realizado dentro do prazo estabelecido. A motocicleta foi bloqueada automaticamente pelo sistema e está impossibilitada de uso.\n\n💸 Valor atualizado com multa e juros: *' + fmtBRL(calcBloqueio.valor) + '*\n\nO desbloqueio ocorrerá de forma automática mediante a confirmação do pagamento. Para regularizar acesse: ' + pagarLink + '\n\nApós a confirmação, o sistema processará o desbloqueio em até 30 minutos.';
 
+    var selo1 = p.lembrete1_em ? '<span style="font-size:0.7rem;color:var(--green)">✓ enviado ' + fmtLembreteQuando(p.lembrete1_em) + '</span>' : '';
+    var selo2 = p.lembrete2_em ? '<span style="font-size:0.7rem;color:var(--green)">✓ enviado ' + fmtLembreteQuando(p.lembrete2_em) + '</span>' : '';
+    var selo3 = p.lembrete3_em ? '<span style="font-size:0.7rem;color:var(--green)">✓ enviado ' + fmtLembreteQuando(p.lembrete3_em) + '</span>' : '';
+
     var btnsHtml = url
       ? '<div style="display:flex;flex-direction:column;gap:0.4rem;align-items:flex-end">' +
-          '<a href="' + url + '" target="_blank" rel="noopener" class="btn btn-primary" style="' + btnStyle1 + '">Lembrete 1</a>' +
-          '<a href="intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg2) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end" target="_blank" rel="noopener" class="btn" style="' + btnStyle2 + '">⚠️ Lembrete 2</a>' +
-          '<a href="intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg3) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end" target="_blank" rel="noopener" class="btn" style="' + btnStyle3 + '">🔒 Lembrete 3</a>' +
+          '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.15rem">' +
+            '<a href="' + url + '" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',1)" class="btn btn-primary" style="' + btnStyle1 + '">' + (p.lembrete1_em ? '✓ ' : '') + 'Lembrete 1</a>' +
+            selo1 +
+          '</div>' +
+          '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.15rem">' +
+            '<a href="intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg2) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',2)" class="btn" style="' + btnStyle2 + '">' + (p.lembrete2_em ? '✓ ' : '⚠️ ') + 'Lembrete 2</a>' +
+            selo2 +
+          '</div>' +
+          '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.15rem">' +
+            '<a href="intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg3) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',3)" class="btn" style="' + btnStyle3 + '">' + (p.lembrete3_em ? '✓ ' : '🔒 ') + 'Lembrete 3</a>' +
+            selo3 +
+          '</div>' +
         '</div>'
       : '<span style="font-size:0.78rem;color:var(--red)">Sem telefone</span>';
 
