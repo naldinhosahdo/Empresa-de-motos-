@@ -3468,13 +3468,15 @@ async function renderCobrancas() {
 
   var pixCode = gerarPixEMV('aba0d81b-5cb4-446f-bd89-e444f266d103');
 
+  function lembreteEnviadoHoje(iso) {
+    return !!iso && new Date(iso).toDateString() === new Date().toDateString();
+  }
   function fmtLembreteQuando(iso) {
     if (!iso) return '';
     var d = new Date(iso);
-    var diffMs = Date.now() - d.getTime();
-    if (diffMs < 3600000) return 'há ' + Math.max(1, Math.round(diffMs / 60000)) + ' min';
-    if (diffMs < 86400000 && d.toDateString() === new Date().toDateString()) return 'hoje às ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-    return 'em ' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + ' às ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    var hora = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    if (lembreteEnviadoHoje(iso)) return 'hoje às ' + hora;
+    return 'último envio: ' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + ' às ' + hora;
   }
 
   container.innerHTML = parcelas.map(function(p) {    var alu    = p.alugueis || {};
@@ -3513,22 +3515,23 @@ async function renderCobrancas() {
     var calcBloqueio = calcularValorParcela(p.valor, p.vencimento, hojeStr);
     var msg3 = 'Aviso automático — Vrunn Sistema: O pagamento de *' + fmtBRL(p.valor) + '* com vencimento em ' + fmtDate(p.vencimento) + ' não foi realizado dentro do prazo estabelecido. A motocicleta foi bloqueada automaticamente pelo sistema e está impossibilitada de uso.\n\n💸 Valor atualizado com multa e juros: *' + fmtBRL(calcBloqueio.valor) + '*\n\nO desbloqueio ocorrerá de forma automática mediante a confirmação do pagamento. Para regularizar acesse: ' + pagarLink + '\n\nApós a confirmação, o sistema processará o desbloqueio em até 30 minutos.';
 
-    var selo1 = p.lembrete1_em ? '<span style="font-size:0.7rem;color:var(--green)">✓ enviado ' + fmtLembreteQuando(p.lembrete1_em) + '</span>' : '';
-    var selo2 = p.lembrete2_em ? '<span style="font-size:0.7rem;color:var(--green)">✓ enviado ' + fmtLembreteQuando(p.lembrete2_em) + '</span>' : '';
-    var selo3 = p.lembrete3_em ? '<span style="font-size:0.7rem;color:var(--green)">✓ enviado ' + fmtLembreteQuando(p.lembrete3_em) + '</span>' : '';
+    var hoje1 = lembreteEnviadoHoje(p.lembrete1_em), hoje2 = lembreteEnviadoHoje(p.lembrete2_em), hoje3 = lembreteEnviadoHoje(p.lembrete3_em);
+    var selo1 = p.lembrete1_em ? '<span style="font-size:0.7rem;color:' + (hoje1 ? 'var(--green)' : 'var(--text2)') + '">' + (hoje1 ? '✓ enviado ' : '') + fmtLembreteQuando(p.lembrete1_em) + '</span>' : '';
+    var selo2 = p.lembrete2_em ? '<span style="font-size:0.7rem;color:' + (hoje2 ? 'var(--green)' : 'var(--text2)') + '">' + (hoje2 ? '✓ enviado ' : '') + fmtLembreteQuando(p.lembrete2_em) + '</span>' : '';
+    var selo3 = p.lembrete3_em ? '<span style="font-size:0.7rem;color:' + (hoje3 ? 'var(--green)' : 'var(--text2)') + '">' + (hoje3 ? '✓ enviado ' : '') + fmtLembreteQuando(p.lembrete3_em) + '</span>' : '';
 
     var btnsHtml = url
       ? '<div style="display:flex;flex-direction:column;gap:0.4rem;align-items:flex-end">' +
           '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.15rem">' +
-            '<a href="' + url + '" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',1)" class="btn btn-primary" style="' + btnStyle1 + '">' + (p.lembrete1_em ? '✓ ' : '') + 'Lembrete 1</a>' +
+            '<a href="' + url + '" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',1)" class="btn btn-primary" style="' + btnStyle1 + '">' + (hoje1 ? '✓ ' : '') + 'Lembrete 1</a>' +
             selo1 +
           '</div>' +
           '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.15rem">' +
-            '<a href="intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg2) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',2)" class="btn" style="' + btnStyle2 + '">' + (p.lembrete2_em ? '✓ ' : '⚠️ ') + 'Lembrete 2</a>' +
+            '<a href="intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg2) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',2)" class="btn" style="' + btnStyle2 + '">' + (hoje2 ? '✓ ' : '⚠️ ') + 'Lembrete 2</a>' +
             selo2 +
           '</div>' +
           '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.15rem">' +
-            '<a href="intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg3) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',3)" class="btn" style="' + btnStyle3 + '">' + (p.lembrete3_em ? '✓ ' : '🔒 ') + 'Lembrete 3</a>' +
+            '<a href="intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg3) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',3)" class="btn" style="' + btnStyle3 + '">' + (hoje3 ? '✓ ' : '🔒 ') + 'Lembrete 3</a>' +
             selo3 +
           '</div>' +
         '</div>'
