@@ -3480,7 +3480,7 @@ async function renderCobrancas() {
     var d = new Date(iso);
     var dataTxt = String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
     var hora    = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-    return '<span style="font-size:0.68rem;color:var(--green)">✓ ' + dataTxt + ' ' + hora + '</span>';
+    return '<span class="lembrete-feito">✓ ' + dataTxt + ' ' + hora + '</span>';
   }
 
   container.innerHTML = parcelas.map(function(p) {    var alu    = p.alugueis || {};
@@ -3509,40 +3509,29 @@ async function renderCobrancas() {
       construirLembreteCobranca(4, alu.cliente, veiModelo, p.valor, p.vencimento),
       construirLembreteCobranca(5, alu.cliente, veiModelo, p.valor, p.vencimento)
     ];
+    var rotulos = ['Lembrete 1 · dois dias antes', 'Lembrete 2 · um dia antes', 'Lembrete 3 · dia do vencimento', 'Lembrete 4 · um dia de atraso', 'Lembrete 5 · auto bloqueado'];
 
-    var btnStyleBase = 'text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:0.4rem;font-size:0.82rem;padding:0.45rem 0.85rem';
-    var btnStylesPorNivel = [
-      '', // nivel 1 usa btn-primary
-      btnStyleBase, // nivel 2
-      btnStyleBase + ';background:rgba(250,204,21,0.15);color:#fde047;border:1px solid rgba(250,204,21,0.3)', // nivel 3 — hoje
-      btnStyleBase + ';background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3)', // nivel 4 — atraso
-      btnStyleBase + ';background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3)'  // nivel 5 — bloqueada
-    ];
-    var rotulos = ['Lembrete 1 · D-2', 'Lembrete 2 · D-1', 'Lembrete 3 · hoje', '⚠️ Lembrete 4 · atraso', '🔒 Lembrete 5 · bloqueada'];
+    var lembretesHtml = fone
+      ? [1, 2, 3, 4, 5].map(function(nivel) {
+          var msgNivel = msgs[nivel - 1];
+          var urlNivel = 'intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msgNivel) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end';
+          var campo = p['lembrete' + nivel + '_em'];
+          var acao = campo
+            ? seloLembrete(campo)
+            : '<a href="' + urlNivel + '" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',' + nivel + ')" class="lembrete-acao">Enviar</a>';
+          return '<div class="lembrete-linha"><span class="lembrete-label">' + rotulos[nivel - 1] + '</span>' + acao + '</div>';
+        }).join('')
+      : '<div class="lembrete-linha"><span style="color:var(--red)">Sem telefone cadastrado</span></div>';
 
-    var btnsHtml = fone
-      ? '<div style="display:flex;flex-direction:column;gap:0.4rem;align-items:flex-end">' +
-          [1, 2, 3, 4, 5].map(function(nivel) {
-            var msgNivel = msgs[nivel - 1];
-            var urlNivel = 'intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msgNivel) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end';
-            var campo = p['lembrete' + nivel + '_em'];
-            var style = nivel === 1 ? btnStyleBase : btnStylesPorNivel[nivel - 1];
-            var classe = nivel === 1 ? 'btn btn-primary' : 'btn';
-            return '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.15rem">' +
-              '<a href="' + urlNivel + '" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',' + nivel + ')" class="' + classe + '" style="' + style + '">' + (campo ? '✓ ' : '') + rotulos[nivel - 1] + '</a>' +
-              seloLembrete(campo) +
-            '</div>';
-          }).join('') +
-        '</div>'
-      : '<span style="font-size:0.78rem;color:var(--red)">Sem telefone</span>';
-
-    return '<div class="cobranca-card" style="border-left-color:' + bordaCard + '">' +
-      '<div class="cobranca-info">' +
-        '<div class="cobranca-nome">' + nome + (motoLabel ? '<span class="cobranca-moto"> · ' + motoLabel + '</span>' : '') + '</div>' +
-        '<div class="cobranca-status" style="color:' + corStatus + '">' + statusLabel + '</div>' +
+    return '<div class="cobranca-card" style="border-top-color:' + bordaCard + '">' +
+      '<div class="cobranca-topo">' +
+        '<div class="cobranca-info">' +
+          '<div class="cobranca-nome">' + nome + (motoLabel ? '<span class="cobranca-moto"> · ' + motoLabel + '</span>' : '') + '</div>' +
+          '<div class="cobranca-status" style="color:' + corStatus + '">' + statusLabel + '</div>' +
+        '</div>' +
         '<div class="cobranca-valor">' + fmtBRL(p.valor) + '</div>' +
       '</div>' +
-      '<div class="cobranca-acao">' + btnsHtml + '</div>' +
+      '<div class="cobranca-lembretes">' + lembretesHtml + '</div>' +
     '</div>';
   }).join('');
 }
