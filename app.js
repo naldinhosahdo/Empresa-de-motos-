@@ -3383,7 +3383,7 @@ async function gerarContrato(id, win) {
 
     '<div class="sec">4. Pagamento</div>' +
     '<div class="cl"><strong>4.1</strong> Pagar antes do vencimento garante <strong>3% de desconto</strong>.</div>' +
-    '<div class="cl"><strong>4.2</strong> Pagar no dia do vencimento: valor cheio, sem desconto nem acréscimo.</div>' +
+    '<div class="cl"><strong>4.2</strong> Pagar no dia do vencimento não dá desconto.</div>' +
     '<div class="cl"><strong>4.3</strong> Atraso gera <strong>multa de 2%</strong> (cobrada uma vez só no primeiro dia) mais <strong>juros de 1% ao mês</strong>. Exemplo: parcela de ' + fmtValor(a.valor) + ' atrasada 7 dias = ' + fmtValor((a.valor||0) + (a.valor||0)*0.02 + (a.valor||0)*(0.01/30)*7) + ' no total.</div>' +
     '<div class="cl"><strong>4.4</strong> Se atrasar, a moto pode ser <strong>bloqueada pelo rastreador</strong>. O bloqueio só é retirado após o pagamento total.</div>' +
     '<div class="cl"><strong>4.5</strong> Atraso igual ou superior a <strong>7 (sete) dias</strong> autoriza o Locador a <strong>recolher a moto imediatamente</strong>, onde ela estiver, sem necessidade de aviso prévio. O recolhimento não cancela a dívida: os valores em aberto continuam sendo devidos, podendo ser descontados do caução.</div>' +
@@ -3391,14 +3391,14 @@ async function gerarContrato(id, win) {
     '<div class="sec">5. Obrigações do Locatário</div>' +
     '<div class="cl"><strong>5.1</strong> Devolver a moto nas mesmas condições em que recebeu, salvo desgaste normal.</div>' +
     '<div class="cl"><strong>5.2</strong> Usar capacete e todos os equipamentos exigidos pelo Código de Trânsito.</div>' +
-    '<div class="cl"><strong>5.3</strong> Não emprestar nem sublocar a moto para ninguém sem autorização escrita do Locador.</div>' +
+    '<div class="cl"><strong>5.3</strong> Não emprestar nem sublocar a moto para ninguém.</div>' +
     '<div class="cl"><strong>5.4</strong> Manter o tanque abastecido e avisar o Locador se o óleo estiver baixo. A troca de óleo é por conta do Locador.</div>' +
     '<div class="cl"><strong>5.5</strong> Todas as multas de trânsito durante o período de locação são por conta do Locatário.</div>' +
     '<div class="cl"><strong>5.6</strong> Proibido usar a moto para atividades ilegais, carregar cargas não permitidas ou participar de rachas.</div>' +
     '<div class="cl"><strong>5.7</strong> Em caso de acidente, roubo, furto ou qualquer ocorrência policial, avisar o Locador imediatamente.</div>' +
-    '<div class="cl"><strong>5.8</strong> Em até <strong>24 horas</strong> após assinar, aceitar a transferência do veículo para seu nome no app <strong>CDT (Carteira Digital de Trânsito)</strong>. Caso contrário, o contrato poderá ser cancelado.</div>' +
+    '<div class="cl"><strong>5.8</strong> Após assinar o contrato, você tem até <strong>24 horas</strong> para aceitar a transferência do veículo no aplicativo da Carteira Digital de Trânsito (CDT). Caso contrário, o contrato poderá ser cancelado.</div>' +
     '<div class="cl"><strong>5.9</strong> Proibido circular a mais de <strong>150 km</strong> de Fortaleza-CE. Se descumprir, a moto é recolhida sem devolução do caução.</div>' +
-    '<div class="cl"><strong>5.10</strong> Proibido fazer qualquer modificação na moto (peças, pintura, escapamento, etc.) sem autorização escrita. Se fizer, paga o conserto para voltar ao estado original.</div>' +
+    '<div class="cl"><strong>5.10</strong> Proibido fazer qualquer modificação na moto (peças, pintura, escapamento, etc.). Se fizer, paga o conserto para voltar ao estado original.</div>' +
     '<div class="cl"><strong>5.11</strong> Toda multa deve ser paga no prazo, mesmo que queira recorrer. Se recorrer e ganhar, o valor é devolvido em até <strong>5 dias úteis contados a partir do recebimento, pelo Locador, da restituição correspondente pelo órgão de trânsito</strong> (ou por quem tiver processado o pagamento). Se não pagar no prazo, o valor é descontado do caução.</div>' +
     '<div class="cl"><strong>5.12</strong> Se se envolver em acidente comprovadamente sob efeito de álcool, drogas ou remédios que proíbem dirigir, pagará o <strong>valor FIPE da moto</strong> na data do acidente. O caução é retido e o restante cobrado judicialmente.</div>' +
 
