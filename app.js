@@ -3509,7 +3509,7 @@ async function renderCobrancas() {
       construirLembreteCobranca(4, alu.cliente, veiModelo, p.valor, p.vencimento),
       construirLembreteCobranca(5, alu.cliente, veiModelo, p.valor, p.vencimento)
     ];
-    var rotulos = ['Lembrete 1 · dois dias antes', 'Lembrete 2 · um dia antes', 'Lembrete 3 · dia do vencimento', 'Lembrete 4 · um dia de atraso', 'Lembrete 5 · auto bloqueado'];
+    var rotulos = ['Lembrete 1 · dois dias antes', 'Lembrete 2 · um dia antes', 'Lembrete 3 · dia do vencimento', 'Lembrete 4 · um dia de atraso', 'Lembrete 5 · moto bloqueada'];
 
     var lembretesHtml = fone
       ? [1, 2, 3, 4, 5].map(function(nivel) {
