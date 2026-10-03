@@ -376,7 +376,7 @@ async function loadNotificacoes() {
     var _c = "document.getElementById('notif-dropdown').style.display='none';";
     var bodyClick;
     if (a.tipo === 'parcela' && a.aluguelId) {
-      bodyClick = 'onclick="' + _c + 'cobrarParcelaWhatsapp(\'' + safeTelefone + '\',\'' + safeCliente + '\',\'' + safeVei + '\',' + a.valorNum + ',\'' + a.vencimentoStr + '\')" style="cursor:pointer"';
+      bodyClick = 'onclick="' + _c + 'cobrarParcelaWhatsapp(\'' + safeTelefone + '\',\'' + safeCliente + '\',\'' + safeVei + '\',' + a.valorNum + ',\'' + a.vencimentoStr + '\',\'' + a.parcelaId + '\')" style="cursor:pointer"';
     } else if (a.tipo === 'aluguel') {
       bodyClick = 'onclick="' + _c + 'abrirModalRenovacao(\'' + a.aluguelId + '\')" style="cursor:pointer"';
     } else if (a.tipo === 'manut') {
@@ -411,51 +411,58 @@ function toggleNotif() {
   dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
 }
 
+// Níveis: 1 = 2 dias antes (c/ desconto) · 2 = 1 dia antes (c/ desconto) ·
+// 3 = dia do vencimento (s/ desconto) · 4 = atrasada (multa/juros, avisa bloqueio) ·
+// 5 = pós-bloqueio manual (moto já bloqueada)
 function construirLembreteCobranca(nivel, cliente, veiculoLabel, valor, vencimento) {
   var nome = (cliente || 'Cliente').toUpperCase();
   var nomeDisplay = nome.charAt(0) + nome.slice(1).toLowerCase();
   var hojeStr   = hojeLocalStr();
-  var atrasada  = vencimento < hojeStr;
-  var hoje0     = vencimento === hojeStr;
   var valorDesc = Math.round(valor * 0.97 * 100) / 100;
+  var veiTxt    = veiculoLabel && veiculoLabel !== '-' ? ' da ' + veiculoLabel : '';
   var pagarLink = 'https://naldinhosahdo.github.io/Empresa-de-motos-/pagar.html?v=' +
     encodeURIComponent(String(valor)) + '&n=' + encodeURIComponent(nomeDisplay) +
     '&d=' + encodeURIComponent(vencimento);
 
-  if (nivel === 2) {
-    var diasAtraso = atrasada ? Math.round((new Date(hojeStr + 'T00:00:00') - new Date(vencimento + 'T00:00:00')) / 86400000) : 0;
-    var multaVal   = atrasada ? Math.round(valor * 0.02 * 100) / 100 : 0;
-    var jurosVal   = atrasada ? Math.round(valor * (0.01 / 30) * diasAtraso * 100) / 100 : 0;
-    var valorComMulta = atrasada ? Math.round((valor + multaVal + jurosVal) * 100) / 100 : valor;
+  if (nivel === 1 || nivel === 2) {
+    var diasTxt = nivel === 1 ? '2 dias' : '1 dia';
+    return 'Aviso automático — Vrunn Sistema: Olá, ' + nomeDisplay + '.\n\n' +
+      'Lembrete: o pagamento do aluguel' + veiTxt + ' no valor de *' + fmtBRL(valor) + '* vence em *' + diasTxt + '* (*' + fmtDate(vencimento) + '*).\n\n' +
+      '💡 Pagando antes do vencimento, o sistema aplica *3% de desconto* — fica *' + fmtBRL(valorDesc) + '*.\n\n' +
+      '📲 *Pagar agora:* ' + pagarLink + '\n_(O link mostra o valor atualizado do dia e o QR Code para pagamento)_\n\nMensagem gerada automaticamente pelo sistema Vrunn 🏍️';
+  }
+
+  if (nivel === 3) {
+    return 'Aviso automático — Vrunn Sistema: Olá, ' + nomeDisplay + '.\n\n' +
+      'Lembrete: o pagamento do aluguel' + veiTxt + ' no valor de *' + fmtBRL(valor) + '* vence *hoje* (*' + fmtDate(vencimento) + '*).\n\n' +
+      '📲 *Pagar agora:* ' + pagarLink + '\n_(O link mostra o QR Code para pagamento)_\n\nMensagem gerada automaticamente pelo sistema Vrunn 🏍️';
+  }
+
+  if (nivel === 4) {
+    var diasAtraso = Math.max(1, Math.round((new Date(hojeStr + 'T00:00:00') - new Date(vencimento + 'T00:00:00')) / 86400000));
+    var multaVal   = Math.round(valor * 0.02 * 100) / 100;
+    var jurosVal   = Math.round(valor * (0.01 / 30) * diasAtraso * 100) / 100;
+    var valorComMulta = Math.round((valor + multaVal + jurosVal) * 100) / 100;
     return 'Aviso automático — Vrunn Sistema: Identificamos pendência no pagamento de *' + fmtBRL(valor) + '* com vencimento em ' + fmtDate(vencimento) +
-      (atrasada
-        ? ', que está em atraso há *' + diasAtraso + ' dia(s)*.\n\n💸 Valor atualizado com encargos:\n• Valor original: ' + fmtBRL(valor) + '\n• Multa (2%): ' + fmtBRL(multaVal) + '\n• Juros (' + diasAtraso + ' dia(s)): ' + fmtBRL(jurosVal) + '\n• *Total a pagar: ' + fmtBRL(valorComMulta) + '*'
-        : '.') +
+      ', que está em atraso há *' + diasAtraso + ' dia(s)*.\n\n💸 Valor atualizado com encargos:\n• Valor original: ' + fmtBRL(valor) + '\n• Multa (2%): ' + fmtBRL(multaVal) + '\n• Juros (' + diasAtraso + ' dia(s)): ' + fmtBRL(jurosVal) + '\n• *Total a pagar: ' + fmtBRL(valorComMulta) + '*' +
       '\n\nCaso o pagamento não seja regularizado, a motocicleta será bloqueada automaticamente pelo sistema. O link abaixo sempre mostra o valor atualizado com os encargos do dia. Para regularizar acesse: ' + pagarLink;
   }
 
-  var msg = 'Aviso automático — Vrunn Sistema: Olá, ' + nomeDisplay + '.\n\n';
-  if (atrasada) {
-    msg += 'O pagamento do aluguel';
-    if (veiculoLabel && veiculoLabel !== '-') msg += ' da ' + veiculoLabel;
-    msg += ' no valor de *' + fmtBRL(valor) + '* consta em atraso (venceu em ' + fmtDate(vencimento) + ').\n\nPor favor, regularize assim que possível.';
-  } else {
-    msg += 'Lembrete: o pagamento do aluguel';
-    if (veiculoLabel && veiculoLabel !== '-') msg += ' da ' + veiculoLabel;
-    msg += ' no valor de *' + fmtBRL(valor) + '* vence ' + (hoje0 ? '*hoje*' : 'em *' + fmtDate(vencimento) + '*') + '.';
-    if (!hoje0) msg += '\n\n💡 Pagando antes do vencimento, o sistema aplica *3% de desconto* — fica *' + fmtBRL(valorDesc) + '*.';
-  }
-  msg += '\n\n📲 *Pagar agora:* ' + pagarLink + '\n_(O link mostra o valor atualizado do dia e o QR Code para pagamento)_\n\nMensagem gerada automaticamente pelo sistema Vrunn 🏍️';
-  return msg;
+  // nivel 5 — moto já bloqueada (envio manual, após o bloqueio real pelo rastreador)
+  var calcBloqueio = calcularValorParcela(valor, vencimento, hojeStr);
+  return 'Aviso automático — Vrunn Sistema: O pagamento de *' + fmtBRL(valor) + '* com vencimento em ' + fmtDate(vencimento) + ' não foi realizado dentro do prazo estabelecido. A motocicleta foi bloqueada automaticamente pelo sistema e está impossibilitada de uso.\n\n💸 Valor atualizado com multa e juros: *' + fmtBRL(calcBloqueio.valor) + '*\n\nO desbloqueio ocorrerá de forma automática mediante a confirmação do pagamento. Para regularizar acesse: ' + pagarLink + '\n\nApós a confirmação, o sistema processará o desbloqueio em até 30 minutos.';
 }
 
-function cobrarParcelaWhatsapp(telefone, cliente, veiculoLabel, valor, vencimento) {
+function cobrarParcelaWhatsapp(telefone, cliente, veiculoLabel, valor, vencimento, parcelaId) {
   var fone = (telefone || '').replace(/\D/g, '');
   if (!fone) { alert('Cliente sem telefone cadastrado.'); return; }
 
-  var atrasada = vencimento < hojeLocalStr();
-  var msg = construirLembreteCobranca(atrasada ? 2 : 1, cliente, veiculoLabel, valor, vencimento);
+  var hojeStr   = hojeLocalStr();
+  var diffDias  = Math.round((new Date(vencimento + 'T00:00:00') - new Date(hojeStr + 'T00:00:00')) / 86400000);
+  var nivel     = diffDias >= 2 ? 1 : diffDias === 1 ? 2 : diffDias === 0 ? 3 : 4;
+  var msg = construirLembreteCobranca(nivel, cliente, veiculoLabel, valor, vencimento);
 
+  if (parcelaId) registrarLembrete(parcelaId, nivel);
   var url = 'intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end';
   window.open(url, '_blank');
 }
@@ -3468,15 +3475,12 @@ async function renderCobrancas() {
 
   var pixCode = gerarPixEMV('aba0d81b-5cb4-446f-bd89-e444f266d103');
 
-  function lembreteEnviadoHoje(iso) {
-    return !!iso && new Date(iso).toDateString() === new Date().toDateString();
-  }
-  function fmtLembreteQuando(iso) {
+  function seloLembrete(iso) {
     if (!iso) return '';
     var d = new Date(iso);
-    var hora = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-    if (lembreteEnviadoHoje(iso)) return 'hoje às ' + hora;
-    return 'último envio: ' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + ' às ' + hora;
+    var dataTxt = String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+    var hora    = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return '<span style="font-size:0.68rem;color:var(--green)">✓ ' + dataTxt + ' ' + hora + '</span>';
   }
 
   container.innerHTML = parcelas.map(function(p) {    var alu    = p.alugueis || {};
@@ -3497,43 +3501,38 @@ async function renderCobrancas() {
     var nomeDisplay = nome.charAt(0) + nome.slice(1).toLowerCase();
     var motoLabel   = vei ? vei.modelo + (vei.placa ? ' · ' + vei.placa : '') : '';
 
-    var msg  = construirLembreteCobranca(1, alu.cliente, vei ? vei.modelo : '', p.valor, p.vencimento);
-    var msg2 = construirLembreteCobranca(2, alu.cliente, vei ? vei.modelo : '', p.valor, p.vencimento);
-    var pagarLink = 'https://naldinhosahdo.github.io/Empresa-de-motos-/pagar.html?v=' +
-      encodeURIComponent(String(p.valor)) + '&n=' + encodeURIComponent(nomeDisplay) +
-      '&d=' + encodeURIComponent(p.vencimento);
+    var veiModelo = vei ? vei.modelo : '';
+    var msgs = [
+      construirLembreteCobranca(1, alu.cliente, veiModelo, p.valor, p.vencimento),
+      construirLembreteCobranca(2, alu.cliente, veiModelo, p.valor, p.vencimento),
+      construirLembreteCobranca(3, alu.cliente, veiModelo, p.valor, p.vencimento),
+      construirLembreteCobranca(4, alu.cliente, veiModelo, p.valor, p.vencimento),
+      construirLembreteCobranca(5, alu.cliente, veiModelo, p.valor, p.vencimento)
+    ];
 
-    var encodedMsg = encodeURIComponent(msg);
-    var url = fone
-      ? 'intent://send?phone=55' + fone + '&text=' + encodedMsg + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end'
-      : null;
+    var btnStyleBase = 'text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:0.4rem;font-size:0.82rem;padding:0.45rem 0.85rem';
+    var btnStylesPorNivel = [
+      '', // nivel 1 usa btn-primary
+      btnStyleBase, // nivel 2
+      btnStyleBase + ';background:rgba(250,204,21,0.15);color:#fde047;border:1px solid rgba(250,204,21,0.3)', // nivel 3 — hoje
+      btnStyleBase + ';background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3)', // nivel 4 — atraso
+      btnStyleBase + ';background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3)'  // nivel 5 — bloqueada
+    ];
+    var rotulos = ['Lembrete 1 · D-2', 'Lembrete 2 · D-1', 'Lembrete 3 · hoje', '⚠️ Lembrete 4 · atraso', '🔒 Lembrete 5 · bloqueada'];
 
-    var btnStyle1 = 'text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:0.4rem;font-size:0.82rem;padding:0.45rem 0.85rem';
-    var btnStyle2 = btnStyle1 + ';background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3)';
-    var btnStyle3 = btnStyle1 + ';background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3)';
-
-    var calcBloqueio = calcularValorParcela(p.valor, p.vencimento, hojeStr);
-    var msg3 = 'Aviso automático — Vrunn Sistema: O pagamento de *' + fmtBRL(p.valor) + '* com vencimento em ' + fmtDate(p.vencimento) + ' não foi realizado dentro do prazo estabelecido. A motocicleta foi bloqueada automaticamente pelo sistema e está impossibilitada de uso.\n\n💸 Valor atualizado com multa e juros: *' + fmtBRL(calcBloqueio.valor) + '*\n\nO desbloqueio ocorrerá de forma automática mediante a confirmação do pagamento. Para regularizar acesse: ' + pagarLink + '\n\nApós a confirmação, o sistema processará o desbloqueio em até 30 minutos.';
-
-    var hoje1 = lembreteEnviadoHoje(p.lembrete1_em), hoje2 = lembreteEnviadoHoje(p.lembrete2_em), hoje3 = lembreteEnviadoHoje(p.lembrete3_em);
-    var selo1 = p.lembrete1_em ? '<span style="font-size:0.7rem;color:' + (hoje1 ? 'var(--green)' : 'var(--text2)') + '">' + (hoje1 ? '✓ enviado ' : '') + fmtLembreteQuando(p.lembrete1_em) + '</span>' : '';
-    var selo2 = p.lembrete2_em ? '<span style="font-size:0.7rem;color:' + (hoje2 ? 'var(--green)' : 'var(--text2)') + '">' + (hoje2 ? '✓ enviado ' : '') + fmtLembreteQuando(p.lembrete2_em) + '</span>' : '';
-    var selo3 = p.lembrete3_em ? '<span style="font-size:0.7rem;color:' + (hoje3 ? 'var(--green)' : 'var(--text2)') + '">' + (hoje3 ? '✓ enviado ' : '') + fmtLembreteQuando(p.lembrete3_em) + '</span>' : '';
-
-    var btnsHtml = url
+    var btnsHtml = fone
       ? '<div style="display:flex;flex-direction:column;gap:0.4rem;align-items:flex-end">' +
-          '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.15rem">' +
-            '<a href="' + url + '" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',1)" class="btn btn-primary" style="' + btnStyle1 + '">' + (hoje1 ? '✓ ' : '') + 'Lembrete 1</a>' +
-            selo1 +
-          '</div>' +
-          '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.15rem">' +
-            '<a href="intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg2) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',2)" class="btn" style="' + btnStyle2 + '">' + (hoje2 ? '✓ ' : '⚠️ ') + 'Lembrete 2</a>' +
-            selo2 +
-          '</div>' +
-          '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.15rem">' +
-            '<a href="intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msg3) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',3)" class="btn" style="' + btnStyle3 + '">' + (hoje3 ? '✓ ' : '🔒 ') + 'Lembrete 3</a>' +
-            selo3 +
-          '</div>' +
+          [1, 2, 3, 4, 5].map(function(nivel) {
+            var msgNivel = msgs[nivel - 1];
+            var urlNivel = 'intent://send?phone=55' + fone + '&text=' + encodeURIComponent(msgNivel) + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end';
+            var campo = p['lembrete' + nivel + '_em'];
+            var style = nivel === 1 ? btnStyleBase : btnStylesPorNivel[nivel - 1];
+            var classe = nivel === 1 ? 'btn btn-primary' : 'btn';
+            return '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.15rem">' +
+              '<a href="' + urlNivel + '" target="_blank" rel="noopener" onclick="registrarLembrete(\'' + p.id + '\',' + nivel + ')" class="' + classe + '" style="' + style + '">' + (campo ? '✓ ' : '') + rotulos[nivel - 1] + '</a>' +
+              seloLembrete(campo) +
+            '</div>';
+          }).join('') +
         '</div>'
       : '<span style="font-size:0.78rem;color:var(--red)">Sem telefone</span>';
 
