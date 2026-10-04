@@ -3054,32 +3054,27 @@ async function renderRelatorios() {
       paybackTxt = 'Informe o valor de compra';
     } else {
       var lucroMensal = 0;
-      var diasUsadosJanela = null;
       if (filtroMes) {
         lucroMensal = lucro;
       } else {
         var alugsVei = todosAlugueis.filter(function(x) { return x.veiculo_id === vei.id; });
         var datas = alugsVei.map(function(x) { return x.inicio; }).filter(Boolean).sort();
-        if (datas.length > 0) {
-          var diasDecorridos = Math.max(0, Math.round((new Date(hojeLocalStr()) - new Date(datas[0] + 'T00:00:00')) / 86400000));
-          if (diasDecorridos < 7) {
-            paybackTxt = 'Poucos dias de uso — aguardando mais dados';
-          } else {
-            var janelaMeses = Math.min(2, diasDecorridos / 30);
-            diasUsadosJanela = Math.min(diasDecorridos, 60);
-            var corte = new Date(hojeLocalStr());
-            corte.setDate(corte.getDate() - diasUsadosJanela);
-            var corteStr = corte.toISOString().split('T')[0];
+        var diasDecorridos = datas.length > 0 ? Math.max(0, Math.round((new Date(hojeLocalStr()) - new Date(datas[0] + 'T00:00:00')) / 86400000)) : 0;
+        if (diasDecorridos < 90) {
+          paybackTxt = 'Sem dados suficientes';
+        } else {
+          var corte = new Date(hojeLocalStr());
+          corte.setDate(corte.getDate() - 60);
+          var corteStr = corte.toISOString().split('T')[0];
 
-            var receitaJanela = pp.filter(function(p) {
-              return p.alugueis && p.alugueis.veiculo_id === vei.id && p.data_pagamento && p.data_pagamento >= corteStr;
-            }).reduce(function(s, p) { return s + valorSemCaucaoRel(p); }, 0);
-            var custosJanela = m.filter(function(x) { return x.veiculo_id === vei.id && x.data && x.data >= corteStr; })
-                                .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
-                              + d.filter(function(x) { return x.veiculo_id === vei.id && x.pago && x.vencimento && x.vencimento >= corteStr; })
-                                .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
-            lucroMensal = (receitaJanela - custosJanela) / janelaMeses;
-          }
+          var receitaJanela = pp.filter(function(p) {
+            return p.alugueis && p.alugueis.veiculo_id === vei.id && p.data_pagamento && p.data_pagamento >= corteStr;
+          }).reduce(function(s, p) { return s + valorSemCaucaoRel(p); }, 0);
+          var custosJanela = m.filter(function(x) { return x.veiculo_id === vei.id && x.data && x.data >= corteStr; })
+                              .reduce(function(s, x) { return s + Number(x.custo || 0); }, 0)
+                            + d.filter(function(x) { return x.veiculo_id === vei.id && x.pago && x.vencimento && x.vencimento >= corteStr; })
+                              .reduce(function(s, x) { return s + Number(x.valor || 0); }, 0);
+          lucroMensal = (receitaJanela - custosJanela) / 2;
         }
       }
       if (!paybackTxt) {
@@ -3088,9 +3083,6 @@ async function renderRelatorios() {
           paybackTxt = mesesPB <= 12
             ? mesesPB + ' mês(es)'
             : Math.floor(mesesPB / 12) + ' ano(s)' + (mesesPB % 12 > 0 ? ' e ' + (mesesPB % 12) + ' mês(es)' : '');
-          if (diasUsadosJanela !== null && diasUsadosJanela < 60) {
-            paybackTxt += ' <span style="color:var(--text2);font-weight:400;font-size:0.75em">(baseado em ' + diasUsadosJanela + ' dia(s) — dado ainda recente)</span>';
-          }
         } else {
           paybackTxt = 'Sem lucro positivo';
         }
