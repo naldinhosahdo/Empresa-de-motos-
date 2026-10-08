@@ -2421,6 +2421,12 @@ async function submitManutencao() {
     ? await db.from('manutencoes').update(m).eq('id', id)
     : await db.from('manutencoes').insert(m);
   if (result.error) { alert('Erro ao salvar: ' + result.error.message); return; }
+  if (m.veiculo_id && m.km) {
+    var { data: veiK } = await db.from('veiculos').select('km_atual').eq('id', m.veiculo_id).single();
+    if (veiK && (!veiK.km_atual || m.km > veiK.km_atual)) {
+      await db.from('veiculos').update({ km_atual: m.km }).eq('id', m.veiculo_id);
+    }
+  }
   await sincronizarManutProgramada(m.veiculo_id, m.tipo, m.km);
   closeModal('modal-manutencao');
   if (document.getElementById('custos-geral').classList.contains('active')) renderManutencoesTab();
