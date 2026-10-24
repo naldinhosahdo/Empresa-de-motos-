@@ -1871,16 +1871,14 @@ async function submitRegistrarTroca() {
   if (vei && (!vei.km_atual || km > vei.km_atual)) {
     await db.from('veiculos').update({ km_atual: km }).eq('id', veiculoId);
   }
-  if (custo) {
-    await db.from('manutencoes').insert({
-      veiculo_id: veiculoId,
-      tipo: prog.item,
-      descricao: prog.item,
-      custo: custo,
-      km: km,
-      data: hojeLocalStr()
-    });
-  }
+  await db.from('manutencoes').insert({
+    veiculo_id: veiculoId,
+    tipo: prog.item,
+    descricao: prog.item,
+    custo: custo,
+    km: km,
+    data: hojeLocalStr()
+  });
   closeModal('modal-registrar-troca');
   renderManutProgramada();
   loadNotificacoes();
