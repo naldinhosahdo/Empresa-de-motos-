@@ -717,7 +717,7 @@ async function renderDashboard() {
 
   // Receita = parcelas pagas excluindo o caução (que fica no card próprio)
   function valorSemCaucao(p) {
-    var v = Number(p.valor_pago || p.valor || 0);
+    var v = Number((p.valor_pago !== null && p.valor_pago !== undefined ? p.valor_pago : p.valor) || 0);
     if (p.numero === 1 && p.descricao && p.descricao.indexOf('Caução') !== -1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
     return v;
   }
@@ -1985,7 +1985,7 @@ async function renderAlugueis(ordenarPorVencimento) {
   var receitaItens = [];
   var receitaTotal = (pagas || []).reduce(function(s, p) {
     if (fmId && p.alugueis && p.alugueis.veiculo_id !== fmId) return s;
-    var v = Number(p.valor_pago || p.valor || 0);
+    var v = Number((p.valor_pago !== null && p.valor_pago !== undefined ? p.valor_pago : p.valor) || 0);
     if (p.numero === 1 && p.descricao && p.descricao.indexOf('Caução') !== -1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
     receitaItens.push({ cliente: p.alugueis.cliente, vei: p.alugueis.veiculos, numero: p.numero, descricao: p.descricao, data: p.data_pagamento, valor: v });
     return s + v;
@@ -2232,7 +2232,7 @@ async function abrirParcelas(aluguelId) {
 
   if (!aluguel) return;
   var vei = aluguel.veiculos;
-  var totalPago   = (parcelas||[]).filter(function(p){ return p.pago; }).reduce(function(s,p){ return s + Number(p.valor_pago || p.valor); }, 0);
+  var totalPago   = (parcelas||[]).filter(function(p){ return p.pago; }).reduce(function(s,p){ return s + Number((p.valor_pago !== null && p.valor_pago !== undefined ? p.valor_pago : p.valor) || 0); }, 0);
   var totalPendente = (parcelas||[]).filter(function(p){ return !p.pago; }).reduce(function(s,p){ return s + Number(p.valor); }, 0);
   var caucao = Number(aluguel.caucao || 0);
   var aluguelSemCaucao = Number(aluguel.total || 0);
@@ -3026,7 +3026,7 @@ async function renderRelatorios() {
 
   // Mapa: veiculo_id → receita de parcelas pagas (sem caução)
   function valorSemCaucaoRel(p) {
-    var v = Number(p.valor_pago || p.valor || 0);
+    var v = Number((p.valor_pago !== null && p.valor_pago !== undefined ? p.valor_pago : p.valor) || 0);
     if (p.numero === 1 && p.descricao && p.descricao.indexOf('Caução') !== -1 && p.alugueis && p.alugueis.caucao) v = Math.max(0, v - Number(p.alugueis.caucao));
     return v;
   }
