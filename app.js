@@ -297,7 +297,7 @@ async function loadNotificacoes() {
       if (dSegFinal <= em5Str) {
         alertasRecorrentes.push({ key: 'seguro_' + vei.id + '_' + dSegFinal, data: dSegFinal,
           label: 'Seguro + Rastreador',
-          veiculo: vl, valor: fmtBRL(vei.seguro_rastreador_mensal), tipo: 'recorrente', veiculoId: vei.id, tipoLabel: 'Seguro' });
+          veiculo: vl, valor: fmtBRL(vei.seguro_rastreador_mensal), valorNum: vei.seguro_rastreador_mensal, tipo: 'recorrente', veiculoId: vei.id, tipoLabel: 'Seguro' });
       }
     }
   });
@@ -385,6 +385,8 @@ async function loadNotificacoes() {
       bodyClick = 'onclick="' + _c + 'showSection(\'custos-geral\');showCustosTab(\'despesas\')" style="cursor:pointer"';
     } else if (a.tipo === 'recorrente' && a.key.indexOf('prog_') === 0) {
       bodyClick = 'onclick="' + _c + 'showSection(\'custos-geral\');showCustosTab(\'manutencoes\')" style="cursor:pointer"';
+    } else if (a.tipo === 'recorrente' && a.tipoLabel === 'Seguro' && a.veiculoId) {
+      bodyClick = 'onclick="' + _c + 'abrirPagarDespesaProgModal(\'' + a.veiculoId + '\',\'Seguro + Rastreador\',\'' + a.data + '\',\'Seguro + Rastreador\',' + (a.valorNum || '') + ')" style="cursor:pointer"';
     } else if (a.tipo === 'recorrente' && a.veiculoId && a.tipoLabel) {
       bodyClick = 'onclick="' + _c + 'abrirDespesaNotif(\'' + a.veiculoId + '\',\'' + a.tipoLabel + '\',\'' + a.data + '\',\'' + safeKey + '\')" style="cursor:pointer"';
     } else if (a.tipo === 'recorrente') {
