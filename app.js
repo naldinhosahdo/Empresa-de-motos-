@@ -929,8 +929,21 @@ async function renderClientes() {
   showLoading('clientes-tbody', 6);
   var busca = document.getElementById('clientes-busca');
   if (busca) busca.value = '';
-  const { data } = await db.from('clientes').select('*').order('nome');
-  _clientesCache = data || [];
+  const [{ data: clientesData }, { data: alugueisData }] = await Promise.all([
+    db.from('clientes').select('*'),
+    db.from('alugueis').select('cliente_id, created_at')
+  ]);
+  var ultimoAluguel = {};
+  (alugueisData || []).forEach(function(a) {
+    if (!a.cliente_id) return;
+    var t = new Date(a.created_at).getTime();
+    if (!ultimoAluguel[a.cliente_id] || t > ultimoAluguel[a.cliente_id]) {
+      ultimoAluguel[a.cliente_id] = t;
+    }
+  });
+  _clientesCache = (clientesData || []).slice().sort(function(a, b) {
+    return (ultimoAluguel[b.id] || 0) - (ultimoAluguel[a.id] || 0);
+  });
   renderClientesTabela(_clientesCache);
 }
 
@@ -970,9 +983,34 @@ function consultarCPF(tipo) {
   }
 }
 
+var CLIENTE_CHECK_TIPOS = ['pf', 'tjce', 'jfce', 'detran'];
+
+function setCheckCliente(tipo, valor) {
+  var hidden = document.getElementById('cliente-check-' + tipo);
+  var novoValor = hidden.value === valor ? '' : valor;
+  hidden.value = novoValor;
+  atualizarVisualCheckCliente(tipo);
+}
+
+function atualizarVisualCheckCliente(tipo) {
+  var valor = document.getElementById('cliente-check-' + tipo).value;
+  var btnOk = document.getElementById('cliente-check-' + tipo + '-ok');
+  var btnX  = document.getElementById('cliente-check-' + tipo + '-x');
+  if (btnOk) btnOk.classList.toggle('check-ativo-ok', valor === 'aprovado');
+  if (btnX)  btnX.classList.toggle('check-ativo-x', valor === 'reprovado');
+}
+
+function resetChecksCliente() {
+  CLIENTE_CHECK_TIPOS.forEach(function(tipo) {
+    document.getElementById('cliente-check-' + tipo).value = '';
+    atualizarVisualCheckCliente(tipo);
+  });
+}
+
 function openNewCliente() {
   document.getElementById('form-cliente').reset();
   document.getElementById('cliente-id').value = '';
+  resetChecksCliente();
   document.getElementById('modal-cliente-title').textContent = 'Novo Cliente';
   openModal('modal-cliente');
 }
@@ -987,6 +1025,10 @@ async function editCliente(id) {
   document.getElementById('cliente-cnh').value     = cl.cnh || '';
   document.getElementById('cliente-endereco').value= cl.endereco || '';
   document.getElementById('cliente-obs').value     = cl.obs || '';
+  CLIENTE_CHECK_TIPOS.forEach(function(tipo) {
+    document.getElementById('cliente-check-' + tipo).value = cl['check_' + tipo] || '';
+    atualizarVisualCheckCliente(tipo);
+  });
   document.getElementById('modal-cliente-title').textContent = 'Editar Cliente';
   openModal('modal-cliente');
 }
@@ -1474,7 +1516,11 @@ async function submitCliente(e) {
     telefone: document.getElementById('cliente-telefone').value.trim(),
     cnh:      document.getElementById('cliente-cnh').value.trim(),
     endereco: document.getElementById('cliente-endereco').value.trim(),
-    obs:      document.getElementById('cliente-obs').value.trim()
+    obs:      document.getElementById('cliente-obs').value.trim(),
+    check_pf:     document.getElementById('cliente-check-pf').value || null,
+    check_tjce:   document.getElementById('cliente-check-tjce').value || null,
+    check_jfce:   document.getElementById('cliente-check-jfce').value || null,
+    check_detran: document.getElementById('cliente-check-detran').value || null
   };
   var result = id
     ? await db.from('clientes').update(cl).eq('id', id)

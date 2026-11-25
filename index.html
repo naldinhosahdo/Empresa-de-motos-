@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Vrunn">
   <meta name="theme-color" content="#0f172a">
-  <link rel="stylesheet" href="style.css?v=52">
+  <link rel="stylesheet" href="style.css?v=53">
 </head>
 <body>
 
@@ -407,10 +407,30 @@
             <input type="text" id="cliente-cpf" placeholder="000.000.000-00">
             <button type="button" class="btn btn-secondary" onclick="consultarCPF('senatran')" title="SENATRAN — Validação CNH">🪪 Validação CNH</button>
             <button type="button" class="btn btn-secondary" onclick="consultarCPF('receita')" title="Receita Federal — Situação do CPF">🏛️ Situação CPF</button>
-<button type="button" class="btn btn-secondary" onclick="consultarCPF('pf')" title="Polícia Federal — Antecedentes Criminais">🚔 Antecedentes Criminais</button>
-            <button type="button" class="btn btn-secondary" onclick="consultarCPF('tjce')" title="TJCE — Processos Justiça Estadual">⚖️ Processos TJCE</button>
-            <button type="button" class="btn btn-secondary" onclick="consultarCPF('jfce')" title="JFCE — Processos Justiça Federal">🏛️ Processos Justiça Federal</button>
-            <button type="button" class="btn btn-secondary" onclick="consultarCPF('detran')" title="DETRAN-CE">🚗 Certidão Negativa de Débitos por CPF</button>
+            <div class="check-row">
+              <button type="button" class="btn btn-secondary" style="flex:1" onclick="consultarCPF('pf')" title="Polícia Federal — Antecedentes Criminais">🚔 Antecedentes Criminais</button>
+              <input type="hidden" id="cliente-check-pf">
+              <button type="button" id="cliente-check-pf-ok" class="btn-check-ok" onclick="setCheckCliente('pf','aprovado')" title="Aprovar">✔</button>
+              <button type="button" id="cliente-check-pf-x" class="btn-check-x" onclick="setCheckCliente('pf','reprovado')" title="Reprovar">✖</button>
+            </div>
+            <div class="check-row">
+              <button type="button" class="btn btn-secondary" style="flex:1" onclick="consultarCPF('tjce')" title="TJCE — Processos Justiça Estadual">⚖️ Processos TJCE</button>
+              <input type="hidden" id="cliente-check-tjce">
+              <button type="button" id="cliente-check-tjce-ok" class="btn-check-ok" onclick="setCheckCliente('tjce','aprovado')" title="Aprovar">✔</button>
+              <button type="button" id="cliente-check-tjce-x" class="btn-check-x" onclick="setCheckCliente('tjce','reprovado')" title="Reprovar">✖</button>
+            </div>
+            <div class="check-row">
+              <button type="button" class="btn btn-secondary" style="flex:1" onclick="consultarCPF('jfce')" title="JFCE — Processos Justiça Federal">🏛️ Processos Justiça Federal</button>
+              <input type="hidden" id="cliente-check-jfce">
+              <button type="button" id="cliente-check-jfce-ok" class="btn-check-ok" onclick="setCheckCliente('jfce','aprovado')" title="Aprovar">✔</button>
+              <button type="button" id="cliente-check-jfce-x" class="btn-check-x" onclick="setCheckCliente('jfce','reprovado')" title="Reprovar">✖</button>
+            </div>
+            <div class="check-row">
+              <button type="button" class="btn btn-secondary" style="flex:1" onclick="consultarCPF('detran')" title="DETRAN-CE">🚗 Certidão Negativa de Débitos por CPF</button>
+              <input type="hidden" id="cliente-check-detran">
+              <button type="button" id="cliente-check-detran-ok" class="btn-check-ok" onclick="setCheckCliente('detran','aprovado')" title="Aprovar">✔</button>
+              <button type="button" id="cliente-check-detran-x" class="btn-check-x" onclick="setCheckCliente('detran','reprovado')" title="Reprovar">✖</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1127,7 +1147,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-<script src="app.js?v=332"></script>
+<script src="app.js?v=333"></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Empresa-de-motos-/sw.js');
