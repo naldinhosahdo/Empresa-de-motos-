@@ -393,6 +393,30 @@ tfoot td { padding: 0.8rem 1.1rem; font-weight: 700; }
 
 .btn-sm { padding: 0.28rem 0.6rem; font-size: 0.75rem; border-radius: 7px; }
 
+.check-row { display: flex; gap: 0.4rem; align-items: stretch; }
+.btn-check-ok, .btn-check-x {
+  flex: 0 0 auto;
+  width: 2.4rem;
+  border-radius: 8px;
+  border: 1.5px solid rgba(249,115,22,0.2);
+  background: var(--bg2);
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.btn-check-ok:hover { border-color: var(--green); color: var(--green); }
+.btn-check-x:hover { border-color: var(--red); color: var(--red); }
+.btn-check-ok.check-ativo-ok {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.btn-check-x.check-ativo-x {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
 .btn-success {
   background: linear-gradient(135deg, var(--green), #059669);
   color: #fff;
