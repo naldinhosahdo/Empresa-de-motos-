@@ -962,7 +962,7 @@ function consultarCPF(tipo) {
   if (!cpf) { alert('Preencha o CPF antes de consultar.'); return; }
   navigator.clipboard.writeText(cpf).catch(function() {});
   if (tipo === 'detran') {
-    abrirUrl('https://sistemas.detran.ce.gov.br/central');
+    abrirUrl('https://servicos.ce.gov.br/solicitacoes/api/5/criar/2409');
   } else if (tipo === 'receita') {
     abrirUrl('https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp');
   } else if (tipo === 'senatran') {
